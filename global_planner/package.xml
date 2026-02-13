@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>global_planner</name>
+  <version>1.0.0</version>
+  <description>The global planners for navigation and exploration.</description>
+  <maintainer email="zhefan@andrew.cmu.edu">Zhefan Xu</maintainer>
+
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>octomap_msgs</depend>
+  <depend>octomap_ros</depend>
+  <depend>tf2</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>map_manager</depend>
+
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>octomap_server</exec_depend>
+  <exec_depend>octomap_rviz_plugins</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

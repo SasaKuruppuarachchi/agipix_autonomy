@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>time_optimizer</name>
+  <version>1.0.0</version>
+  <description>The time optimizer package for trajectory generation</description>
+  <maintainer email="zhefan@andrew.cmu.edu">Zhefan Xu</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>std_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>global_planner</depend>
+  <depend>trajectory_planner</depend>
+  <depend>map_manager</depend>
+
+  <export>
+  </export>
+</package>

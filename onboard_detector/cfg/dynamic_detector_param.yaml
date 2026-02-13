@@ -1,0 +1,96 @@
+dynamic_detector_node:
+  ros__parameters:
+    localization_mode: 0 # 0: pose (default) 1: odom
+
+    # ROS Topics
+    # depth_image_topic: /drone1/RealSense_Camera/depth
+    # color_image_topic: /drone1/RealSense_Camera/color/image_raw
+    depth_image_topic: /stereo/depth
+    color_image_topic: /color/preview/image
+    lidar_pointcloud_topic: /point_cloud
+    pose_topic: /drone0/self_localization/pose
+    odom_topic: /dlio/odom_node/odom
+    frame_id: drone0/map
+
+    # Camera Parameters
+    # depth_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # fx,  fy, cx, cy realsense
+    # color_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # intel realsense
+
+    depth_intrinsics: [398.5701599121094, 335.19561767578125, 398.5701599121094, 210.33920288085938] # fx,  fy, cx, cy realsense
+    color_intrinsics: [568.4973144531258, 327.1590881347656, 568.497314453125, 204.2058868408203] # oak-d
+
+    depth_scale_factor: 1000.0 # 1000 for Intel Realsense Camera
+    depth_min_value: 0.5
+    depth_max_value: 10.0
+    depth_filter_margin: 10 # filter
+    depth_skip_pixel: 5  # filter
+    image_cols: 400  
+    image_rows: 680
+
+    # Sensor Transforms
+    body_to_camera_depth: [0.0,  0.0,  1.0,  0.13,
+                          -1.0,  0.0,  0.0,  0.0 ,   
+                          0.0, -1.0,  0.0,  -0.022,
+                          0.0,  0.0,  0.0,  1.0]
+    body_to_camera_color: [0.0,  0.0,  1.0,  0.13,
+                          -1.0,  0.0,  0.0,  0.0 ,   
+                          0.0, -1.0,  0.0,  -0.022,
+                          0.0,  0.0,  0.0,  1.0]
+    body_to_lidar:  [0.7071068,  0.0000000,  0.7071068,  0.0795,
+                    0.0000000,  1.0000000,  0.0000000,  0.0 ,   
+                    -0.7071068,  0.0000000,  0.7071068,  0.0323,
+                    0.0,  0.0,  0.0,  1.0]
+
+    # System
+    time_step: 0.033
+
+    # DBSCAN Common
+    ground_height: 0.2 # height of ground to remove ground points
+    roof_height: 2.0 # relative height of roof to remove roof points
+
+    # DBSCAN visual param
+    voxel_occupied_thresh: 5 # min num of points for a voxel to be occupied in voxel filter
+    dbscan_min_points_cluster: 20 # 20: 4.0m range; 30: 3.5m range 40: 3.0m range
+    dbscan_search_range_epsilon: 0.05 # searching range radius
+
+    # DBSCAN LiDAR param
+    lidar_DBSCAN_min_points: 10
+    lidar_DBSCAN_epsilon: 0.05
+    downsample_threshold: 3500 # threshold for downsampling
+    gaussian_downsample_rate: 6
+
+    # LiDAR Visual Filtering
+    filtering_BBox_IOU_threshold: 0.2
+
+    # Tracking and data association
+    max_match_range: 0.5 # max match range between time steps in meters
+    max_size_diff_range: 0.5 #  in meter
+    # weight for features: 3pos + 3size + 3 pc centroid
+    feature_weight:
+      - 3.0
+      - 3.0
+      - 0.1
+      - 0.5
+      - 0.5
+      - 0.05
+      - 0.0
+      - 0.0
+      - 0.0
+    history_size: 100 # size of tracking history. history[0] is current detection
+    fix_size_history_threshold: 10 # History threshold (num of frames) to fix box size
+    fix_size_dimension_threshold: 0.4 # dimension threshold (size of proportional) to fix box size
+    kalman_filter_param: [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6]
+    kalman_filter_averaging_frames: 10
+
+    # Classification
+    frame_skip: 5 # num of frames skiped when comparing 2 point clouds
+    dynamic_velocity_threshold: 0.2
+    dynamic_voting_threshold: 0.8
+    frames_force_dynamic: 10 # Range of searching dynamic obstacles in box history
+    frames_force_dynamic_check_range: 30 # threshold for forcing dynamic obstacles
+    dynamic_consistency_threshold: 15 # obstacles being voted as dynamic for continuous k frames are eligible to be classified as dynamic
+
+    # Constrain size
+    target_constrain_size: true
+    target_object_size: [0.5, 0.5, 1.5]
+    max_object_size: [3.0, 3.0, 2.0] # filter out objects that are too large

@@ -1,0 +1,31 @@
+# Ignore build and install directories
+/build/
+/install/
+/log/
+.vscode
+
+# Ignore CMake build files
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles/
+/cmake_install.cmake
+Makefile
+
+# Ignore Python compiled files
+*.pyc
+*.pyo
+__pycache__/
+
+# Ignore other common files
+*.swp
+*.bak
+*.tmp
+*.log
+*.DS_Store
+*.pyc
+*.idea/
+
+**/__pycache__/
+**.pytest_cache/
+**/htmlcov/
+tracking_controller_bak

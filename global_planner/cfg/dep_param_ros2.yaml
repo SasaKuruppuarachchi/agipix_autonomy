@@ -1,0 +1,27 @@
+dep_test_node:
+  ros__parameters:
+    odom_topic: "/drone0/sensor_measurements/odom"
+    local_region_min: [-5.0, -5.0, -2.0]
+    local_region_max: [5.0, 5.0, 2.0]
+    global_region_min: [-20.0, -20.0, 0.0]
+    global_region_max: [20.0, 20.0, 3.0]
+    local_sample_thresh: 50
+    global_sample_thresh: 50
+    frontier_sample_thresh: 100
+    dist_thresh: 0.8
+    safe_distance_xy: 0.3
+    safe_distance_z: 0.0
+    safe_distance_check_unknown: true
+    horizontal_FOV: 1.57
+    vertical_FOV: 1.57
+    dmin: 0.0
+    dmax: 1.0
+    nearest_neighbor_number: 15
+    frontier_nearest_neighbor_number: 15
+    max_connect_dist: 1.5
+    num_yaw_angles: 32
+    min_voxel_thresh: 0.5
+    min_goal_candidates: 3
+    max_goal_candidates: 5
+    information_gain_update_distance: 1.0
+    yaw_penalty_weight: 1.0

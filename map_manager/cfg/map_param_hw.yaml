@@ -1,0 +1,58 @@
+occupancy_map_node:
+  ros__parameters:
+    occupancy_map:
+      localization_mode: 1 # 0: pose (default) 1: odom
+      depth_image_topic: /stereo/depth
+      point_cloud_topic: /livox/lidar
+      pose_topic: /drone0/self_localization/pose
+      odom_topic: /dlio/odom_node/odom
+      map_frame_id : odom
+
+      # robot size
+      robot_size: [0.3, 0.3, 0.1]
+
+      # Depth Camera Parameters
+      depth_intrinsics: [398.5701599121094, 398.5701599121094, 335.19561767578125, 210.33920288085938] #[458.1245542807029, 458.1245542807029, 320.0, 240.0] # fx,  fy, cx, cy
+      depth_scale_factor: 1000.0 # 1000 for Intel Realsense Camera
+      depth_min_value: 0.5
+      depth_max_value: 5.0
+      depth_filter_margin: 2 # filter
+      depth_skip_pixel: 2 # filter
+      image_cols: 640
+      image_rows: 400
+      body_to_depth_sensor: [0.0,  0.0,  1.0,  0.13,
+                        -1.0,  0.0,  0.0,  0.0 ,   
+                        0.0, -1.0,  0.0,  -0.022,
+                        0.0,  0.0,  0.0,  1.0]
+
+      # Point cloud sensor Parameters
+      pointcloud_min_distance: 0.5
+      pointcloud_max_distance: 5.0
+      body_to_pointcloud_sensor: [1.0000,  0.0000000,  0.000000,  0.0795,
+                                  0.0000000,  1.0000000,  0.0000000,  0.0,   
+                                  0.000000,  0.0000000,  1.000000,  0.0323,
+                                  0.0,  0.0,  0.0,  1.0]
+      # Raycasting
+      raycast_max_length: 5.0
+      p_hit: 0.70
+      p_miss: 0.35
+      p_min: 0.12
+      p_max: 0.97
+      p_occ: 0.80
+
+      # Map
+      map_resolution: 0.1
+      ground_height: -0.1 # m
+      map_size: [60.0, 60.0, 3.0] # meter. in x y z direction (reserved size)
+      local_update_range: [5.0, 5.0, 5.0]
+      local_bound_inflation: 3.0 # inflate local bound in meter
+      clean_local_map: false
+
+      # visualziation
+      local_map_size: [5.0, 5.0, 3.0] # meter. in x y z direction (only for visualization)
+      max_height_visualization: 4.0 # m
+      visualize_global_map: true
+      verbose: false
+
+      prebuilt_map_directory: "No"
+      # prebuilt_map_directory: "path/to/static_map.pcd"

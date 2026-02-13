@@ -1,0 +1,29 @@
+rrt_interactive_node:
+  ros__parameters:
+    collision_box: [0.4, 0.4, 0.2]
+    env_box: [-100.0, 100.0, -100.0, 100.0, 1.0, 1.0]
+    timeout: 0.1
+    rrt_incremental_distance: 1.0
+    rrt_connect_goal_ratio: 0.2
+    goal_reach_distance: 0.4
+    map_resolution: 0.2
+    ignore_unknown: true
+    max_shortcut_dist: 5.0
+    vis_RRT: false
+    vis_path: true
+
+rrt_star_interactive_node:
+  ros__parameters:
+    collision_box: [0.4, 0.4, 0.2]
+    env_box: [-100.0, 100.0, -100.0, 100.0, 1.0, 1.0]
+    timeout: 0.1
+    rrt_incremental_distance: 1.0
+    rrt_connect_goal_ratio: 0.2
+    goal_reach_distance: 0.4
+    map_resolution: 0.2
+    ignore_unknown: true
+    max_shortcut_dist: 5.0
+    vis_RRT: false
+    vis_path: true
+    neighborhood_radius: 1.0
+    max_num_neighbors: 10.0
