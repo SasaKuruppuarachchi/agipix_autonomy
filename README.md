@@ -1,5 +1,7 @@
 # AgiAUTO (ROS 2) — Agipix PX4 Autonomy Stack
 
+> Native Px4 DDS control implementation is WIP (Stay tuned for the rollout) 
+
 This repository is the **AgiAUTO module** of **Agipix** and contains a ROS 2 autonomy stack for PX4-based UAV operation in simulation and real-world workflows.
 
 <p align="center"><img src=".media/images/banner.png" alt="AgiAUTO banner"></p>
