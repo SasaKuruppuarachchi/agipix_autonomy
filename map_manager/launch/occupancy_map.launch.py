@@ -9,7 +9,7 @@ def generate_launch_description():
     # Declare a launch argument so the config filename can be passed on the CLI
     config_arg = DeclareLaunchArgument(
         'config_file',
-        default_value='map_param.yaml',
+        default_value='map_param_sw.yaml',
         description='YAML config filename located in map_manager/cfg'
     )
 

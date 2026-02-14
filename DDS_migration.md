@@ -294,3 +294,94 @@ Move arm/mode sequencing from manual MAVROS loop to:
 6. WP-D mission ownership migration
 7. WP-E cleanup to DDS-only
 
+---
+
+## 13. Library-specific design constraints (px4_ros2_interface_lib)
+
+To align with `px4_ros2_interface_lib` architecture and avoid integration regressions:
+
+1. **Use external modes, not MAVROS offboard loops**
+	- Control ownership should be represented by `ModeBase` / `ModeExecutorBase`.
+	- Activation/deactivation and failsafe interaction should be managed by PX4 mode lifecycle.
+
+2. **Register modes through `NodeWithMode` or `NodeWithModeExecutor`**
+	- Use registration-time compatibility checks (default behavior).
+	- Keep compatibility checks enabled in production; disable only if translation node is explicitly used.
+
+3. **Setpoint type policy for MC (release/1.16)**
+	- Phase-in order:
+	  1) `TrajectorySetpointType` (experimental namespace in release/1.16)
+	  2) `AttitudeSetpointType`
+	  3) `RatesSetpointType`
+	  4) optional `GotoSetpointType` for simple actions
+
+4. **Frame boundary policy**
+	- Keep mission/controller internal frame unchanged.
+	- Enforce one transform boundary in `px4_control_interface` (ENU -> NED and yaw conversion).
+
+5. **Arming and mode transitions**
+	- Replace direct `set_mode/cmd/arming` calls with executor actions (`takeoff`, `scheduleMode`, `rtl`, `waitUntilDisarmed`).
+
+6. **Mode requirements and failsafe handling**
+	- Rely on mode requirement flags from selected setpoint/telemetry components.
+	- Use deferred failsafes only for tightly bounded operations and with explicit timeout.
+
+---
+
+## 14. Controller abstraction contract (recommended)
+
+Introduce internal interfaces in `tracking_controller` (no behavior change):
+
+- `IStateProvider`
+  - `position_enu()`, `velocity_enu()`, `attitude_quat_enu()`, `imu()`
+- `ISetpointSink`
+  - `publishTrajectoryRef(position, velocity, acceleration, yaw)`
+  - `publishAttitudeRef(quat, thrust)`
+  - `publishRatesRef(body_rates, thrust)`
+
+Backends:
+
+- `MavrosStateProvider`, `MavrosSetpointSink` (legacy)
+- `Px4Ros2StateProvider`, `Px4Ros2SetpointSink` (DDS)
+
+Runtime switch:
+
+- `controller_backend: mavros | dds`
+
+Acceptance:
+
+- Controller core binary-identical gains and PID logic.
+- Equivalent output traces on logged replay (tolerance bounded).
+
+---
+
+## 15. Implementation status (started)
+
+Bootstrap implementation has been started in `px4_control_interface`:
+
+- Added package scaffolding (`package.xml`, `CMakeLists.txt`, launch, README).
+- Added external mode node based on `NodeWithMode`.
+- Implemented minimal `ModeBase` (`AgiPix DDS Tracking`) that:
+  - subscribes existing mission-controller stream (`/autonomous_flight/target_state`),
+  - maps ENU setpoints to NED,
+  - publishes PX4 trajectory setpoints,
+  - falls back to hold position on target timeout.
+
+This corresponds to **Phase 1 / WP-B bootstrap** and creates a non-controlling DDS shadow entry point.
+
+---
+
+## 16. Immediate next agentic steps
+
+1. Add `dds_shadow` composed launch profile with existing mission stack + `px4_control_interface` node.
+2. Add compatibility check target in CI using:
+	- `scripts/check-message-compatibility.py`
+	- `scripts/check-used-topics.py`
+3. Split `tracking_controller` into core + backend interfaces (no behavior change).
+4. Add `dds` backend sink implementation against `px4_control_interface` contract.
+5. Add SITL parity test matrix for:
+	- takeoff/hover
+	- navigation
+	- dynamic_navigation
+	- dynamic_inspection state transitions
+

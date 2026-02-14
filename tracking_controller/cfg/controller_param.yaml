@@ -6,26 +6,26 @@
 #
 
 /**:
-	ros__parameters:
-		controller:
-			# body
-			body_rate_control: false # all parameters
-			attitude_control: false # PID and hover thrust
-			acceleration_control: true # only PID matters
+  ros__parameters:
+    controller:
+      # body
+      body_rate_control: false # all parameters
+      attitude_control: false # PID and hover thrust
+      acceleration_control: true # only PID matters
 
-			# Position PID
-			position_p: [1.5, 1.5, 1.5]
-			position_i: [0.0, 0.0, 0.1]
-			position_d: [0.0, 0.0, 0.0]
+      # Position PID
+      position_p: [1.5, 1.5, 1.5]
+      position_i: [0.0, 0.0, 0.1]
+      position_d: [0.0, 0.0, 0.0]
 
-			# Velocity
-			velocity_p: [1.0, 1.0, 1.0]
-			velocity_i: [0.0, 0.0, 0.0]
-			velocity_d: [0.0, 0.0, 0.0]
+      # Velocity
+      velocity_p: [1.0, 1.0, 1.0]
+      velocity_i: [0.0, 0.0, 0.0]
+      velocity_d: [0.0, 0.0, 0.0]
 
-			# Body rate control 
-			attitude_control_tau: 0.3 # (this will not be used if attitude control is true)
-			hover_thrust: 0.70 # this need to be very accurate for a good control (most important)
+      # Body rate control 
+      attitude_control_tau: 0.3 # (this will not be used if attitude control is true)
+      hover_thrust: 0.70 # this need to be very accurate for a good control (most important)
 
-			# display message
-			verbose: false
+      # display message
+      verbose: false

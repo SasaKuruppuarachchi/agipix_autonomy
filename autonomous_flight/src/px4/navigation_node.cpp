@@ -11,12 +11,11 @@ int main(int argc, char** argv){
 	rclcpp::init(argc, argv);
 	auto node = rclcpp::Node::make_shared("navigation_node");
 
+	AutoFlight::navigation navigation (node);
+	navigation.run();
+
 	rclcpp::executors::MultiThreadedExecutor executor;
 	executor.add_node(node);
-
-	AutoFlight::navigation navigator (node);
-	navigator.run();
-
 	executor.spin();
 	rclcpp::shutdown();
 	return 0;

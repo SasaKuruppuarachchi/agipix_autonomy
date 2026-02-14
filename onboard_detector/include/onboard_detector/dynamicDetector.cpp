@@ -32,42 +32,42 @@ namespace onboardDetector{
 
     void dynamicDetector::initParam(){
 		// localization mode
-		this->declare_parameter<int>("localization_mode", 0);
-		this->get_parameter("localization_mode", this->localizationMode_);
+		this->declare_parameter<int>("detector.localization_mode", 0);
+		this->get_parameter("detector.localization_mode", this->localizationMode_);
 		std::cout << this->hint_ << ": Localization mode: pose (0)/odom (1). Your option: " << this->localizationMode_ << std::endl;
 
         // frame id
-		this->declare_parameter<std::string>("frame_id", "map");
-		this->get_parameter("frame_id", this->frameId_);
+		this->declare_parameter<std::string>("detector.frame_id", "map");
+		this->get_parameter("detector.frame_id", this->frameId_);
         cout << this->hint_ << ": frame_id: " << this->frameId_ << endl;
 
         // depth topic name
-		this->declare_parameter<std::string>("depth_image_topic", "/camera/depth/image_raw");
-		this->get_parameter("depth_image_topic", this->depthTopicName_);
+		this->declare_parameter<std::string>("detector.depth_image_topic", "/camera/depth/image_raw");
+		this->get_parameter("detector.depth_image_topic", this->depthTopicName_);
         cout << this->hint_ << ": Depth topic: " << this->depthTopicName_ << endl;
         
         // color topic name
-		this->declare_parameter<std::string>("color_image_topic", "/camera/color/image_raw");
-		this->get_parameter("color_image_topic", this->colorImgTopicName_);
+		this->declare_parameter<std::string>("detector.color_image_topic", "/camera/color/image_raw");
+		this->get_parameter("detector.color_image_topic", this->colorImgTopicName_);
         cout << this->hint_ << ": Color image topic: " << this->colorImgTopicName_ << endl;
 
         if (this->localizationMode_ == 0){
             // pose topic name
-            this->declare_parameter<std::string>("pose_topic", "/CERLAB/quadcopter/pose");
-            this->get_parameter("pose_topic", this->poseTopicName_);
+            this->declare_parameter<std::string>("detector.pose_topic", "/CERLAB/quadcopter/pose");
+            this->get_parameter("detector.pose_topic", this->poseTopicName_);
             cout << this->hint_ << ": Pose topic: " << this->poseTopicName_ << endl;
         }
         else{
             // odom topic name
-            this->declare_parameter<std::string>("odom_topic", "/CERLAB/quadcopter/odom");
-            this->get_parameter("odom_topic", this->odomTopicName_);
+            this->declare_parameter<std::string>("detector.odom_topic", "/CERLAB/quadcopter/odom");
+            this->get_parameter("detector.odom_topic", this->odomTopicName_);
             cout << this->hint_ << ": Odom topic: " << this->odomTopicName_ << endl;
         }
 
         // depth intrinsics
         std::vector<double> depthIntrinsics;
-        this->declare_parameter<std::vector<double>>("depth_intrinsics", {0.0, 0.0, 0.0, 0.0});
-        this->get_parameter("depth_intrinsics", depthIntrinsics);
+        this->declare_parameter<std::vector<double>>("detector.depth_intrinsics", {0.0, 0.0, 0.0, 0.0});
+        this->get_parameter("detector.depth_intrinsics", depthIntrinsics);
         this->fx_ = depthIntrinsics[0];
         this->fy_ = depthIntrinsics[1];
         this->cx_ = depthIntrinsics[2];
@@ -76,8 +76,8 @@ namespace onboardDetector{
     
         // color camera intrinsics
         std::vector<double> colorIntrinsics;
-        this->declare_parameter<std::vector<double>>("color_intrinsics", {0.0, 0.0, 0.0, 0.0});
-        this->get_parameter("color_intrinsics", colorIntrinsics);
+        this->declare_parameter<std::vector<double>>("detector.color_intrinsics", {0.0, 0.0, 0.0, 0.0});
+        this->get_parameter("detector.color_intrinsics", colorIntrinsics);
         this->fxC_ = colorIntrinsics[0];
         this->fyC_ = colorIntrinsics[1];
         this->cxC_ = colorIntrinsics[2];
@@ -85,46 +85,46 @@ namespace onboardDetector{
         std::cout << this->hint_ << ": fxC, fyC, cxC, cyC: [" << this->fxC_ << ", " << this->fyC_ << ", " << this->cxC_ << ", " << this->cyC_ << "]" << std::endl;
     
         // depth scale factor
-        this->declare_parameter<double>("depth_scale_factor", 1000.0);
-        this->get_parameter("depth_scale_factor", this->depthScale_);
+        this->declare_parameter<double>("detector.depth_scale_factor", 1000.0);
+        this->get_parameter("detector.depth_scale_factor", this->depthScale_);
         std::cout << this->hint_ << ": Depth scale factor: " << this->depthScale_ << std::endl;
 
         // depth min value
-        this->declare_parameter<double>("depth_min_value", 0.2);
-        this->get_parameter("depth_min_value", this->depthMinValue_);
+        this->declare_parameter<double>("detector.depth_min_value", 0.2);
+        this->get_parameter("detector.depth_min_value", this->depthMinValue_);
         std::cout << this->hint_ << ": Depth min value: " << this->depthMinValue_ << std::endl;
 
         // depth max value
-        this->declare_parameter<double>("depth_max_value", 5.0);
-        this->get_parameter("depth_max_value", this->depthMaxValue_);
+        this->declare_parameter<double>("detector.depth_max_value", 5.0);
+        this->get_parameter("detector.depth_max_value", this->depthMaxValue_);
         std::cout << this->hint_ << ": Depth max value: " << this->depthMaxValue_ << std::endl;
 
         // depth filter margin
-        this->declare_parameter<int>("depth_filter_margin", 0);
-        this->get_parameter("depth_filter_margin", this->depthFilterMargin_);
+        this->declare_parameter<int>("detector.depth_filter_margin", 0);
+        this->get_parameter("detector.depth_filter_margin", this->depthFilterMargin_);
         std::cout << this->hint_ << ": Depth filter margin: " << this->depthFilterMargin_ << std::endl;
 
         // depth skip pixel
-        this->declare_parameter<int>("depth_skip_pixel", 1);
-        this->get_parameter("depth_skip_pixel", this->skipPixel_);
+        this->declare_parameter<int>("detector.depth_skip_pixel", 1);
+        this->get_parameter("detector.depth_skip_pixel", this->skipPixel_);
         std::cout << this->hint_ << ": Depth skip pixel: " << this->skipPixel_ << std::endl;
 
         // depth image columns
-        this->declare_parameter<int>("image_cols", 640);
-        this->get_parameter("image_cols", this->imgCols_);
+        this->declare_parameter<int>("detector.image_cols", 640);
+        this->get_parameter("detector.image_cols", this->imgCols_);
         std::cout << this->hint_ << ": Depth image columns: " << this->imgCols_ << std::endl;
 
         // depth image rows
-        this->declare_parameter<int>("image_rows", 480);
-        this->get_parameter("image_rows", this->imgRows_);
+        this->declare_parameter<int>("detector.image_rows", 480);
+        this->get_parameter("detector.image_rows", this->imgRows_);
         std::cout << this->hint_ << ": Depth image rows: " << this->imgRows_ << std::endl;
         this->projPoints_.resize(this->imgCols_ * this->imgRows_ / (this->skipPixel_ * this->skipPixel_));
         this->pointsDepth_.resize(this->imgCols_ * this->imgRows_ / (this->skipPixel_ * this->skipPixel_));
 
         // transform matrix: body to depth camera
         std::vector<double> body2CamVec(16, 0.0);
-        this->declare_parameter<std::vector<double>>("body_to_camera_depth", std::vector<double>(16));
-        this->get_parameter("body_to_camera_depth", body2CamVec);
+        this->declare_parameter<std::vector<double>>("detector.body_to_camera_depth", std::vector<double>(16));
+        this->get_parameter("detector.body_to_camera_depth", body2CamVec);
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 this->body2CamDepth_(i, j) = body2CamVec[i * 4 + j];
@@ -133,8 +133,8 @@ namespace onboardDetector{
 
         // transform matrix: body to color camera
         std::vector<double> body2CamColorVec(16, 0.0);
-        this->declare_parameter<std::vector<double>>("body_to_camera_color", std::vector<double>(16));
-        this->get_parameter("body_to_camera_color", body2CamColorVec);
+        this->declare_parameter<std::vector<double>>("detector.body_to_camera_color", std::vector<double>(16));
+        this->get_parameter("detector.body_to_camera_color", body2CamColorVec);
         for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
                 this->body2CamColor_(i, j) = body2CamColorVec[i * 4 + j];
@@ -143,8 +143,8 @@ namespace onboardDetector{
 
         // transform matrix: body to lidar (optional, fallback to depth camera if not provided)
         std::vector<double> body2LidarVec(16, 0.0);
-        this->declare_parameter<std::vector<double>>("body_to_lidar", std::vector<double>(16));
-        this->get_parameter("body_to_lidar", body2LidarVec);
+        this->declare_parameter<std::vector<double>>("detector.body_to_lidar", std::vector<double>(16));
+        this->get_parameter("detector.body_to_lidar", body2LidarVec);
         bool allZeroLidar = true;
         for (double v : body2LidarVec) { if (v != 0.0) { allZeroLidar = false; break; } }
         if (!allZeroLidar) {
@@ -159,72 +159,72 @@ namespace onboardDetector{
         }
 
         // time step
-        this->declare_parameter<double>("time_step", 0.033);
-        this->get_parameter("time_step", this->dt_);
+        this->declare_parameter<double>("detector.time_step", 0.033);
+        this->get_parameter("detector.time_step", this->dt_);
         std::cout << this->hint_ << ": The time step for the system is set to: " << this->dt_ << std::endl;
 
         // raycast max length
-        this->declare_parameter<double>("raycast_max_length", 5.0);
-        this->get_parameter("raycast_max_length", this->raycastMaxLength_);
+        this->declare_parameter<double>("detector.raycast_max_length", 5.0);
+        this->get_parameter("detector.raycast_max_length", this->raycastMaxLength_);
         std::cout << this->hint_ << ": Raycast max length: " << this->raycastMaxLength_ << std::endl;
 
         // IOU threshold
-        this->declare_parameter<double>("filtering_BBox_IOU_threshold", 0.5);
-        this->get_parameter("filtering_BBox_IOU_threshold", this->boxIOUThresh_);
+        this->declare_parameter<double>("detector.filtering_BBox_IOU_threshold", 0.5);
+        this->get_parameter("detector.filtering_BBox_IOU_threshold", this->boxIOUThresh_);
         std::cout << this->hint_ << ": The threshold for bounding box IOU filtering is set to: " << this->boxIOUThresh_ << std::endl;
 
     // Association thresholds (new cfg)
-    this->declare_parameter<double>("max_match_range", this->maxMatchRange_);
-    this->get_parameter("max_match_range", this->maxMatchRange_);
+    this->declare_parameter<double>("detector.max_match_range", this->maxMatchRange_);
+    this->get_parameter("detector.max_match_range", this->maxMatchRange_);
     std::cout << this->hint_ << ": Max match range (m): " << this->maxMatchRange_ << std::endl;
-    this->declare_parameter<double>("max_size_diff_range", this->maxSizeDiffRange_);
-    this->get_parameter("max_size_diff_range", this->maxSizeDiffRange_);
+    this->declare_parameter<double>("detector.max_size_diff_range", this->maxSizeDiffRange_);
+    this->get_parameter("detector.max_size_diff_range", this->maxSizeDiffRange_);
     std::cout << this->hint_ << ": Max size diff (m): " << this->maxSizeDiffRange_ << std::endl;
 
         // DBSCAN minimum number of points in each cluster
-        this->declare_parameter<int>("dbscan_min_points_cluster", 18);
-        this->get_parameter("dbscan_min_points_cluster", this->dbMinPointsCluster_);
+        this->declare_parameter<int>("detector.dbscan_min_points_cluster", 18);
+        this->get_parameter("detector.dbscan_min_points_cluster", this->dbMinPointsCluster_);
         std::cout << this->hint_ << ": DBSCAN Minimum point in each cluster is set to: " << this->dbMinPointsCluster_ << std::endl;
 
         // DBSCAN search range
-        this->declare_parameter<double>("dbscan_search_range_epsilon", 0.3);
-        this->get_parameter("dbscan_search_range_epsilon", this->dbEpsilon_);
+        this->declare_parameter<double>("detector.dbscan_search_range_epsilon", 0.3);
+        this->get_parameter("detector.dbscan_search_range_epsilon", this->dbEpsilon_);
         std::cout << this->hint_ << ": DBSCAN epsilon is set to: " << this->dbEpsilon_ << std::endl;
 
     // DBSCAN ground/roof heights
-    this->declare_parameter<double>("ground_height", 0.1);
-    this->get_parameter("ground_height", this->groundHeight_);
+    this->declare_parameter<double>("detector.ground_height", 0.1);
+    this->get_parameter("detector.ground_height", this->groundHeight_);
     std::cout << this->hint_ << ": Ground height is set to: " << this->groundHeight_ << std::endl;
 
-    this->declare_parameter<double>("roof_height", 2.0);
-    this->get_parameter("roof_height", this->roofHeight_);
+    this->declare_parameter<double>("detector.roof_height", 2.0);
+    this->get_parameter("detector.roof_height", this->roofHeight_);
     std::cout << this->hint_ << ": Roof height is set to: " << this->roofHeight_ << std::endl;
 
     // LIDAR parameters
-    this->declare_parameter<std::string>("lidar_pointcloud_topic", "/cloud_registered");
-    this->get_parameter("lidar_pointcloud_topic", this->lidarTopicName_);
+    this->declare_parameter<std::string>("detector.lidar_pointcloud_topic", "/cloud_registered");
+    this->get_parameter("detector.lidar_pointcloud_topic", this->lidarTopicName_);
     std::cout << this->hint_ << ": Lidar pointcloud topic: " << this->lidarTopicName_ << std::endl;
 
-    this->declare_parameter<int>("lidar_DBSCAN_min_points", 10);
-    this->get_parameter("lidar_DBSCAN_min_points", this->lidarDBMinPoints_);
+    this->declare_parameter<int>("detector.lidar_DBSCAN_min_points", 10);
+    this->get_parameter("detector.lidar_DBSCAN_min_points", this->lidarDBMinPoints_);
     std::cout << this->hint_ << ": Lidar DBSCAN Minimum point in each cluster is set to: " << this->lidarDBMinPoints_ << std::endl;
 
-    this->declare_parameter<double>("lidar_DBSCAN_epsilon", 0.2);
-    this->get_parameter("lidar_DBSCAN_epsilon", this->lidarDBEpsilon_);
+    this->declare_parameter<double>("detector.lidar_DBSCAN_epsilon", 0.2);
+    this->get_parameter("detector.lidar_DBSCAN_epsilon", this->lidarDBEpsilon_);
     std::cout << this->hint_ << ": Lidar DBSCAN epsilon is set to: " << this->lidarDBEpsilon_ << std::endl;
 
-    this->declare_parameter<int>("downsample_threshold", 4000);
-    this->get_parameter("downsample_threshold", this->downSampleThresh_);
+    this->declare_parameter<int>("detector.downsample_threshold", 4000);
+    this->get_parameter("detector.downsample_threshold", this->downSampleThresh_);
     std::cout << this->hint_ << ": Downsample threshold is set to: " << this->downSampleThresh_ << std::endl;
 
-    this->declare_parameter<int>("gaussian_downsample_rate", 2);
-    this->get_parameter("gaussian_downsample_rate", this->gaussianDownSampleRate_);
+    this->declare_parameter<int>("detector.gaussian_downsample_rate", 2);
+    this->get_parameter("detector.gaussian_downsample_rate", this->gaussianDownSampleRate_);
     std::cout << this->hint_ << ": Gaussian downsample rate is set to: " << this->gaussianDownSampleRate_ << std::endl;
 
         // max object size threshold
         std::vector<double> maxObjectSizeTemp;
-        this->declare_parameter<std::vector<double>>("max_object_size", std::vector<double>({2.0, 2.0, 2.0}));
-        this->get_parameter("max_object_size", maxObjectSizeTemp);
+        this->declare_parameter<std::vector<double>>("detector.max_object_size", std::vector<double>({2.0, 2.0, 2.0}));
+        this->get_parameter("detector.max_object_size", maxObjectSizeTemp);
         if (maxObjectSizeTemp.size() == 3){
             this->maxObjectSize_(0) = maxObjectSizeTemp[0];
             this->maxObjectSize_(1) = maxObjectSizeTemp[1];
@@ -235,35 +235,35 @@ namespace onboardDetector{
         std::cout << this->hint_ << ": Max object size threshold set to: [" << this->maxObjectSize_(0) << ", " << this->maxObjectSize_(1) << ", " << this->maxObjectSize_(2) << "]" << std::endl;
 
         // DBSCAN min number of points for a voxel to be occupied in voxel filter
-        this->declare_parameter<int>("voxel_occupied_thresh", 10);
-        this->get_parameter("voxel_occupied_thresh", this->voxelOccThresh_);
+        this->declare_parameter<int>("detector.voxel_occupied_thresh", 10);
+        this->get_parameter("detector.voxel_occupied_thresh", this->voxelOccThresh_);
         std::cout << this->hint_ << ": Min num of points for a voxel to be occupied in voxel filter is set to: " << this->voxelOccThresh_ << std::endl;
 
         // tracking history size
-        this->declare_parameter<int>("history_size", 5);
-        this->get_parameter("history_size", this->histSize_);
+        this->declare_parameter<int>("detector.history_size", 5);
+        this->get_parameter("detector.history_size", this->histSize_);
         std::cout << this->hint_ << ": The history for tracking is set to: " << this->histSize_ << std::endl;
 
         // tracking prediction size
-        this->declare_parameter<int>("prediction_size", 5);
-        this->get_parameter("prediction_size", this->predSize_);
+        this->declare_parameter<int>("detector.prediction_size", 5);
+        this->get_parameter("detector.prediction_size", this->predSize_);
         std::cout << this->hint_ << ": The prediction size is set to: " << this->predSize_ << std::endl;
 
     // similarity threshold for data association (kept for backward compatibility)
-    this->declare_parameter<double>("similarity_threshold", 0.9);
-    this->get_parameter("similarity_threshold", this->simThresh_);
+    this->declare_parameter<double>("detector.similarity_threshold", 0.9);
+    this->get_parameter("detector.similarity_threshold", this->simThresh_);
     std::cout << this->hint_ << ": The similarity threshold for data association is set to: " << this->simThresh_ << std::endl;
 
     // retrack similarity threshold (kept for backward compatibility)
-    this->declare_parameter<double>("retrack_similarity_threshold", 0.5);
-    this->get_parameter("retrack_similarity_threshold", this->simThreshRetrack_);
+    this->declare_parameter<double>("detector.retrack_similarity_threshold", 0.5);
+    this->get_parameter("detector.retrack_similarity_threshold", this->simThreshRetrack_);
     std::cout << this->hint_ << ": The retrack similarity threshold is set to: " << this->simThreshRetrack_ << std::endl;    
     
         // Kalman filter parameters (new cfg option: kalman_filter_param overrides individual values)
         // Fallback to individual params for backward compatibility
         std::vector<double> kfParams;
-        this->declare_parameter<std::vector<double>>("kalman_filter_param", std::vector<double>());
-        this->get_parameter("kalman_filter_param", kfParams);
+        this->declare_parameter<std::vector<double>>("detector.kalman_filter_param", std::vector<double>());
+        this->get_parameter("detector.kalman_filter_param", kfParams);
         if (kfParams.size() == 7) {
             this->eP_    = kfParams[0];
             this->eQPos_ = kfParams[1];
@@ -273,89 +273,89 @@ namespace onboardDetector{
             this->eRVel_ = kfParams[5];
             this->eRAcc_ = kfParams[6];
         } else {
-            this->declare_parameter<double>("e_p", 0.5);
-            this->get_parameter("e_p", this->eP_);
-            this->declare_parameter<double>("e_q_pos", 0.5);
-            this->get_parameter("e_q_pos", this->eQPos_);
-            this->declare_parameter<double>("e_q_vel", 0.5);
-            this->get_parameter("e_q_vel", this->eQVel_);
-            this->declare_parameter<double>("e_q_acc", 0.5);
-            this->get_parameter("e_q_acc", this->eQAcc_);
-            this->declare_parameter<double>("e_r_pos", 0.5);
-            this->get_parameter("e_r_pos", this->eRPos_);
-            this->declare_parameter<double>("e_r_vel", 0.5);
-            this->get_parameter("e_r_vel", this->eRVel_);
-            this->declare_parameter<double>("e_r_acc", 0.5);
-            this->get_parameter("e_r_acc", this->eRAcc_);
+            this->declare_parameter<double>("detector.e_p", 0.5);
+            this->get_parameter("detector.e_p", this->eP_);
+            this->declare_parameter<double>("detector.e_q_pos", 0.5);
+            this->get_parameter("detector.e_q_pos", this->eQPos_);
+            this->declare_parameter<double>("detector.e_q_vel", 0.5);
+            this->get_parameter("detector.e_q_vel", this->eQVel_);
+            this->declare_parameter<double>("detector.e_q_acc", 0.5);
+            this->get_parameter("detector.e_q_acc", this->eQAcc_);
+            this->declare_parameter<double>("detector.e_r_pos", 0.5);
+            this->get_parameter("detector.e_r_pos", this->eRPos_);
+            this->declare_parameter<double>("detector.e_r_vel", 0.5);
+            this->get_parameter("detector.e_r_vel", this->eRVel_);
+            this->declare_parameter<double>("detector.e_r_acc", 0.5);
+            this->get_parameter("detector.e_r_acc", this->eRAcc_);
         }
         std::cout << this->hint_ << ": KF params [eP, eQpos, eQvel, eQacc, eRpos, eRvel, eRacc]: ["
                   << this->eP_ << ", " << this->eQPos_ << ", " << this->eQVel_ << ", " << this->eQAcc_
                   << ", " << this->eRPos_ << ", " << this->eRVel_ << ", " << this->eRAcc_ << "]" << std::endl;
         
         // number of frames used in KF for observation
-        this->declare_parameter<int>("kalman_filter_averaging_frames", 10);
-        this->get_parameter("kalman_filter_averaging_frames", this->kfAvgFrames_);
+        this->declare_parameter<int>("detector.kalman_filter_averaging_frames", 10);
+        this->get_parameter("detector.kalman_filter_averaging_frames", this->kfAvgFrames_);
         std::cout << this->hint_ << ": Number of frames used in KF for observation is set to: " << this->kfAvgFrames_ << std::endl;
 
         // frame skip
-        this->declare_parameter<int>("frame_skip", 5);
-        this->get_parameter("frame_skip", this->skipFrame_);
+        this->declare_parameter<int>("detector.frame_skip", 5);
+        this->get_parameter("detector.frame_skip", this->skipFrame_);
         std::cout << this->hint_ << ": The number of frames skipped for classification is set to: " << this->skipFrame_ << std::endl;
     
         // dynamic velocity threshold
-        this->declare_parameter<double>("dynamic_velocity_threshold", 0.35);
-        this->get_parameter("dynamic_velocity_threshold", this->dynaVelThresh_);
+        this->declare_parameter<double>("detector.dynamic_velocity_threshold", 0.35);
+        this->get_parameter("detector.dynamic_velocity_threshold", this->dynaVelThresh_);
         std::cout << this->hint_ << ": The velocity threshold for dynamic classification is set to: " << this->dynaVelThresh_ << std::endl;
 
         // dynamic voting threshold
-        this->declare_parameter<double>("dynamic_voting_threshold", 0.8);
-        this->get_parameter("dynamic_voting_threshold", this->dynaVoteThresh_);
+        this->declare_parameter<double>("detector.dynamic_voting_threshold", 0.8);
+        this->get_parameter("detector.dynamic_voting_threshold", this->dynaVoteThresh_);
         std::cout << this->hint_ << ": The voting threshold for dynamic classification is set to: " << this->dynaVoteThresh_ << std::endl;
 
         // maximum skip ratio
-        this->declare_parameter<double>("maximum_skip_ratio", 0.5);
-        this->get_parameter("maximum_skip_ratio", this->maxSkipRatio_);
+        this->declare_parameter<double>("detector.maximum_skip_ratio", 0.5);
+        this->get_parameter("detector.maximum_skip_ratio", this->maxSkipRatio_);
         std::cout << this->hint_ << ": The upper limit of points skipping in classification is set to: " << this->maxSkipRatio_ << std::endl;
 
         // history threshold for fixing box size
-        this->declare_parameter<int>("fix_size_history_threshold", 10);
-        this->get_parameter("fix_size_history_threshold", this->fixSizeHistThresh_);
+        this->declare_parameter<int>("detector.fix_size_history_threshold", 10);
+        this->get_parameter("detector.fix_size_history_threshold", this->fixSizeHistThresh_);
         std::cout << this->hint_ << ": History threshold for fixing size is set to: " << this->fixSizeHistThresh_ << std::endl;
 
         // dimension threshold for fixing box size
-        this->declare_parameter<double>("fix_size_dimension_threshold", 0.4);
-        this->get_parameter("fix_size_dimension_threshold", this->fixSizeDimThresh_);
+        this->declare_parameter<double>("detector.fix_size_dimension_threshold", 0.4);
+        this->get_parameter("detector.fix_size_dimension_threshold", this->fixSizeDimThresh_);
         std::cout << this->hint_ << ": Dimension threshold for fixing size is set to: " << this->fixSizeDimThresh_ << std::endl;
         
         // frames to force dynamic
-        this->declare_parameter<int>("frames_force_dynamic", 20);
-        this->get_parameter("frames_force_dynamic", this->forceDynaFrames_);
+        this->declare_parameter<int>("detector.frames_force_dynamic", 20);
+        this->get_parameter("detector.frames_force_dynamic", this->forceDynaFrames_);
         std::cout << this->hint_ << ": Range of searching dynamic obstacles in box history is set to: " << this->forceDynaFrames_ << std::endl;
 
         // threshold for forcing dynamic obstacles
-        this->declare_parameter<int>("frames_force_dynamic_check_range", 30);
-        this->get_parameter("frames_force_dynamic_check_range", this->forceDynaCheckRange_);
+        this->declare_parameter<int>("detector.frames_force_dynamic_check_range", 30);
+        this->get_parameter("detector.frames_force_dynamic_check_range", this->forceDynaCheckRange_);
         std::cout << this->hint_ << ": Threshold for forcing dynamic obstacles is set to: " << this->forceDynaCheckRange_ << std::endl;
 
         // dynamic consistency check
-        this->declare_parameter<int>("dynamic_consistency_threshold", 3);
-        this->get_parameter("dynamic_consistency_threshold", this->dynamicConsistThresh_);
+        this->declare_parameter<int>("detector.dynamic_consistency_threshold", 3);
+        this->get_parameter("detector.dynamic_consistency_threshold", this->dynamicConsistThresh_);
         std::cout << this->hint_ << ": Threshold for dynamic consistency check is set to: " << this->dynamicConsistThresh_ << std::endl;
 
         // constrain target object size (new key: target_constrain_size)
-        this->declare_parameter<bool>("target_constrain_size", false);
-        this->declare_parameter<bool>("constrain_size", false); // backward compat
-        this->get_parameter("target_constrain_size", this->constrainSize_);
+        this->declare_parameter<bool>("detector.target_constrain_size", false);
+        this->declare_parameter<bool>("detector.constrain_size", false); // backward compat
+        this->get_parameter("detector.target_constrain_size", this->constrainSize_);
         bool oldConstrain = false;
-        if (this->get_parameter("constrain_size", oldConstrain)) {
+        if (this->get_parameter("detector.constrain_size", oldConstrain)) {
             this->constrainSize_ = oldConstrain;
         }
         std::cout << this->hint_ << ": Target object constrain is set to: " << this->constrainSize_ << std::endl;
 
         // object target sizes
         std::vector<double> targetObjectSizeTemp;
-        this->declare_parameter<std::vector<double>>("target_object_size", std::vector<double>());
-        this->get_parameter("target_object_size", targetObjectSizeTemp);
+        this->declare_parameter<std::vector<double>>("detector.target_object_size", std::vector<double>());
+        this->get_parameter("detector.target_object_size", targetObjectSizeTemp);
         if (targetObjectSizeTemp.empty()) {
             std::cout << this->hint_ << ": No target object size found. Do not apply target object size." << std::endl;
         } else {
@@ -368,8 +368,8 @@ namespace onboardDetector{
 
         // feature weights for association (supports 9 or 10 elements)
         std::vector<double> featW;
-        this->declare_parameter<std::vector<double>>("feature_weight", std::vector<double>());
-        this->get_parameter("feature_weight", featW);
+        this->declare_parameter<std::vector<double>>("detector.feature_weight", std::vector<double>());
+        this->get_parameter("detector.feature_weight", featW);
         this->featureWeights_.resize(10);
         // defaults
         Eigen::VectorXd defaultW(10);

@@ -11,7 +11,8 @@ def generate_launch_description():
     af_params = [
         PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "flight_base.yaml"]),
         PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "planner_param.yaml"]),
-        PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "fake_detector_param.yaml"]),
+        PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "mapping_param.yaml"]),
+        PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "dynamic_detector_param.yaml"]),
     ]
 
     map_params = PathJoinSubstitution([af_share, "cfg", "dynamic_navigation", "mapping_param.yaml"])
@@ -28,20 +29,20 @@ def generate_launch_description():
                 output="screen",
                 parameters=[controller_params],
             ),
-            Node(
-                package="map_manager",
-                executable="dynamic_map_node",
-                name="dynamic_map_node",
-                output="screen",
-                parameters=[map_params],
-            ),
-            Node(
-                package="onboard_detector",
-                executable="dynamic_detector_node",
-                name="dynamic_detector_node",
-                output="screen",
-                parameters=[detector_params],
-            ),
+            # Node(
+            #     package="map_manager",
+            #     executable="dynamic_map_node",
+            #     name="dynamic_map_node",
+            #     output="screen",
+            #     parameters=[map_params],
+            # ),
+            # Node(
+            #     package="onboard_detector",
+            #     executable="dynamic_detector_node",
+            #     name="dynamic_detector_node",
+            #     output="screen",
+            #     parameters=[detector_params],
+            # ),
             Node(
                 package="autonomous_flight",
                 executable="dynamic_navigation_node",

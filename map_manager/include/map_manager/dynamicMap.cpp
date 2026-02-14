@@ -14,7 +14,7 @@ namespace mapManager{
 	{
 		this->ns_ = "dynamic_map";
 		this->hint_ = "[dynamicMap]";
-		this->initMap(freeMap);
+		//this->initMap(freeMap);
 	}
 
 	void dynamicMap::initMap(bool freeMap){

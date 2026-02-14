@@ -52,6 +52,7 @@ namespace AutoFlight{
 		
 		// parameters
 		double takeoffHgt_;
+		bool waitForTopicsReady_ = true;
 		bool yawControl_;
 		int timeStep_;
 		double radius_;

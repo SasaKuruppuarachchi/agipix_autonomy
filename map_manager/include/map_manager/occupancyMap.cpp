@@ -22,7 +22,7 @@ namespace mapManager{
 
 	void occMap::initParam(){
 		// map frame id
-		if (not AutoFlight::parse_param("map_frame_id", this->mapFrameId_, _node)){
+		if (not AutoFlight::parse_param("mapper.map_frame_id", this->mapFrameId_, _node)){
 			this->mapFrameId_ = "map";
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No map frame id. Use default: map" );
 		}
@@ -31,7 +31,7 @@ namespace mapManager{
 		}
 
 		// localization mode
-		if (not AutoFlight::parse_param("localization_mode", this->localizationMode_, _node)){
+		if (not AutoFlight::parse_param("mapper.localization_mode", this->localizationMode_, _node)){
 			this->localizationMode_ = 0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No localization mode option. Use default: pose" );
 		}
@@ -40,7 +40,7 @@ namespace mapManager{
 		}
 
 		// depth topic name
-		if (not AutoFlight::parse_param("depth_image_topic", this->depthTopicName_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_image_topic", this->depthTopicName_, _node)){
 			this->depthTopicName_ = "/camera/depth/image_raw";
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth topic name. Use default: " << this->depthTopicName_ );
 		}
@@ -49,7 +49,7 @@ namespace mapManager{
 		}
 
 		// pointcloud topic name
-		if (not AutoFlight::parse_param("point_cloud_topic", this->pointcloudTopicName_, _node)){
+		if (not AutoFlight::parse_param("mapper.point_cloud_topic", this->pointcloudTopicName_, _node)){
 			this->pointcloudTopicName_ = "/camera/depth/points";
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No pointcloud topic name. Use default: " << this->pointcloudTopicName_ );
 		}
@@ -60,7 +60,7 @@ namespace mapManager{
 		// conditional logic for localization mode
 		if (this->localizationMode_ == 0) {
 			// odom topic name
-			if (not AutoFlight::parse_param("pose_topic", this->poseTopicName_, _node)){
+			if (not AutoFlight::parse_param("mapper.pose_topic", this->poseTopicName_, _node)){
 				this->poseTopicName_ = "/CERLAB/quadcopter/pose";
 				RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No pose topic name. Use default: /CERLAB/quadcopter/pose" );
 			}
@@ -69,7 +69,7 @@ namespace mapManager{
 			}	
 		}else{
 			// odom topic name
-			if (not AutoFlight::parse_param("odom_topic", this->odomTopicName_, _node)){
+			if (not AutoFlight::parse_param("mapper.odom_topic", this->odomTopicName_, _node)){
 				this->odomTopicName_ = "/CERLAB/quadcopter/odom";
 				RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No odom topic name. Use default: /CERLAB/quadcopter/odom" );
 			}
@@ -81,7 +81,7 @@ namespace mapManager{
 
 
 		std::vector<double> robotSizeVec (3);
-		if (not AutoFlight::parse_param("robot_size", robotSizeVec, _node)){
+		if (not AutoFlight::parse_param("mapper.robot_size", robotSizeVec, _node)){
 			robotSizeVec = std::vector<double>{0.5, 0.5, 0.3};
 		}
 		// Guard against malformed or empty parameter arrays that could lead to segfaults
@@ -95,7 +95,7 @@ namespace mapManager{
 		this->robotSize_(0) = robotSizeVec[0]; this->robotSize_(1) = robotSizeVec[1]; this->robotSize_(2) = robotSizeVec[2];
 
 		std::vector<double> depthIntrinsics (4);
-		if (not AutoFlight::parse_param("depth_intrinsics", depthIntrinsics, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_intrinsics", depthIntrinsics, _node)){
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": Please check camera intrinsics!" );
 			exit(0);
 		}
@@ -108,7 +108,7 @@ namespace mapManager{
 		}
 
 		// depth scale factor
-		if (not AutoFlight::parse_param("depth_scale_factor", this->depthScale_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_scale_factor", this->depthScale_, _node)){
 			this->depthScale_ = 1000.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth scale factor. Use default: 1000." );
 		}
@@ -117,7 +117,7 @@ namespace mapManager{
 		}
 
 		// depth min value
-		if (not AutoFlight::parse_param("depth_min_value", this->depthMinValue_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_min_value", this->depthMinValue_, _node)){
 			this->depthMinValue_ = 0.2;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth min value. Use default: 0.2 m." );
 		}
@@ -126,7 +126,7 @@ namespace mapManager{
 		}
 
 		// depth max value
-		if (not AutoFlight::parse_param("depth_max_value", this->depthMaxValue_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_max_value", this->depthMaxValue_, _node)){
 			this->depthMaxValue_ = 5.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth max value. Use default: 5.0 m." );
 		}
@@ -135,7 +135,7 @@ namespace mapManager{
 		}
 
 		// depth filter margin
-		if (not AutoFlight::parse_param("depth_filter_margin", this->depthFilterMargin_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_filter_margin", this->depthFilterMargin_, _node)){
 			this->depthFilterMargin_ = 0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth filter margin. Use default: 0." );
 		}
@@ -144,7 +144,7 @@ namespace mapManager{
 		}
 
 		// depth skip pixel
-		if (not AutoFlight::parse_param("depth_skip_pixel", this->skipPixel_, _node)){
+		if (not AutoFlight::parse_param("mapper.depth_skip_pixel", this->skipPixel_, _node)){
 			this->skipPixel_ = 1;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth skip pixel. Use default: 1." );
 		}
@@ -154,7 +154,7 @@ namespace mapManager{
 
 		// ------------------------------------------------------------------------------------
 		// depth image columns
-		if (not AutoFlight::parse_param("image_cols", this->imgCols_, _node)){
+		if (not AutoFlight::parse_param("mapper.image_cols", this->imgCols_, _node)){
 			this->imgCols_ = 640;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth image columns. Use default: 640." );
 		}
@@ -163,7 +163,7 @@ namespace mapManager{
 		}
 
 		// depth skip pixel
-		if (not AutoFlight::parse_param("image_rows", this->imgRows_, _node)){
+		if (not AutoFlight::parse_param("mapper.image_rows", this->imgRows_, _node)){
 			this->imgRows_ = 480;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No depth image rows. Use default: 480." );
 		}
@@ -176,7 +176,7 @@ namespace mapManager{
 
 		// transform matrix: body to camera
 		std::vector<double> body2CamVec (16);
-		if (not AutoFlight::parse_param("body_to_depth_sensor", body2CamVec, _node)){
+		if (not AutoFlight::parse_param("mapper.body_to_depth_sensor", body2CamVec, _node)){
 			RCLCPP_ERROR(_node->get_logger(),"[OccMap]: Please check body to depth sensor matrix!");
 		}
 		else{
@@ -191,7 +191,7 @@ namespace mapManager{
 
 
 		// pointcloud min distance
-		if (not AutoFlight::parse_param("pointcloud_min_distance", this->pointcloudMinDistance_, _node)){
+		if (not AutoFlight::parse_param("mapper.pointcloud_min_distance", this->pointcloudMinDistance_, _node)){
 			this->pointcloudMinDistance_ = 0.2;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No pointcloud min distance. Use default: 0.2 m." );
 		}
@@ -200,7 +200,7 @@ namespace mapManager{
 		}
 		
 		// pointcloud max distance
-		if (not AutoFlight::parse_param("pointcloud_max_distance", this->pointcloudMaxDistance_, _node)){
+		if (not AutoFlight::parse_param("mapper.pointcloud_max_distance", this->pointcloudMaxDistance_, _node)){
 			this->pointcloudMaxDistance_ = 5.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No pointcloud max distance. Use default: 5.0 m." );
 		}
@@ -210,7 +210,7 @@ namespace mapManager{
 
 		// transform matrix: body to point cloud sensor
 		std::vector<double> body2PointcloudSensorVec (16);
-		if (not AutoFlight::parse_param("body_to_pointcloud_sensor", body2PointcloudSensorVec, _node)){
+		if (not AutoFlight::parse_param("mapper.body_to_pointcloud_sensor", body2PointcloudSensorVec, _node)){
 			RCLCPP_ERROR(_node->get_logger(),"[OccMap]: Please check body to point cloud sensor matrix!");
 		}
 		else{
@@ -224,7 +224,7 @@ namespace mapManager{
 		}
 		
 		// Raycast max length
-		if (not AutoFlight::parse_param("raycast_max_length", this->raycastMaxLength_, _node)){
+		if (not AutoFlight::parse_param("mapper.raycast_max_length", this->raycastMaxLength_, _node)){
 			this->raycastMaxLength_ = 5.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No raycast max length. Use default: 5.0." );
 		}
@@ -233,7 +233,7 @@ namespace mapManager{
 		}
 
 		// // Raycast min length
-		// if (not AutoFlight::parse_param("raycast_min_length", this->raycastMinLength_, _node)){
+		// if (not AutoFlight::parse_param("mapper.raycast_min_length", this->raycastMinLength_, _node)){
 		// 	this->raycastMinLength_ = 0.1;
 		// 	RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No raycast min length. Use default: 0.1." );
 		// }
@@ -243,7 +243,7 @@ namespace mapManager{
 
 		// p hit
 		double pHit;
-		if (not AutoFlight::parse_param("p_hit", pHit, _node)){
+		if (not AutoFlight::parse_param("mapper.p_hit", pHit, _node)){
 			pHit = 0.70;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No p hit. Use default: 0.70." );
 		}
@@ -254,7 +254,7 @@ namespace mapManager{
 
 		// p miss
 		double pMiss;
-		if (not AutoFlight::parse_param("p_miss", pMiss, _node)){
+		if (not AutoFlight::parse_param("mapper.p_miss", pMiss, _node)){
 			pMiss = 0.35;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No p miss. Use default: 0.35." );
 		}
@@ -265,7 +265,7 @@ namespace mapManager{
 
 		// p min
 		double pMin;
-		if (not AutoFlight::parse_param("p_min", pMin, _node)){
+		if (not AutoFlight::parse_param("mapper.p_min", pMin, _node)){
 			pHit = 0.12;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No p min. Use default: 0.12." );
 		}
@@ -276,7 +276,7 @@ namespace mapManager{
 
 		// p max
 		double pMax;
-		if (not AutoFlight::parse_param("p_max", pMax, _node)){
+		if (not AutoFlight::parse_param("mapper.p_max", pMax, _node)){
 			pMax = 0.97;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No p max. Use default: 0.97." );
 		}
@@ -287,7 +287,7 @@ namespace mapManager{
 
 		// p occ
 		double pOcc;
-		if (not AutoFlight::parse_param("p_occ", pOcc, _node)){
+		if (not AutoFlight::parse_param("mapper.p_occ", pOcc, _node)){
 			pOcc = 0.80;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No p occ. Use default: 0.80." );
 		}
@@ -298,7 +298,7 @@ namespace mapManager{
 
 
 		// map resolution
-		if (not AutoFlight::parse_param("map_resolution", this->mapRes_, _node)){
+		if (not AutoFlight::parse_param("mapper.map_resolution", this->mapRes_, _node)){
 			this->mapRes_ = 0.1;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No map resolution. Use default: 0.1." );
 		}
@@ -307,7 +307,7 @@ namespace mapManager{
 		}
 
 		// ground height
-		if (not AutoFlight::parse_param("ground_height", this->groundHeight_, _node)){
+		if (not AutoFlight::parse_param("mapper.ground_height", this->groundHeight_, _node)){
 			this->groundHeight_ = 0.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No ground height. Use default: 0.0." );
 		}
@@ -318,7 +318,7 @@ namespace mapManager{
 
 		// map size
 		std::vector<double> mapSizeVec (3);
-		if (not AutoFlight::parse_param("map_size", mapSizeVec, _node)){
+		if (not AutoFlight::parse_param("mapper.map_size", mapSizeVec, _node)){
 			mapSizeVec[0] = 20; mapSizeVec[1] = 20; mapSizeVec[2] = 3;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No map size. Use default: [20, 20, 3]." );
 		}
@@ -353,7 +353,7 @@ namespace mapManager{
 
 		// local update range
 		std::vector<double> localUpdateRangeVec;
-		if (not AutoFlight::parse_param("local_update_range", localUpdateRangeVec, _node)){
+		if (not AutoFlight::parse_param("mapper.local_update_range", localUpdateRangeVec, _node)){
 			localUpdateRangeVec = std::vector<double>{5.0, 5.0, 3.0};
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No local update range. Use default: [5.0, 5.0, 3.0] m." );
 		}
@@ -364,7 +364,7 @@ namespace mapManager{
 
 
 		// local bound inflate factor
-		if (not AutoFlight::parse_param("local_bound_inflation", this->localBoundInflate_, _node)){
+		if (not AutoFlight::parse_param("mapper.local_bound_inflation", this->localBoundInflate_, _node)){
 			this->localBoundInflate_ = 0.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No local bound inflate. Use default: 0.0 m." );
 		}
@@ -373,7 +373,7 @@ namespace mapManager{
 		}
 
 		// whether to clean local map
-		if (not AutoFlight::parse_param("clean_local_map", this->cleanLocalMap_, _node)){
+		if (not AutoFlight::parse_param("mapper.clean_local_map", this->cleanLocalMap_, _node)){
 			this->cleanLocalMap_ = true;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No clean local map option. Use default: true." );
 		}
@@ -382,7 +382,7 @@ namespace mapManager{
 		}
 
 		// absolute dir of prebuilt map file (.pcd)
-		if (not AutoFlight::parse_param("prebuilt_map_directory", this->prebuiltMapDir_, _node)){
+		if (not AutoFlight::parse_param("mapper.prebuilt_map_directory", this->prebuiltMapDir_, _node)){
 			this->prebuiltMapDir_ = "";
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": Not using prebuilt map." );
 		}
@@ -392,7 +392,7 @@ namespace mapManager{
 
 		// local map size (visualization)
 		std::vector<double> localMapSizeVec;
-		if (not AutoFlight::parse_param("local_map_size", localMapSizeVec, _node)){
+		if (not AutoFlight::parse_param("mapper.local_map_size", localMapSizeVec, _node)){
 			localMapSizeVec = std::vector<double>{10.0, 10.0, 2.0};
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No local map size. Use default: [10.0, 10.0, 3.0] m." );
 		}
@@ -403,7 +403,7 @@ namespace mapManager{
 		this->localMapVoxel_(0) = int(ceil(localMapSizeVec[0]/(2*this->mapRes_))); this->localMapVoxel_(1) = int(ceil(localMapSizeVec[1]/(2*this->mapRes_))); this->localMapVoxel_(2) = int(ceil(localMapSizeVec[2]/(2*this->mapRes_)));
 
 		// max vis height
-		if (not AutoFlight::parse_param("max_height_visualization", this->maxVisHeight_, _node)){
+		if (not AutoFlight::parse_param("mapper.max_height_visualization", this->maxVisHeight_, _node)){
 			this->maxVisHeight_ = 3.0;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No max visualization height. Use default: 3.0 m." );
 		}
@@ -412,7 +412,7 @@ namespace mapManager{
 		}
 
 		// visualize global map
-		if (not AutoFlight::parse_param("visualize_global_map", this->visGlobalMap_, _node)){
+		if (not AutoFlight::parse_param("mapper.visualize_global_map", this->visGlobalMap_, _node)){
 			this->visGlobalMap_ = false;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No visualize map option. Use default: visualize local map." );
 		}
@@ -421,7 +421,7 @@ namespace mapManager{
 		}
 
 		// verbose
-		if (not AutoFlight::parse_param("verbose", this->verbose_, _node)){
+		if (not AutoFlight::parse_param("mapper.verbose", this->verbose_, _node)){
 			this->verbose_ = true;
 			RCLCPP_INFO_STREAM(_node->get_logger(),this->hint_ << ": No verbose option. Use default: check update info." );
 		}

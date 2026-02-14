@@ -11,12 +11,11 @@ int main(int argc, char** argv){
 	rclcpp::init(argc, argv);
 	auto node = rclcpp::Node::make_shared("dynamic_exploration_node");
 
-	rclcpp::executors::MultiThreadedExecutor executor;
-	executor.add_node(node);
-
 	AutoFlight::dynamicExploration explorer (node);
 	explorer.run();
 
+	rclcpp::executors::MultiThreadedExecutor executor;
+	executor.add_node(node);
 	executor.spin();
 	rclcpp::shutdown();
 	return 0;

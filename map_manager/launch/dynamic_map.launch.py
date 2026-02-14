@@ -27,7 +27,7 @@ def generate_launch_description():
     ])
     
     detector_param_file = PathJoinSubstitution([
-        FindPackageShare('onboard_detector'),
+        FindPackageShare('map_manager'),
         'cfg',
         LaunchConfiguration('detector_config_file')
     ])
@@ -45,13 +45,13 @@ def generate_launch_description():
         parameters=[map_param_file]
     )
     
-    dynamic_detector_node = Node(
-        package='onboard_detector',
-        executable='dynamic_detector_node',
-        name='dynamic_detector_node',
-        output='screen',
-        parameters=[detector_param_file]
-    )
+    # dynamic_detector_node = Node(
+    #     package='onboard_detector',
+    #     executable='dynamic_detector_node',
+    #     name='dynamic_detector_node',
+    #     output='screen',
+    #     parameters=[detector_param_file]
+    # )
 
     return LaunchDescription([
         config_arg,
@@ -59,5 +59,5 @@ def generate_launch_description():
         dynamic_map_node,
         detector_config_arg,
         log1,
-        dynamic_detector_node
+        #dynamic_detector_node
     ])

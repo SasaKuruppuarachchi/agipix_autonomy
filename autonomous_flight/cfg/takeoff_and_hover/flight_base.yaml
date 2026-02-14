@@ -1,3 +1,4 @@
 /**:
-	ros__parameters:
-		takeoff_height: 1.0 #m
+  ros__parameters:
+    takeoff_height: 1.0 #m
+    wait_for_topics_ready: false

@@ -1,91 +1,101 @@
-yolo_overwrite_distance: 3
-e_q_vel: 0.05
-e_q_acc: 0.05
-e_r_pos: 0.04
-e_r_vel: 0.3
-e_r_acc: 0.6
-dynamic_velocity_threshold: 0.15
-dynamic_voting_threshold: 0.8
-dynamic_consistency_threshold: 5 # obstacles being voted as dynamic for continuous k frames are eligible to be classified as dynamic
-dynamic_detector_node:
-    ros__parameters:
+/**:
+  ros__parameters:
+    detector:
         localization_mode: 0 # 0: pose (default) 1: odom
 
-        depth_image_topic: /camera/depth/image_raw
-        aligned_depth_image_topic: /camera/depth/image_raw
-        # pose_topic: /CERLAB/quadcopter/pose
-        # odom_topic: /CERLAB/quadcopter/odom
-
-        # depth_image_topic: /camera/depth/image_rect_raw
-        # aligned_depth_image_topic: /camera/aligned_depth_to_color/image_raw
-        pose_topic: /mavros/local_position/pose
-        odom_topic: /vins_estimator/imu_propagate
+        # ROS Topics
+        # depth_image_topic: /drone1/RealSense_Camera/depth
+        # color_image_topic: /drone1/RealSense_Camera/color/image_raw
+        depth_image_topic: /drone1/RealSense_Camera/depth
+        color_image_topic: /drone1/RealSense_Camera/color/image_raw
+        lidar_pointcloud_topic: /point_cloud
+        pose_topic: /drone0/self_localization/pose
+        odom_topic: /drone0/sensor_measurements/odom # /dlio/odom_node/odom
+        frame_id: drone0/map
 
         # Camera Parameters
-        # depth_intrinsics: [386.22674560546875, 386.22674560546875, 317.3930969238281, 239.78431701660156] # fx,  fy, cx, cy realsense
-        depth_intrinsics: [554.254691191187, 554.254691191187, 320.5, 240.5] # fx,  fy, cx, cy simulation
-        color_intrinsics: [554.254691191187, 554.254691191187, 320.5, 240.5] # fx,  fy, cx, cy simulation
-        # color_intrinsics: [608.08740234375, 608.08740234375, 317.48284912109375, 234.11557006835938] # intel realsense
-        # depth_scale_factor: 1000 # 1000 for Intel Realsense Camera
-        depth_scale_factor: 10 # simulation
+        # depth_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # fx,  fy, cx, cy realsense
+        # color_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # intel realsense
+
+        # Depth camera intrinsics (32FC1 in meters, from depth image_info)
+        depth_intrinsics: [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5] # fx, fy, cx, cy
+        # Color intrinsics (aligned to depth cam in Isaac Sim)
+        color_intrinsics: [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5]
+
+        # Depth image is 32FC1 (meters), so scale factor = 1.0
+        depth_scale_factor: 1000.0
         depth_min_value: 0.5
-        depth_max_value: 5.0
+        depth_max_value: 20.0
         depth_filter_margin: 10 # filter
-        depth_skip_pixel: 2  # filter
-        image_cols: 640
-        image_rows: 480
-        body_to_camera: [0.0,  0.0,  1.0,  0.09,
-                                        -1.0,  0.0,  0.0,  0.0 ,   
-                                         0.0, -1.0,  0.0,  0.095,
-                                         0.0,  0.0,  0.0,  1.0]
-        body_to_camera_color: [0.0,  0.0,  1.0,  0.09,
-                                        -1.0,  0.0,  0.0,  0.0 ,   
-                                         0.0, -1.0,  0.0,  0.095,
-                                         0.0,  0.0,  0.0,  1.0]
+        depth_skip_pixel: 3  # downsample step in projection
+        image_cols: 1920  
+        image_rows: 1200
+        raycast_max_length: 10.0
 
-        # Raycasting (max depth)
-        raycast_max_length: 5.0
+        # Sensor Transforms
+        body_to_camera_depth: [0.0,  0.0,  1.0,  0.13,
+                            -1.0,  0.0,  0.0,  0.0 ,   
+                            0.0, -1.0,  0.0,  -0.022,
+                            0.0,  0.0,  0.0,  1.0]
+        body_to_camera_color: [0.0,  0.0,  1.0,  0.13,
+                            -1.0,  0.0,  0.0,  0.0 ,   
+                            0.0, -1.0,  0.0,  -0.022,
+                            0.0,  0.0,  0.0,  1.0]
+        body_to_lidar:  [0.7071068,  0.0000000,  0.7071068,  0.0795,
+                        0.0000000,  1.0000000,  0.0000000,  0.0 ,   
+                        -0.7071068,  0.0000000,  0.7071068,  0.0323,
+                        0.0,  0.0,  0.0,  1.0]
 
-        # time difference
-        time_difference: 0.033
+        # System
+        time_step: 0.033
 
-        # sensor data processing
-        voxel_occupied_thresh: 15 # min num of points for a voxel to be occupied in voxel filter
+        # DBSCAN Common
+        ground_height: 0.2 # height of ground to remove ground points
+        roof_height: 5.0 # relative height of roof to remove roof points
 
-        # dbscan
-        ground_height: 0.1 # height of ground to remove ground points
+        # DBSCAN visual param
+        voxel_occupied_thresh: 5 # min num of points for a voxel to be occupied in voxel filter
         dbscan_min_points_cluster: 20 # 20: 4.0m range; 30: 3.5m range 40: 3.0m range
-        dbscan_search_range_epsilon: 0.1 # searching range radius
+        dbscan_search_range_epsilon: 0.05 # searching range radius
 
-        # bounding box filtering
-        filtering_BBox_IOU_threshold: 0.05
-        yolo_overwrite_distance: 3
+        # DBSCAN LiDAR param
+        lidar_DBSCAN_min_points: 10
+        lidar_DBSCAN_epsilon: 0.05
+        downsample_threshold: 3500 # threshold for downsampling
+        gaussian_downsample_rate: 6
 
-        # tracking and data association
+        # LiDAR Visual Filtering
+        filtering_BBox_IOU_threshold: 0.2
+
+        # Tracking and data association
+        max_match_range: 0.5 # max match range between time steps in meters
+        max_size_diff_range: 0.5 #  in meter
+        # weight for features: 3pos + 3size + 3 pc centroid
+        feature_weight:
+        - 3.0
+        - 3.0
+        - 0.1
+        - 0.5
+        - 0.5
+        - 0.05
+        - 0.0
+        - 0.0
+        - 0.0
         history_size: 100 # size of tracking history. history[0] is current detection
-        similarity_threshold: 0.02 # similiary threshold for data association matching comparison
         fix_size_history_threshold: 10 # History threshold (num of frames) to fix box size
         fix_size_dimension_threshold: 0.4 # dimension threshold (size of proportional) to fix box size
-
-        e_p: 0.25
-        e_q_pos: 0.01
-        e_q_vel: 0.05
-        e_q_acc: 0.05
-        e_r_pos: 0.04
-        e_r_vel: 0.3
-        e_r_acc: 0.6
-
+        kalman_filter_param: [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6]
         kalman_filter_averaging_frames: 10
 
-        # classification
+        # Classification
         frame_skip: 5 # num of frames skiped when comparing 2 point clouds
-        dynamic_velocity_threshold: 0.15
+        dynamic_velocity_threshold: 0.2
         dynamic_voting_threshold: 0.8
-        maximum_skip_ratio: 0.5 # the upper limit of points that are skipped(out of previous FOV) to be classfified as dynamic
         frames_force_dynamic: 10 # Range of searching dynamic obstacles in box history
         frames_force_dynamic_check_range: 30 # threshold for forcing dynamic obstacles
-        dynamic_consistency_threshold: 5 # obstacles being voted as dynamic for continuous k frames are eligible to be classified as dynamic
+        dynamic_consistency_threshold: 15 # obstacles being voted as dynamic for continuous k frames are eligible to be classified as dynamic
 
-        # constrain size
-constrain_size: true
-target_object_size: [0.5, 0.5, 1.7]
+        # Constrain size
+        target_constrain_size: true
+        target_object_size: [0.5, 0.5, 1.5]
+        max_object_size: [3.0, 3.0, 2.0] # filter out objects that are too large

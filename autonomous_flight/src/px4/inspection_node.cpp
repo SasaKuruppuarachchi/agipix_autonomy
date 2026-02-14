@@ -6,12 +6,11 @@ int main(int argc, char** argv){
 	rclcpp::init(argc, argv);
 	auto node = rclcpp::Node::make_shared("auto_inspection_node");
 
-	rclcpp::executors::MultiThreadedExecutor executor;
-	executor.add_node(node);
-
 	AutoFlight::inspector ip (node);
 	ip.run();
 
+	rclcpp::executors::MultiThreadedExecutor executor;
+	executor.add_node(node);
 	executor.spin();
 	rclcpp::shutdown();
 	return 0;

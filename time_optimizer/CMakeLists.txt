@@ -206,6 +206,22 @@ install(DIRECTORY include/${PROJECT_NAME}/
   FILES_MATCHING PATTERN "*.h"
 )
 
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64")
+  install(
+    FILES
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/x86/libmosek64.so
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/x86/libmosek64.so.10.0
+    DESTINATION lib
+  )
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+  install(
+    FILES
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libmosek64.so
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libmosek64.so.10.1
+    DESTINATION lib
+  )
+endif()
+
 ament_package()
 #############
 ## Install ##

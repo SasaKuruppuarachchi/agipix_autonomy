@@ -12,6 +12,10 @@ namespace AutoFlight{
 		this->node_->get_parameter("takeoff_height", this->takeoffHgt_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Takeoff Height: %.2fm.", this->takeoffHgt_);
 
+		this->node_->declare_parameter<bool>("wait_for_topics_ready", true);
+		this->node_->get_parameter("wait_for_topics_ready", this->waitForTopicsReady_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Wait for MAVROS/odom topics at startup: %s.", this->waitForTopicsReady_ ? "true" : "false");
+
 		// callback groups
 		this->stateCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->odomCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -46,12 +50,17 @@ namespace AutoFlight{
 		// Wait for odometry and mavros to be ready
     	this->odomReceived_ = false;
     	this->mavrosStateReceived_ = false;
-		rclcpp::Rate r (10);
-		while (rclcpp::ok() && !(this->odomReceived_ && this->mavrosStateReceived_)){
-			rclcpp::spin_some(this->node_);
-			r.sleep();
+		if (this->waitForTopicsReady_){
+			rclcpp::Rate r (10);
+			while (rclcpp::ok() && !(this->odomReceived_ && this->mavrosStateReceived_)){
+				rclcpp::spin_some(this->node_);
+				r.sleep();
+			}
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom and mavros topics are ready.");
 		}
-		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom and mavros topics are ready.");
+		else{
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Startup topic wait is disabled (wait_for_topics_ready=false).");
+		}
 
 
     	// Tareget publish thread

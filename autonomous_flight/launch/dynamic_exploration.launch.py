@@ -13,12 +13,11 @@ def generate_launch_description():
         PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "flight_base.yaml"]),
         PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "exploration_param.yaml"]),
         PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "planner_param.yaml"]),
-        PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "fake_detector_param.yaml"]),
+        PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "mapping_param.yaml"]),
+        PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "dynamic_detector_param.yaml"])
     ]
 
-    map_params = PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "mapping_param.yaml"])
-    detector_params = PathJoinSubstitution([af_share, "cfg", "dynamic_exploration", "dynamic_detector_param.yaml"])
-
+    
     controller_params = PathJoinSubstitution([tc_share, "cfg", "controller_param.yaml"])
 
     throttle_script = PathJoinSubstitution([af_share, "scripts", "throttle_topics.sh"])
@@ -32,21 +31,21 @@ def generate_launch_description():
                 output="screen",
                 parameters=[controller_params],
             ),
-            Node(
-                package="map_manager",
-                executable="dynamic_map_node",
-                name="dynamic_map_node",
-                output="screen",
-                parameters=[map_params],
-            ),
-            Node(
-                package="onboard_detector",
-                executable="dynamic_detector_node",
-                name="dynamic_detector_node",
-                output="screen",
-                parameters=[detector_params],
-            ),
-            ExecuteProcess(cmd=["bash", throttle_script], output="screen"),
+            # Node(
+            #     package="map_manager",
+            #     executable="dynamic_map_node",
+            #     name="dynamic_map_node",
+            #     output="screen",
+            #     parameters=[map_params],
+            # ),
+            # Node(
+            #     package="onboard_detector",
+            #     executable="dynamic_detector_node",
+            #     name="dynamic_detector_node",
+            #     output="screen",
+            #     parameters=[detector_params],
+            # ),
+            #ExecuteProcess(cmd=["bash", throttle_script], output="screen"),
             Node(
                 package="autonomous_flight",
                 executable="dynamic_exploration_node",

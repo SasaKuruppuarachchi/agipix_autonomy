@@ -59,6 +59,7 @@ namespace AutoFlight{
 	void dynamicNavigation::initModules(){
 		// initialize map
 		this->map_.reset(new mapManager::dynamicMap (this->node_));
+		map_->initMap();
 		// initialize rrt planner
 		this->rrtPlanner_.reset(new globalPlanner::rrtOccMap<3> (this->node_));
 		this->rrtPlanner_->setMap(this->map_);

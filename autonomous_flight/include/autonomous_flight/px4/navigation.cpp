@@ -59,7 +59,7 @@ namespace AutoFlight{
 	void navigation::initModules(){
 		// initialize map
 		this->map_.reset(new mapManager::occMap (this->node_));
-
+		map_->initMap();
 		// initialize rrt planner
 		this->rrtPlanner_.reset(new globalPlanner::rrtOccMap<3> (this->node_));
 		this->rrtPlanner_->setMap(this->map_);
