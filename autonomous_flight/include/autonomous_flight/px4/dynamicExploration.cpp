@@ -506,12 +506,12 @@ namespace AutoFlight{
 		fflush(stdin);
 		std::cin.get();
 
-		int temp1 = system("mkdir -p ~/rosbag_exploration_info &");
-		int temp2 = system("mv ~/rosbag_exploration_info/exploration_info ~/rosbag_exploration_info/previous &");
-		int temp3 = system("ros2 bag record -o ~/rosbag_exploration_info/exploration_info /camera/aligned_depth_to_color/image_raw_t /camera/color/image_raw_t /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose /dynamicExploration/bspline_trajectory /mavros/setpoint_position/local /tracking_controller/target_pose /dep/best_paths /dep/roadmap /dep/candidate_paths /dep/best_paths /dep/frontier_regions /dynamic_map/occupancy_map_2D &");
-		if (temp1==-1 or temp2==-1 or temp3==-1){
-			cout << "[AutoFlight]: Recording fails." << endl;
-		}
+		// int temp1 = system("mkdir -p ~/rosbag_exploration_info &");
+		// int temp2 = system("mv ~/rosbag_exploration_info/exploration_info ~/rosbag_exploration_info/previous &");
+		// int temp3 = system("ros2 bag record -o ~/rosbag_exploration_info/exploration_info /camera/aligned_depth_to_color/image_raw_t /camera/color/image_raw_t /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose /dynamicExploration/bspline_trajectory /mavros/setpoint_position/local /tracking_controller/target_pose /dep/best_paths /dep/roadmap /dep/candidate_paths /dep/best_paths /dep/frontier_regions /dynamic_map/occupancy_map_2D &");
+		// if (temp1==-1 or temp2==-1 or temp3==-1){
+		// 	cout << "[AutoFlight]: Recording fails." << endl;
+		// }
 
 		this->initExplore();
 

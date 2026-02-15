@@ -283,12 +283,12 @@ namespace AutoFlight{
 		std::cin.get();
 		this->takeoff();
 
-		int temp1 = system("mkdir -p ~/rosbag_inspection_info &");
-		int temp2 = system("mv ~/rosbag_inspection_info/inspection_info ~/rosbag_inspection_info/previous &");
-		int temp3 = system("ros2 bag record -o ~/rosbag_inspection_info/inspection_info /inspection/rrt_path /inspection/poly_trajectory /inspection/pwl_trajectory /inspection/bspline_trajectory /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose --ros-args -r __node:=inspection_bag_info &");
-		if (temp1==-1 or temp2==-1 or temp3==-1){
-			cout << "[AutoFlight]: Recording fails." << endl;
-		}
+		// int temp1 = system("mkdir -p ~/rosbag_inspection_info &");
+		// int temp2 = system("mv ~/rosbag_inspection_info/inspection_info ~/rosbag_inspection_info/previous &");
+		// int temp3 = system("ros2 bag record -o ~/rosbag_inspection_info/inspection_info /inspection/rrt_path /inspection/poly_trajectory /inspection/pwl_trajectory /inspection/bspline_trajectory /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose --ros-args -r __node:=inspection_bag_info &");
+		// if (temp1==-1 or temp2==-1 or temp3==-1){
+		// 	cout << "[AutoFlight]: Recording fails." << endl;
+		// }
 
 
 		cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Then PRESS ENTER to continue or PRESS CTRL+C to land.\033[0m" << endl;
