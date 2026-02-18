@@ -98,7 +98,9 @@ def odomCB(odom):
 
 def main():
 	rospy.init_node("record_history_node", anonymous=True)
-	rospy.Subscriber("/mavros/local_position/odom", Odometry, odomCB)
+	odom_topic = rospy.get_param("~odom_topic", "/drone0/sensor_measurements/odom")
+	rospy.loginfo("Subscribing odometry topic: %s", odom_topic)
+	rospy.Subscriber(odom_topic, Odometry, odomCB)
 	rospy.spin()
 
 

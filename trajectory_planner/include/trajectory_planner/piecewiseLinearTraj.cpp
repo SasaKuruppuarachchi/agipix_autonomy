@@ -171,7 +171,7 @@ namespace trajPlanner{
 		}
 		trajVec.push_back(this->getPose(this->desiredTime_.back()));
 		trajectory.poses = trajVec;
-		trajectory.header.frame_id = "map";
+		trajectory.header.frame_id = "drone0/map";
 		trajectory.header.stamp = this->clock_->now();
 	}
 
@@ -207,7 +207,7 @@ namespace trajPlanner{
 			ps.pose.position.y = lastP.y;
 			ps.pose.position.z = lastP.z;
 			ps.pose.orientation = trajPlanner::quaternion_from_rpy(0, 0, lastP.yaw);
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.header.stamp = this->clock_->now();
 			return ps;
 		}
@@ -272,7 +272,7 @@ namespace trajPlanner{
 				break;
 			}
 		}
-		ps.header.frame_id = "map";
+		ps.header.frame_id = "drone0/map";
 		ps.header.stamp = this->clock_->now();
 		return ps;
 	}

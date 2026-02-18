@@ -2,7 +2,7 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 from ament_index_python.packages import get_package_share_directory
 import os
 
@@ -13,6 +13,12 @@ def generate_launch_description():
         'config_file',
         default_value='dynamic_detector_param_sw.yaml',
         description='YAML config filename for the dynamic detector, located in onboard_detector/cfg'
+    )
+
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation clock if true'
     )
 
     # Build the parameter file path at runtime for dynamic detector: <package_share>/cfg/<config_file>
@@ -51,6 +57,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        use_sim_time_arg,
+        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
         dynamic_config_arg,
         log,
         dynamic_detector_node,

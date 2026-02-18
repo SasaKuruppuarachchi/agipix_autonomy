@@ -5,9 +5,11 @@
 */
 
 #include <tracking_controller/trackingController.h>
+#include <tracking_controller/default_backends.h>
 #include <chrono>
 #include <functional>
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 
 namespace controller{
@@ -29,6 +31,27 @@ namespace controller{
 		// acceleration control
 		this->accControl_ = this->node_->declare_parameter<bool>("controller.acceleration_control", true);
 		cout << "[trackingController]: Acceleration control is set to: " << this->accControl_  << endl;
+
+		// backend selection
+		this->backendType_ = this->node_->declare_parameter<std::string>("controller.backend", "dds");
+		std::transform(this->backendType_.begin(), this->backendType_.end(), this->backendType_.begin(), ::tolower);
+		if (this->backendType_ != "dds"){
+			RCLCPP_WARN(this->node_->get_logger(), "[trackingController]: MAVROS backend has been purged. Forcing backend to DDS.");
+			this->backendType_ = "dds";
+		}
+		cout << "[trackingController]: Backend is set to: " << this->backendType_ << endl;
+
+		this->ddsTargetTopic_ = this->node_->declare_parameter<std::string>(
+			"controller.dds_target_topic", "/px4_control_interface/controller_target_state");
+		cout << "[trackingController]: DDS target topic: " << this->ddsTargetTopic_ << endl;
+
+		this->odomTopic_ = this->node_->declare_parameter<std::string>(
+			"controller.odom_topic", "/drone0/sensor_measurements/odom");
+		cout << "[trackingController]: Odom topic: " << this->odomTopic_ << endl;
+
+		this->imuTopic_ = this->node_->declare_parameter<std::string>(
+			"controller.imu_topic", "/drone0/sensor_measurements/imu");
+		cout << "[trackingController]: IMU topic: " << this->imuTopic_ << endl;
 
 
 		// P for Position
@@ -118,12 +141,6 @@ namespace controller{
 	}
 
 	void trackingController::registerPub(){
-		// command publisher
-		this->cmdPub_ = this->node_->create_publisher<mavros_msgs::msg::AttitudeTarget>("/mavros/setpoint_raw/attitude", 100);
-
-		// acc comman publisher
-		this->accCmdPub_ = this->node_->create_publisher<mavros_msgs::msg::PositionTarget>("/mavros/setpoint_raw/local", 100);
-		
 		// current pose visualization publisher
 		this->poseVisPub_ = this->node_->create_publisher<geometry_msgs::msg::PoseStamped>("/tracking_controller/robot_pose", 1);
 
@@ -138,6 +155,9 @@ namespace controller{
 
 		// velocity and acceleration visualization publisher
 		this->velAndAccVisPub_ = this->node_->create_publisher<visualization_msgs::msg::Marker>("/tracking_controller/vel_and_acc_info", 1);
+
+		this->setpointSink_ = std::make_unique<DdsSetpointSink>(this->node_, this->ddsTargetTopic_);
+		RCLCPP_INFO(this->node_->get_logger(), "[trackingController]: Using DDS setpoint sink.");
 	}
 
 
@@ -154,7 +174,7 @@ namespace controller{
 		rclcpp::SubscriptionOptions odomOpts;
 		odomOpts.callback_group = this->odomCbGroup_;
 		this->odomSub_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
-			"/mavros/local_position/odom",
+			this->odomTopic_,
 			rclcpp::SensorDataQoS(),
 			std::bind(&trackingController::odomCB, this, std::placeholders::_1),
 			odomOpts);
@@ -163,7 +183,7 @@ namespace controller{
 		rclcpp::SubscriptionOptions imuOpts;
 		imuOpts.callback_group = this->imuCbGroup_;
 		this->imuSub_ = this->node_->create_subscription<sensor_msgs::msg::Imu>(
-			"/mavros/imu/data",
+			this->imuTopic_,
 			rclcpp::SensorDataQoS(),
 			std::bind(&trackingController::imuCB, this, std::placeholders::_1),
 			imuOpts);
@@ -350,47 +370,33 @@ namespace controller{
 
 
 	void trackingController::publishCommand(const Eigen::Vector4d& cmd){
-		mavros_msgs::msg::AttitudeTarget cmdMsg;
-		cmdMsg.header.stamp = this->node_->now();
-		cmdMsg.header.frame_id = "map";
-		cmdMsg.body_rate.x = cmd(0);
-		cmdMsg.body_rate.y = cmd(1);
-		cmdMsg.body_rate.z = cmd(2);
-		cmdMsg.thrust = cmd(3);
-		cmdMsg.type_mask = cmdMsg.IGNORE_ATTITUDE;
-		this->cmdPub_->publish(cmdMsg);
+		if (this->setpointSink_){
+			this->setpointSink_->publishBodyRateThrust(cmd);
+		}
 	}
 
 	void trackingController::publishCommand(const Eigen::Vector4d& cmd, const Eigen::Vector3d& accRef){
-		mavros_msgs::msg::AttitudeTarget cmdMsg;
-		cmdMsg.header.stamp = this->node_->now();
-		cmdMsg.header.frame_id = "map";
-		cmdMsg.orientation.w = cmd(0);
-		cmdMsg.orientation.x = cmd(1);
-		cmdMsg.orientation.y = cmd(2);
-		cmdMsg.orientation.z = cmd(3);
 		double thrust = accRef.norm();
 		double thrustPercent = std::max(0.0, std::min(1.0, 1.0 * thrust/(9.8 * 1.0/this->hoverThrust_))); // percent
 		this->cmdThrust_ = thrustPercent;
 		this->cmdThrustTime_ = this->node_->now();
-		this->thrustReady_ = true;		
-		cmdMsg.thrust = thrustPercent;
-		cmdMsg.type_mask = cmdMsg.IGNORE_ROLL_RATE + cmdMsg.IGNORE_PITCH_RATE + cmdMsg.IGNORE_YAW_RATE;		
-		this->cmdPub_->publish(cmdMsg);
+		this->thrustReady_ = true;
+		if (this->setpointSink_){
+			this->setpointSink_->publishAttitudeThrust(cmd, thrustPercent);
+		}
 	}
 
 	void trackingController::publishCommand(const Eigen::Vector3d& accRef){
-		mavros_msgs::msg::PositionTarget cmdMsg;
-		cmdMsg.coordinate_frame = cmdMsg.FRAME_LOCAL_NED;
-		cmdMsg.header.stamp = this->node_->now();
-		cmdMsg.header.frame_id = "map";
-		cmdMsg.acceleration_or_force.x = accRef(0);
-		cmdMsg.acceleration_or_force.y = accRef(1);
-		cmdMsg.acceleration_or_force.z = accRef(2) - 9.8;
-		cmdMsg.yaw = this->target_.yaw;
-		cmdMsg.type_mask = cmdMsg.IGNORE_PX + cmdMsg.IGNORE_PY + cmdMsg.IGNORE_PZ + cmdMsg.IGNORE_VX + cmdMsg.IGNORE_VY + cmdMsg.IGNORE_VZ + cmdMsg.IGNORE_YAW_RATE;
-		// cout << "acc: " << accRef(0) << " " << accRef(1) << " " << accRef(2) - 9.8 << " " << endl;
-		this->accCmdPub_->publish(cmdMsg);
+		if (this->setpointSink_){
+			const Eigen::Vector3d posRef(this->target_.position.x, this->target_.position.y, this->target_.position.z);
+			const Eigen::Vector3d velRef(this->target_.velocity.x, this->target_.velocity.y, this->target_.velocity.z);
+			this->setpointSink_->publishAccelerationYaw(
+				accRef,
+				this->target_.yaw,
+				posRef,
+				velRef,
+				this->target_.type_mask);
+		}
 	}
 
 
@@ -525,7 +531,7 @@ namespace controller{
 	void trackingController::publishPoseVis(){
 		if (not this->odomReceived_) return;
 		geometry_msgs::msg::PoseStamped ps;
-		ps.header.frame_id = "map";
+		ps.header.frame_id = "drone0/map";
 		ps.header.stamp = this->node_->now();
 		ps.pose.position.x = this->odom_.pose.pose.position.x;
 		ps.pose.position.y = this->odom_.pose.pose.position.y;
@@ -545,7 +551,7 @@ namespace controller{
 	void trackingController::publishHistTraj(){
 		if (not this->odomReceived_) return;
 		nav_msgs::msg::Path histTrajMsg;
-		histTrajMsg.header.frame_id = "map";
+		histTrajMsg.header.frame_id = "drone0/map";
 		histTrajMsg.header.stamp = this->node_->now();
 		for (size_t i=0; i<this->histTraj_.size(); ++i){
 			histTrajMsg.poses.push_back(this->histTraj_[i]);
@@ -557,7 +563,7 @@ namespace controller{
 	void trackingController::publishTargetVis(){
 		if (not this->firstTargetReceived_) return;
 		geometry_msgs::msg::PoseStamped ps;
-		ps.header.frame_id = "map";
+		ps.header.frame_id = "drone0/map";
 		ps.header.stamp = this->node_->now();
 		ps.pose.position.x = this->target_.position.x;
 		ps.pose.position.y = this->target_.position.y;
@@ -579,7 +585,7 @@ namespace controller{
 	void trackingController::publishTargetHistTraj(){
 		if (not this->firstTargetReceived_) return;
 		nav_msgs::msg::Path targetHistTrajMsg;
-		targetHistTrajMsg.header.frame_id = "map";
+		targetHistTrajMsg.header.frame_id = "drone0/map";
 		targetHistTrajMsg.header.stamp = this->node_->now();
 		for (size_t i=0; i<this->targetHistTraj_.size(); ++i){
 			targetHistTrajMsg.poses.push_back(this->targetHistTraj_[i]);
@@ -623,7 +629,7 @@ namespace controller{
 
 
 		visualization_msgs::msg::Marker velAndAccVisMsg;
-        velAndAccVisMsg.header.frame_id = "map";
+        velAndAccVisMsg.header.frame_id = "drone0/map";
 		velAndAccVisMsg.header.stamp = this->node_->now();
         velAndAccVisMsg.ns = "tracking_controller";
         // velAndAccVisMsg.id = 0;

@@ -10,7 +10,7 @@ int main(int argc, char** argv){
 	rclcpp::init(argc, argv);
 	auto node = rclcpp::Node::make_shared("tracking_controller_node");
 
-	rclcpp::executors::MultiThreadedExecutor executor;
+	rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4);
 	executor.add_node(node);
 
 	controller::trackingController tc(node);

@@ -563,13 +563,13 @@ namespace mapManager{
 
 		// publish service
 		// collision check server
-		this->collisionCheckServer_ = _node->create_service<map_manager::srv::CheckPosCollision>(this->ns_ + "/check_pos_collision", std::bind(&occMap::checkCollisionSrv, this, std::placeholders::_1, std::placeholders::_2));
+		this->collisionCheckServer_ = _node->create_service<map_manager::srv::CheckPosCollision>(this->ns_ + "/check_pos_collision", std::bind(&occMap::checkCollisionSrv, this, std::placeholders::_1, std::placeholders::_2), rmw_qos_profile_services_default, this->srvClientGroup_);
 
 		// static obstacles server
-		this->staticObstacleServer_ = _node->create_service<map_manager::srv::GetStaticObstacles>(this->ns_ + "/get_static_obstacles", std::bind(&occMap::getStaticObstaclesSrv, this, std::placeholders::_1, std::placeholders::_2));				
+		this->staticObstacleServer_ = _node->create_service<map_manager::srv::GetStaticObstacles>(this->ns_ + "/get_static_obstacles", std::bind(&occMap::getStaticObstaclesSrv, this, std::placeholders::_1, std::placeholders::_2), rmw_qos_profile_services_default, this->srvClientGroup_);				
 
 		// raycast server
-		this->raycastServer_ = _node->create_service<map_manager::srv::RayCast>(this->ns_ + "/raycast", std::bind(&occMap::getRayCastSrv, this, std::placeholders::_1, std::placeholders::_2));		
+		this->raycastServer_ = _node->create_service<map_manager::srv::RayCast>(this->ns_ + "/raycast", std::bind(&occMap::getRayCastSrv, this, std::placeholders::_1, std::placeholders::_2), rmw_qos_profile_services_default, this->srvClientGroup_);		
 		this->getDynamicObstaclesClient_ = _node->create_client<onboard_detector::srv::GetDynamicObstacles>("/onboard_detector/get_dynamic_obstacles", rmw_qos_profile_services_default, this->srvClientGroup_);
 	}
 
@@ -1268,7 +1268,7 @@ namespace mapManager{
 									inflateIndex(1) = pointIndex(1) + iy;
 									inflateIndex(2) = pointIndex(2) + iz;
 									inflateAddress = this->indexToAddress(inflateIndex);
-									if ((inflateAddress < 0) or (inflateAddress > maxIndex)){
+									if ((inflateAddress < 0) or (inflateAddress >= maxIndex)){
 										continue; // those points are not in the reserved map
 									} 
 									this->occupancyInflated_[inflateAddress] = true;
@@ -1291,10 +1291,9 @@ namespace mapManager{
 
 
 			auto result = this->getDynamicObstaclesClient_->async_send_request(request);
-			// if (rclcpp::spin_until_future_complete(this->getDynamicObstacleSrvNode_, result) == rclcpp::FutureReturnCode::SUCCESS){
-        	std::future_status status = result.wait_for(0.001s);  // timeout to guarantee a graceful finish
-			while (status != std::future_status::ready){
-				status = result.wait_for(0.001s);
+			std::future_status status = result.wait_for(5ms);
+			if (status != std::future_status::ready){
+				return;
 			}
 			if (status == std::future_status::ready){
 				auto response = result.get();
@@ -1455,19 +1454,28 @@ namespace mapManager{
 		this->boundIndex(minRangeIdx);
 		this->boundIndex(maxRangeIdx);
 
-		nav_msgs::msg::OccupancyGrid mapMsg;
-		for (int i=0; i<maxRangeIdx(0); ++i){
-			for (int j=0; j<maxRangeIdx(1); ++j){
-				mapMsg.data.push_back(0);
-			}
+		if ((maxRangeIdx(0) < minRangeIdx(0)) or (maxRangeIdx(1) < minRangeIdx(1))){
+			RCLCPP_WARN(_node->get_logger(), "%s Invalid 2D occupancy bounds. Skip publish.", this->hint_.c_str());
+			return;
 		}
 
+		const int width = maxRangeIdx(0) - minRangeIdx(0) + 1;
+		const int height = maxRangeIdx(1) - minRangeIdx(1) + 1;
+		if ((width <= 0) or (height <= 0)){
+			RCLCPP_WARN(_node->get_logger(), "%s Invalid 2D occupancy size (%d x %d). Skip publish.", this->hint_.c_str(), width, height);
+			return;
+		}
+
+		nav_msgs::msg::OccupancyGrid mapMsg;
+		mapMsg.data.assign(static_cast<size_t>(width) * static_cast<size_t>(height), 0);
+
 		double z = 0.5;
-		int zIdx = int(z/this->mapRes_);
+		int zIdx = int((z - this->mapSizeMin_(2)) / this->mapRes_);
+		zIdx = std::max(minRangeIdx(2), std::min(zIdx, maxRangeIdx(2)));
 		for (int x=minRangeIdx(0); x<=maxRangeIdx(0); ++x){
 			for (int y=minRangeIdx(1); y<=maxRangeIdx(1); ++y){
 				Eigen::Vector3i pointIdx (x, y, zIdx);
-				int map2DIdx = x  +  y * maxRangeIdx(0);
+				int map2DIdx = (x - minRangeIdx(0)) + (y - minRangeIdx(1)) * width;
 				if (this->isUnknown(pointIdx)){
 					mapMsg.data[map2DIdx] = -1;
 				}
@@ -1482,8 +1490,8 @@ namespace mapManager{
 		mapMsg.header.frame_id = this->mapFrameId_;
 		mapMsg.header.stamp = _node->get_clock()->now();
 		mapMsg.info.resolution = this->mapRes_;
-		mapMsg.info.width = maxRangeIdx(0);
-		mapMsg.info.height = maxRangeIdx(1);
+		mapMsg.info.width = width;
+		mapMsg.info.height = height;
 		mapMsg.info.origin.position.x = minRange(0);
 		mapMsg.info.origin.position.y = minRange(1);
 		this->map2DPub_->publish(mapMsg);		

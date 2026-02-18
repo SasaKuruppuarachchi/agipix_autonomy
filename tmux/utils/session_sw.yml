@@ -1,0 +1,102 @@
+<%
+# Input parameters
+drone_namespace     = @settings["drone_namespace"]
+simulation          = @settings["simulation"] == "true"
+estimator_plugin    = @settings["estimator_plugin"]
+
+# Other parameters
+behavior_type               = "position" # "trajectory"
+motion_controller_plugin    = "pid_speed_controller" # "differential_flatness_controller"
+
+if simulation
+    config_path     = "sim_config"
+    platform_config_file = "sim_config/platform_config.yaml"
+else
+    config_path     = "real_config"
+    platform_config_file = "real_config/platform_config_odom.yaml"
+end
+
+if estimator_plugin == "mocap_pose"
+    platform_config_file = "real_config/platform_config_mocap.yaml"
+    state_estimator_config_file = "real_config/state_estimator_mocap.yaml"
+elsif estimator_plugin == "raw_odometry"
+
+    
+
+    if not simulation
+        state_estimator_config_file = "real_config/state_estimator_odom.yaml"
+    elsif simulation
+        state_estimator_config_file = "sim_config/state_estimator_odom.yaml"
+    end
+end
+
+%>
+
+name: agipix_console_<%= drone_namespace %>
+root: ./
+startup_window: UI
+pre_window: ls; source /workspaces/upgrade_control/install/setup.bash
+windows:
+  - UI:
+      layout: tiled
+      panes:
+        - ros2 run agi_alphanumeric_viewer agi_alphanumeric_viewer_node --ros-args -r  __ns:=/<%= drone_namespace %> -p use_sim_time:=<%= simulation %>
+        - agi-logger record
+
+  - CTRL-MISSION:
+      layout: tiled
+      panes:
+        - mkdir -p /tmp/dds_mission_logs; stdbuf -oL -eL timeout 240s ros2 launch px4_control_interface dds_shadow.launch.py 
+            use_sim_time:=<%= simulation %> 
+            start_legacy_stack:=true 
+            mission:=takeoff_and_hover 
+            start_tracking_controller:=false 
+            tracking_backend:=dds 
+            tracking_dds_target_topic:=/px4_control_interface/controller_target_state 
+            target_topic:=/px4_control_interface/controller_target_state 
+            middle_level_controller:=cascaded_pid 
+            2>&1 | tee /tmp/dds_mission_logs/01_takeoff_hover.log
+
+  - CTRL-DEBUG:
+      layout: tiled
+      panes:
+        - ros2 topic hz /autonomous_flight/target_state
+        - ros2 topic hz /px4_control_interface/controller_target_state
+        - ros2 topic hz /drone0/sensor_measurements/odom
+        
+
+  - BACKEND:
+      layout: even-horizontal
+      panes:
+        - MicroXRCEAgent udp4 -p 8888
+        #- 
+        - ros2 launch odom_transformer publish_static_transforms.launch.py use_sim_time:=<%= simulation %>
+        - ros2 launch as2_platform_pixhawk pixhawk_launch.py
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
+            platform_config_file:=<%= platform_config_file %>
+        - ros2 launch as2_state_estimator state_estimator_launch.py
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
+            plugin_name:=<%= estimator_plugin %>
+            plugin_config_file:=<%= state_estimator_config_file %>
+
+        # cd /workspaces/agipix_control/src/thirdparty/PX4-Autopilot && make px4_sitl gz_x500
+        
+        
+  - PERCEP-LIO:
+      layout: even-vertical
+      panes:
+        # Launch LIO here
+        - ls
+
+  - PERCEP-MAP:
+      layout: even-vertical
+      panes:
+        - ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_global_planner_navigation:=true
+        
+  - PERCEP-debug:
+      layout: even-horizontal
+      panes:
+        - ros2 topic echo /fmu/in/vehicle_visual_odometry
+ 

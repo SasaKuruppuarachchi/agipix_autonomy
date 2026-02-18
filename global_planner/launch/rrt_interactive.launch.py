@@ -106,7 +106,7 @@ def generate_launch_description():
         name='octomap_server_node',
         output='screen',
         #arguments=[LaunchConfiguration('map_location')]
-        parameters=[{'octomap_path': octomap_path}, {'frame_id': 'map'}]  # <--- Pass as param here
+        parameters=[{'octomap_path': octomap_path}, {'frame_id': 'drone0/map'}]  # <--- Pass as param here
     )
 
     rviz_node = Node(

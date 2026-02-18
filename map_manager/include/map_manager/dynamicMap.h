@@ -29,6 +29,7 @@ namespace mapManager{
 
 		// dynamic clean 
 		void freeMapCB();
+		void cleanDynamicObstacles() override;
 
 		// user function
 		void getDynamicObstacles(std::vector<Eigen::Vector3d>& obstaclePos, 

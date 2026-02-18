@@ -14,7 +14,7 @@
  {
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared(kNodeName);
-	rclcpp::executors::MultiThreadedExecutor executor;
+	rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4);
   	executor.add_node(node);
 
 	mapManager::ESDFMap m(node);

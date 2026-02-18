@@ -1,0 +1,11 @@
+<launch>
+  <!-- Including in another launch file -->
+  <include file="$(find-pkg-share foxglove_bridge)/launch/foxglove_bridge_launch.xml">
+    <arg name="port" value="8765"/>
+    <arg name="send_buffer_limit" value="100000000"/>
+    <arg name="use_compression" value="true"/>
+    <arg name="num_threads" value="4"/>
+    <arg name="max_qos_depth" value="10"/>
+    <!-- ... other arguments ... -->
+  </include>
+</launch>

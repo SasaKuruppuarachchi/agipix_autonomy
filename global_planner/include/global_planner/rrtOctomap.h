@@ -162,15 +162,25 @@ namespace globalPlanner{
 		this->mapCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		rclcpp::SubscriptionOptions mapOptions;
 		mapOptions.callback_group = this->mapCbGroup_;
+		auto mapQos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
 		this->mapSub_ = this->node_->create_subscription<octomap_msgs::msg::Octomap>(
-			"/octomap_full", 1, std::bind(&rrtOctomap::mapCB, this, std::placeholders::_1), mapOptions);
+			"/octomap_full", mapQos, std::bind(&rrtOctomap::mapCB, this, std::placeholders::_1), mapOptions);
 
 		rclcpp::Rate r(10);
+		rclcpp::Time waitStart = this->node_->now();
+		const double mapWaitTimeoutSec = 3.0;
 		while (rclcpp::ok() and this->map_ == NULL){
 			cout << "[RRTPlanner]: Wait for Map..." << endl;
+			rclcpp::spin_some(this->node_);
+			if ((this->node_->now() - waitStart).seconds() > mapWaitTimeoutSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[RRTPlanner]: Map wait timeout (%.1fs). Continue and wait asynchronously for /octomap_full.", mapWaitTimeoutSec);
+				break;
+			}
 			r.sleep();
 		}
-		cout << "[RRTPlanner]: Map Updated!" << endl;
+		if (this->map_ != NULL){
+			cout << "[RRTPlanner]: Map Updated!" << endl;
+		}
 
 		// Visualization:
 		this->startVisModule();
@@ -626,7 +636,7 @@ namespace globalPlanner{
 		std::vector<geometry_msgs::msg::Point> lineVec;
 		
 		// point:
-		point.header.frame_id = "map";
+		point.header.frame_id = "drone0/map";
 		point.ns = "RRT_point";
 		point.id = id;
 		point.type = visualization_msgs::msg::Marker::SPHERE;
@@ -653,7 +663,7 @@ namespace globalPlanner{
 		lineVec.push_back(p1);
 		lineVec.push_back(p2);
 
-		line.header.frame_id = "map";
+		line.header.frame_id = "drone0/map";
 		line.ns = "RRT_line";
 		line.points = lineVec;
 		line.id = id;
@@ -690,7 +700,7 @@ namespace globalPlanner{
 				lineVec.push_back(p2);
 			}
 			// waypoint
-			waypoint.header.frame_id = "map";
+			waypoint.header.frame_id = "drone0/map";
 			waypoint.id = 1+i;
 			waypoint.ns = "rrt_path";
 			waypoint.type = visualization_msgs::msg::Marker::SPHERE;
@@ -707,7 +717,7 @@ namespace globalPlanner{
 			waypoint.color.b = 0.5;
 			this->pathVisVec_.push_back(waypoint);
 		}
-		line.header.frame_id = "map";
+		line.header.frame_id = "drone0/map";
 		line.points = lineVec;
 		line.ns = "rrt_path";
 		line.id = 0;
@@ -737,7 +747,7 @@ namespace globalPlanner{
 		for (KDTree::Point<N> p: pathTemp){
 			geometry_msgs::msg::PoseStamped ps;
 			ps.header.stamp = this->node_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.pose.position.x = p[0];
 			ps.pose.position.y = p[1];
 			ps.pose.position.z = p[2];
@@ -745,7 +755,7 @@ namespace globalPlanner{
 		}
 		path.poses = pathVec;
 		path.header.stamp = this->node_->now();
-		path.header.frame_id = "map";
+		path.header.frame_id = "drone0/map";
 	}
 
 	template <std::size_t N>

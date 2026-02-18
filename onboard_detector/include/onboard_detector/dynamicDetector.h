@@ -27,6 +27,7 @@
 #include <onboard_detector/detectors/lidarDetector.h>
 #include <onboard_detector/tracking/kalmanFilter.h>
 #include <onboard_detector/utils.h>
+#include <mutex>
 
 using std::cout; using std::endl;
 namespace onboardDetector{
@@ -97,6 +98,15 @@ namespace onboardDetector{
         rclcpp::TimerBase::SharedPtr trackingTimer_;
         rclcpp::TimerBase::SharedPtr classificationTimer_;
         rclcpp::TimerBase::SharedPtr visTimer_;
+
+        // Callback groups
+        rclcpp::CallbackGroup::SharedPtr sensorCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr auxSubCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr detectionCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr trackingCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr classificationCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr visCbGroup_;
+        rclcpp::CallbackGroup::SharedPtr serviceCbGroup_;
 
         //Server
         rclcpp::Service<onboard_detector::srv::GetDynamicObstacles>::SharedPtr getDynamicObstacleServer_;
@@ -230,6 +240,9 @@ namespace onboardDetector{
         std::vector<std::deque<std::vector<Eigen::Vector3d>>> pcHist_; // data association result: history of filtered pc clusteres for each pc cluster in current frame
         std::vector<onboardDetector::box3D> trackedBBoxes_; // bboxes tracked from kalman filtering
         std::vector<onboardDetector::box3D> dynamicBBoxes_; // boxes classified as dynamic
+
+        // Protects detector/tracking/classification shared state (histories and dynamic outputs)
+        std::mutex stateMutex_;
 
         // YOLO DATA
         vision_msgs::msg::Detection2DArray yoloDetectionResults_; // yolo detected 2D results

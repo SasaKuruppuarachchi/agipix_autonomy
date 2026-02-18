@@ -33,6 +33,7 @@ namespace AutoFlight{
 		rclcpp::CallbackGroup::SharedPtr replanCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr trajExeCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr visCbGroup_;
+		rclcpp::CallbackGroup::SharedPtr exploreReplanCbGroup_;
 
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr polyTrajPub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pwlTrajPub_;
@@ -48,6 +49,7 @@ namespace AutoFlight{
 		double replanTimeForDynamicObstacle_;
 		Eigen::Vector3d freeRange_;
 		double reachGoalDistance_;
+		bool operatorConfirm_ = false;
 
 		// exploration data
 		bool explorationReplan_ = true;
@@ -64,9 +66,11 @@ namespace AutoFlight{
 		double trajTime_; // current trajectory time
 		trajPlanner::bspline trajectory_;
 		rclcpp::Time lastDynamicObstacleTime_;
+		bool waypointRotatePending_ = false;
+		rclcpp::Time waypointRotateReadyTime_;
+		double waypointRotateYaw_ = 0.0;
 	
 	public:
-		std::thread exploreReplanWorker_;
 		explicit dynamicExploration(const rclcpp::Node::SharedPtr& node);
 
 		void initParam();
@@ -94,7 +98,6 @@ namespace AutoFlight{
 		nav_msgs::msg::Path getRestGlobalPath();
 		nav_msgs::msg::Path getRestGlobalPath(const Eigen::Vector3d& pos);
 		nav_msgs::msg::Path getRestGlobalPath(const Eigen::Vector3d& pos, double yaw);
-		void waitTime(double time);
 	};
 }
 #endif

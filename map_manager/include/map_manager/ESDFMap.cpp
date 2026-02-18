@@ -281,7 +281,7 @@ namespace mapManager{
 		cloud.width = cloud.points.size();
 		cloud.height = 1;
 		cloud.is_dense = true;
-		cloud.header.frame_id = "map";
+		cloud.header.frame_id = "drone0/map";
 		sensor_msgs::msg::PointCloud2 cloud_msg;
 		pcl::toROSMsg(cloud, cloud_msg);
 

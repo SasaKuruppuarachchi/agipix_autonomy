@@ -6,8 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /OccupancyGrid1
         - /OccupancyGrid2
+        - /Map1
       Splitter Ratio: 0.5
     Tree Height: 689
   - Class: rviz_common/Selection
@@ -42,7 +44,7 @@ Visualization Manager:
         Z: 0
       Plane: XY
       Plane Cell Count: 10
-      Reference Frame: map
+      Reference Frame: drone0/map
       Value: true
     - Class: octomap_rviz_plugins/OccupancyGrid
       Enabled: true
@@ -152,7 +154,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 255; 255; 255
-    Fixed Frame: map
+    Fixed Frame: drone0/map
     Frame Rate: 30
   Name: root
   Tools:

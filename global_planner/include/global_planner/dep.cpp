@@ -164,8 +164,9 @@ namespace globalPlanner{
 		// odom subscriber
 		rclcpp::SubscriptionOptions odomOptions;
 		odomOptions.callback_group = this->odomCbGroup_;
+		auto odomQos = rclcpp::SensorDataQoS();
 		this->odomSub_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
-			this->odomTopic_, 1000, std::bind(&DEP::odomCB, this, std::placeholders::_1), odomOptions);
+			this->odomTopic_, odomQos, std::bind(&DEP::odomCB, this, std::placeholders::_1), odomOptions);
 	
 		// visualization timer
 		this->visTimer_ = this->node_->create_wall_timer(
@@ -1000,7 +1001,7 @@ namespace globalPlanner{
 
 			// Node point
 			visualization_msgs::msg::Marker point;
-			point.header.frame_id = "map";
+			point.header.frame_id = "drone0/map";
 			point.header.stamp = this->node_->now();
 			point.ns = "prm_point";
 			point.id = countPointNum;
@@ -1023,7 +1024,7 @@ namespace globalPlanner{
 			// number of voxels for each node
 			visualization_msgs::msg::Marker voxelNumText;
 			voxelNumText.ns = "num_voxel_text";
-			voxelNumText.header.frame_id = "map";
+			voxelNumText.header.frame_id = "drone0/map";
 			voxelNumText.id = countVoxelNumText;
 			voxelNumText.header.stamp = this->node_->now();
 			voxelNumText.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
@@ -1044,7 +1045,7 @@ namespace globalPlanner{
 			// Edges
 			visualization_msgs::msg::Marker line;
 			line.ns = "edge";
-			line.header.frame_id = "map";
+			line.header.frame_id = "drone0/map";
 			line.type = visualization_msgs::msg::Marker::LINE_LIST;
 			line.header.stamp = this->node_->now();
 			for (std::shared_ptr<PRM::Node> adjNode : n->adjNodes){
@@ -1078,7 +1079,7 @@ namespace globalPlanner{
 			// Goal candidates
 			visualization_msgs::msg::Marker goalCandidatePoint;
 			goalCandidatePoint.ns = "goal_candidate";
-			goalCandidatePoint.header.frame_id = "map";
+			goalCandidatePoint.header.frame_id = "drone0/map";
 			goalCandidatePoint.header.stamp = this->node_->now();
 			goalCandidatePoint.id = countGoalCandidateNum;
 			goalCandidatePoint.type = visualization_msgs::msg::Marker::SPHERE;
@@ -1109,7 +1110,7 @@ namespace globalPlanner{
 			for (size_t i=0; i<path.size(); ++i){
 				std::shared_ptr<PRM::Node> n = path[i];
 				visualization_msgs::msg::Marker point;
-				point.header.frame_id = "map";
+				point.header.frame_id = "drone0/map";
 				point.header.stamp = this->node_->now();
 				point.ns = "candidate_path_node";
 				point.id = countNodeNum;
@@ -1133,7 +1134,7 @@ namespace globalPlanner{
 					std::shared_ptr<PRM::Node> nNext = path[i+1];
 					visualization_msgs::msg::Marker line;
 					line.ns = "candidate_path";
-					line.header.frame_id = "map";
+					line.header.frame_id = "drone0/map";
 					line.type = visualization_msgs::msg::Marker::LINE_LIST;
 					line.header.stamp = this->node_->now();
 					geometry_msgs::msg::Point p1, p2;
@@ -1169,7 +1170,7 @@ namespace globalPlanner{
 		for (size_t i=0; i<this->bestPath_.size(); ++i){
 			std::shared_ptr<PRM::Node> n = this->bestPath_[i];
 			visualization_msgs::msg::Marker point;
-			point.header.frame_id = "map";
+			point.header.frame_id = "drone0/map";
 			point.header.stamp = this->node_->now();
 			point.ns = "best_path_node";
 			point.id = countNodeNum;
@@ -1193,7 +1194,7 @@ namespace globalPlanner{
 				std::shared_ptr<PRM::Node> nNext = this->bestPath_[i+1];
 				visualization_msgs::msg::Marker line;
 				line.ns = "best_path";
-				line.header.frame_id = "map";
+				line.header.frame_id = "drone0/map";
 				line.type = visualization_msgs::msg::Marker::LINE_LIST;
 				line.header.stamp = this->node_->now();
 				geometry_msgs::msg::Point p1, p2;
@@ -1230,7 +1231,7 @@ namespace globalPlanner{
 			Eigen::Vector3d p = this->frontierPointPairs_[i].first;
 			double dist = this->frontierPointPairs_[i].second;
 
-			range.header.frame_id = "map";
+			range.header.frame_id = "drone0/map";
 			range.header.stamp = this->node_->now();
 			range.ns = "frontier range";
 			range.id = frontierRangeCount;

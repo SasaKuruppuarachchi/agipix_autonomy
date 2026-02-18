@@ -435,6 +435,14 @@ namespace onboardDetector{
 
 
     void dynamicDetector::registerCallback(){
+        this->sensorCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->auxSubCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->detectionCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->trackingCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->classificationCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->visCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+        this->serviceCbGroup_ = this->_node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+
             this->depthSub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::Image>>(this->_node, this->depthTopicName_);
             this->lidarSub_ = std::make_shared<message_filters::Subscriber<sensor_msgs::msg::PointCloud2>>(this->_node, this->lidarTopicName_);
             if (this->localizationMode_ == 0){
@@ -453,33 +461,38 @@ namespace onboardDetector{
             }
 
         // color image subscriber
-        this->colorImageSub_ = this->create_subscription<sensor_msgs::msg::Image>(this->colorImgTopicName_, 10, std::bind(&dynamicDetector::colorImgCB, this, std::placeholders::_1));
+        rclcpp::SubscriptionOptions colorOpts;
+        colorOpts.callback_group = this->auxSubCbGroup_;
+        this->colorImageSub_ = this->create_subscription<sensor_msgs::msg::Image>(this->colorImgTopicName_, 10, std::bind(&dynamicDetector::colorImgCB, this, std::placeholders::_1), colorOpts);
 
         // yolo detection results subscriber
-        this->yoloDetectionSub_ = this->create_subscription<vision_msgs::msg::Detection2DArray>("yolo_detector/detected_bounding_boxes", 10, std::bind(&dynamicDetector::yoloDetectionCB, this, std::placeholders::_1));
+        rclcpp::SubscriptionOptions yoloOpts;
+        yoloOpts.callback_group = this->auxSubCbGroup_;
+        this->yoloDetectionSub_ = this->create_subscription<vision_msgs::msg::Detection2DArray>("yolo_detector/detected_bounding_boxes", 10, std::bind(&dynamicDetector::yoloDetectionCB, this, std::placeholders::_1), yoloOpts);
     
         int timeStep = this->dt_ * 1000.0;
     // detection timer
-    this->detectionTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::detectionCB, this));
+    this->detectionTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::detectionCB, this), this->detectionCbGroup_);
 
     // lidar detection timer
-    this->lidarDetectionTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::lidarDetectionCB, this));
+    this->lidarDetectionTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::lidarDetectionCB, this), this->detectionCbGroup_);
 
     // tracking timer
-    this->trackingTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::trackingCB, this));
+    this->trackingTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::trackingCB, this), this->trackingCbGroup_);
 
     // classification timer
-    this->classificationTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::classificationCB, this));
+    this->classificationTimer_ = this->create_wall_timer(std::chrono::milliseconds(timeStep), std::bind(&dynamicDetector::classificationCB, this), this->classificationCbGroup_);
 
     // visualization timer
-    this->visTimer_ = this->create_wall_timer(33ms, std::bind(&dynamicDetector::visCB, this));
+    this->visTimer_ = this->create_wall_timer(33ms, std::bind(&dynamicDetector::visCB, this), this->visCbGroup_);
 
 		// get dynamic obstacle service
-        this->getDynamicObstacleServer_ = this->create_service<onboard_detector::srv::GetDynamicObstacles>(this->ns_ + "/get_dynamic_obstacles", std::bind(&dynamicDetector::getDynamicObstaclesSrv, this, std::placeholders::_1, std::placeholders::_2));	
+        this->getDynamicObstacleServer_ = this->create_service<onboard_detector::srv::GetDynamicObstacles>(this->ns_ + "/get_dynamic_obstacles", std::bind(&dynamicDetector::getDynamicObstaclesSrv, this, std::placeholders::_1, std::placeholders::_2), rmw_qos_profile_services_default, this->serviceCbGroup_);	
     }
 
     bool dynamicDetector::getDynamicObstaclesSrv(const std::shared_ptr<onboard_detector::srv::GetDynamicObstacles::Request> req, 
-                                                 const std::shared_ptr<onboard_detector::srv::GetDynamicObstacles::Response> res){
+                                                     const std::shared_ptr<onboard_detector::srv::GetDynamicObstacles::Response> res){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         // Get the current robot position
         Eigen::Vector3d currPos = Eigen::Vector3d (req->current_position.x, req->current_position.y, req->current_position.z);
 
@@ -531,6 +544,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::depthPoseCB(const sensor_msgs::msg::Image::ConstSharedPtr& img, const geometry_msgs::msg::PoseStamped::ConstSharedPtr& pose){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         // store current depth image
         cv_bridge::CvImagePtr imgPtr = cv_bridge::toCvCopy(img, img->encoding);
         if (img->encoding == sensor_msgs::image_encodings::TYPE_32FC1){
@@ -562,6 +576,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::depthOdomCB(const sensor_msgs::msg::Image::ConstSharedPtr& img, const nav_msgs::msg::Odometry::ConstSharedPtr& odom){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         // store current depth image
         cv_bridge::CvImagePtr imgPtr = cv_bridge::toCvCopy(img, img->encoding);
         if (img->encoding == sensor_msgs::image_encodings::TYPE_32FC1){
@@ -593,6 +608,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::lidarPoseCB(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& cloudMsg, const geometry_msgs::msg::PoseStamped::ConstSharedPtr& pose){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         // store latest cloud
     (void)0; // placeholder: no latestCloud_ in ROS2 version
 
@@ -677,19 +693,23 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::lidarDetectionCB(){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         this->lidarDetect();
     }
 
     void dynamicDetector::colorImgCB(const sensor_msgs::msg::Image::SharedPtr img){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         cv_bridge::CvImagePtr imgPtr = cv_bridge::toCvCopy(img, img->encoding);
         imgPtr->image.copyTo(this->detectedColorImage_);
     }
 
     void dynamicDetector::yoloDetectionCB(const vision_msgs::msg::Detection2DArray::SharedPtr detections){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         this->yoloDetectionResults_ = *detections;
     }
 
     void dynamicDetector::detectionCB(){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         // update pose history
         this->updatePoseHist();
         this->dbscanDetect();
@@ -699,6 +719,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::trackingCB(){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         std::vector<int> bestMatch; // for each current detection, which index of previous obstacle match
         std::vector<int> boxOOR; // whether the box in hist is detected in this time step
         // bestMatch: an array of current detected object num size and the entries are idx from the history
@@ -715,6 +736,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::classificationCB(){
+        std::lock_guard<std::mutex> lock(this->stateMutex_);
         std::vector<onboardDetector::box3D> dynamicBBoxesTemp;
 
         // Iterate through all pointcloud/bounding boxes history (note that yolo's pointclouds are dummy pointcloud (empty))
@@ -767,6 +789,10 @@ namespace onboardDetector{
             else{
                 curFrameGap = this->skipFrame_;
             }
+
+			if (curFrameGap <= 0){
+				continue;
+			}
             // ===================================================================================
 
 
@@ -844,7 +870,7 @@ namespace onboardDetector{
             // 1. point cloud voting ratio.
             // 2. velocity (from kalman filter) 
             // 3. enough valid point correspondence 
-            if (voteRatio>=this->dynaVoteThresh_ && velNorm>=this->dynaVelThresh_ && double(numSkip)/double(numPoints)<this->maxSkipRatio_){
+            if (numPoints > 0 && voteRatio>=this->dynaVoteThresh_ && velNorm>=this->dynaVelThresh_ && double(numSkip)/double(numPoints)<this->maxSkipRatio_){
                 this->boxHist_[i][0].is_dynamic_candidate = true;
                 // dynamic-consistency check
                 int dynaConsistCount = 0;
@@ -894,6 +920,7 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::visCB(){
+		std::lock_guard<std::mutex> lock(this->stateMutex_);
         this->publishUVImages();
         this->publish3dBox(this->uvBBoxes_, this->uvBBoxesPub_, 0, 1, 0);
         std::vector<Eigen::Vector3d> dynamicPoints;
@@ -934,7 +961,7 @@ namespace onboardDetector{
 
         // detect from depth mapcalBox
         if (not this->depthImage_.empty()){
-            this->uvDetector_->depth = this->depthImage_;
+            this->uvDetector_->depth = this->depthImage_.clone();
             this->uvDetector_->detect();
             this->uvDetector_->extract_3Dbox();
 
@@ -1188,6 +1215,7 @@ namespace onboardDetector{
                 if (*rowPtr == 0) {
                     depth = this->raycastMaxLength_ + 0.1;
                 } else if (depth < this->depthMinValue_) {
+                    rowPtr = rowPtr + this->skipPixel_;
                     continue;
                 } else if (depth > this->depthMaxValue_) {
                     depth = this->raycastMaxLength_ + 0.1;
@@ -1846,15 +1874,30 @@ namespace onboardDetector{
     } 
     
     void dynamicDetector::publishUVImages(){
-        sensor_msgs::msg::Image::SharedPtr depthBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->depth_show).toImageMsg();
-        sensor_msgs::msg::Image::SharedPtr umapBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->U_map_show).toImageMsg();
-        sensor_msgs::msg::Image::SharedPtr birdBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->bird_view).toImageMsg();  
+        if (this->uvDetector_ == nullptr) {
+            return;
+        }
+
+        if (this->uvDetector_->depth_show.empty() || this->uvDetector_->U_map_show.empty() || this->uvDetector_->bird_view.empty()) {
+            return;
+        }
+
+        cv::Mat depthShow = this->uvDetector_->depth_show.clone();
+        cv::Mat uMapShow = this->uvDetector_->U_map_show.clone();
+        cv::Mat birdView = this->uvDetector_->bird_view.clone();
+
+        sensor_msgs::msg::Image::SharedPtr depthBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", depthShow).toImageMsg();
+        sensor_msgs::msg::Image::SharedPtr umapBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", uMapShow).toImageMsg();
+        sensor_msgs::msg::Image::SharedPtr birdBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", birdView).toImageMsg();
         this->uvDepthMapPub_->publish(*depthBoxMsg);
         this->uDepthMapPub_->publish(*umapBoxMsg); 
         this->uvBirdViewPub_->publish(*birdBoxMsg);     
     }
 
     void dynamicDetector::publishColorImages(){
+        if (this->detectedColorImage_.empty()) {
+            return;
+        }
         sensor_msgs::msg::Image::SharedPtr detectedColorImgMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->detectedColorImage_).toImageMsg();
         this->detectedColorImgPub_->publish(*detectedColorImgMsg);
     }

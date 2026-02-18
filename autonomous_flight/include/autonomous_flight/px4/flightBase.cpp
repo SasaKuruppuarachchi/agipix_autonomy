@@ -14,58 +14,70 @@ namespace AutoFlight{
 
 		this->node_->declare_parameter<bool>("wait_for_topics_ready", true);
 		this->node_->get_parameter("wait_for_topics_ready", this->waitForTopicsReady_);
-		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Wait for MAVROS/odom topics at startup: %s.", this->waitForTopicsReady_ ? "true" : "false");
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Wait for required startup topics: %s.", this->waitForTopicsReady_ ? "true" : "false");
+
+		this->node_->declare_parameter<double>("takeoff_wait_timeout_sec", 8.0);
+		this->node_->get_parameter("takeoff_wait_timeout_sec", this->takeoffWaitTimeoutSec_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Takeoff wait timeout: %.2fs.", this->takeoffWaitTimeoutSec_);
+
+		this->node_->declare_parameter<bool>("require_takeoff_feedback", false);
+		this->node_->get_parameter("require_takeoff_feedback", this->requireTakeoffFeedback_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Require takeoff feedback: %s.", this->requireTakeoffFeedback_ ? "true" : "false");
+
+		this->node_->declare_parameter<std::string>("controller.backend", "dds");
+		this->node_->get_parameter("controller.backend", this->controllerBackend_);
+		if (this->controllerBackend_ != "dds"){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: MAVROS backend has been purged. Forcing backend to DDS.");
+			this->controllerBackend_ = "dds";
+		}
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Controller backend: %s.", this->controllerBackend_.c_str());
+
+		this->node_->declare_parameter<std::string>("frame_id", "map");
+		this->node_->get_parameter("frame_id", this->mapFrameId_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Frame ID: %s.", this->mapFrameId_.c_str());
+
+		this->node_->declare_parameter<std::string>("odom_topic", "/drone0/sensor_measurements/odom");
+		this->node_->get_parameter("odom_topic", this->odomTopic_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom topic: %s.", this->odomTopic_.c_str());
 
 		// callback groups
 		this->stateCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->odomCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->clickCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+		this->targetPubCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->stateUpdateCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-
-		// Subscriber
-		rclcpp::SubscriptionOptions stateOptions;
-		stateOptions.callback_group = this->stateCbGroup_;
-		this->stateSub_ = this->node_->create_subscription<mavros_msgs::msg::State>(
-			"/mavros/state", rclcpp::QoS(1000), std::bind(&flightBase::stateCB, this, std::placeholders::_1), stateOptions);
 
 		rclcpp::SubscriptionOptions odomOptions;
 		odomOptions.callback_group = this->odomCbGroup_;
 		this->odomSub_ = this->node_->create_subscription<nav_msgs::msg::Odometry>(
-			"/mavros/local_position/odom", rclcpp::QoS(1000), std::bind(&flightBase::odomCB, this, std::placeholders::_1), odomOptions);
+			this->odomTopic_, rclcpp::SensorDataQoS(), std::bind(&flightBase::odomCB, this, std::placeholders::_1), odomOptions);
 
 		rclcpp::SubscriptionOptions clickOptions;
 		clickOptions.callback_group = this->clickCbGroup_;
 		this->clickSub_ = this->node_->create_subscription<geometry_msgs::msg::PoseStamped>(
 			"/move_base_simple/goal", rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
 		
-		// Service client
-		this->armClient_ = this->node_->create_client<mavros_msgs::srv::CommandBool>("mavros/cmd/arming");
-		this->setModeClient_ = this->node_->create_client<mavros_msgs::srv::SetMode>("mavros/set_mode");	
-
-    	// Publisher
-		this->posePub_ = this->node_->create_publisher<geometry_msgs::msg::PoseStamped>("/mavros/setpoint_position/local", 1000);
+	    // Publisher
 		this->statePub_ = this->node_->create_publisher<tracking_controller::msg::Target>("/autonomous_flight/target_state", 1000);
 
 
-		// Wait for odometry and mavros to be ready
+		// Wait for odometry to be ready
     	this->odomReceived_ = false;
-    	this->mavrosStateReceived_ = false;
 		if (this->waitForTopicsReady_){
 			rclcpp::Rate r (10);
-			while (rclcpp::ok() && !(this->odomReceived_ && this->mavrosStateReceived_)){
+			while (rclcpp::ok() && !this->odomReceived_){
 				rclcpp::spin_some(this->node_);
 				r.sleep();
 			}
-			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom and mavros topics are ready.");
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom topic is ready.");
 		}
 		else{
 			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Startup topic wait is disabled (wait_for_topics_ready=false).");
 		}
 
-
-    	// Tareget publish thread
-		this->targetPubWorker_ = std::thread(&flightBase::publishTarget, this);
-		this->targetPubWorker_.detach();
+		// Target publish timer (replaces detached blocking thread)
+		this->targetPubTimer_ = this->node_->create_wall_timer(
+			std::chrono::milliseconds(5), std::bind(&flightBase::publishTarget, this), this->targetPubCbGroup_);
 
 		// state update callback (velocity and acceleration)
 		this->stateUpdateTimer_ = this->node_->create_wall_timer(
@@ -73,61 +85,7 @@ namespace AutoFlight{
 	}
 
 	void flightBase::publishTarget(){
-		rclcpp::Rate r (200);
-
-		// warmup
-		for(int i = 100; rclcpp::ok() && i > 0; --i){
-	        this->poseTgt_.header.stamp = this->node_->now();
-	        this->posePub_->publish(this->poseTgt_);
-    	}
-
-		auto offboardMode = std::make_shared<mavros_msgs::srv::SetMode::Request>();
-		offboardMode->custom_mode = "OFFBOARD";
-		auto armCmd = std::make_shared<mavros_msgs::srv::CommandBool::Request>();
-		armCmd->value = true;
-		rclcpp::Time lastRequest = this->node_->now();
-		while (rclcpp::ok()){
-			if (this->mavrosState_.mode != "OFFBOARD" && (this->node_->now() - lastRequest > rclcpp::Duration::from_seconds(5.0))){
-				if (this->setModeClient_->service_is_ready()){
-					this->setModeClient_->async_send_request(offboardMode,
-						[this](rclcpp::Client<mavros_msgs::srv::SetMode>::SharedFuture future){
-							if (future.get()->mode_sent){
-								RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Offboard mode enabled.");
-							}
-						});
-				}
-				lastRequest = this->node_->now();
-			} else {
-				if (!this->mavrosState_.armed && (this->node_->now() - lastRequest > rclcpp::Duration::from_seconds(5.0))){
-					if (this->armClient_->service_is_ready()){
-						this->armClient_->async_send_request(armCmd,
-							[this](rclcpp::Client<mavros_msgs::srv::CommandBool>::SharedFuture future){
-								if (future.get()->success){
-									RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Vehicle armed.");
-								}
-							});
-					}
-					lastRequest = this->node_->now();
-				}
-			}
-
-			if (this->poseControl_){
-	        	// this->poseTgt_.header.stamp = this->node_->now();
-	        	this->posePub_->publish(this->poseTgt_);
-	        }
-	        else{
-				this->statePub_->publish(this->stateTgt_);
-			}
-			// ros::spinOnce();
-			r.sleep();
-		}	
-	}
-
-	void flightBase::stateCB(const mavros_msgs::msg::State::SharedPtr state){
-		this->mavrosState_ = *state;
-		if (not this->mavrosStateReceived_){
-			this->mavrosStateReceived_ = true;
-		}
+		this->statePub_->publish(this->stateTgt_);
 	}
 
 	void flightBase::odomCB(const nav_msgs::msg::Odometry::SharedPtr odom){
@@ -150,6 +108,7 @@ namespace AutoFlight{
 		if (not this->goalReceived_){
 			this->goalReceived_ = true;
 		}
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Goal received: x=%.2f, y=%.2f, z=%.2f", this->goal_.pose.position.x, this->goal_.pose.position.y, this->goal_.pose.position.z);
 	}
 
 	void flightBase::stateUpdateCB(){
@@ -174,7 +133,7 @@ namespace AutoFlight{
 	void flightBase::takeoff(){
 		// from cfg yaml read the flight height
 		geometry_msgs::msg::PoseStamped ps;
-		ps.header.frame_id = "map";
+		ps.header.frame_id = this->mapFrameId_;
 		ps.header.stamp = this->node_->now();
 		ps.pose.position.x = this->odom_.pose.pose.position.x;
 		ps.pose.position.y = this->odom_.pose.pose.position.y;
@@ -185,14 +144,27 @@ namespace AutoFlight{
 
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Start taking off...");
 		rclcpp::Rate r (30);
+		rclcpp::Time takeoffStart = this->node_->now();
 		while (rclcpp::ok() && std::abs(this->odom_.pose.pose.position.z - this->takeoffHgt_) >= 0.1){
+			rclcpp::Time now = this->node_->now();
+			double elapsed = (now - takeoffStart).seconds();
+			if (this->takeoffWaitTimeoutSec_ > 0.0 && elapsed > this->takeoffWaitTimeoutSec_){
+				if (this->requireTakeoffFeedback_){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Takeoff feedback timeout (%.2fs) but require_takeoff_feedback=true, continue waiting.", elapsed);
+					takeoffStart = now;
+				}
+				else{
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: No takeoff feedback within %.2fs. Continue mission without blocking.", elapsed);
+					break;
+				}
+			}
 			rclcpp::spin_some(this->node_);
 			r.sleep();
 		}
 
 		// tracking_controller::Target psT;
 		// // psT.type_mask = psT.IGNORE_ACC_VEL;
-		// psT.header.frame_id = "map";
+		// psT.header.frame_id = this->mapFrameId_;
 		// psT.header.stamp = ros::Time::now();
 		// psT.position.x = this->odom_.pose.pose.position.x;
 		// psT.position.y = this->odom_.pose.pose.position.y;
@@ -487,13 +459,23 @@ namespace AutoFlight{
 
 	void flightBase::updateTarget(const geometry_msgs::msg::PoseStamped& ps){
 		this->poseTgt_ = ps;
-		this->poseTgt_.header.frame_id = "map";
-		this->poseControl_ = true;
+		this->poseTgt_.header.frame_id = this->mapFrameId_;
+		tracking_controller::msg::Target target;
+		target.position.x = ps.pose.position.x;
+		target.position.y = ps.pose.position.y;
+		target.position.z = ps.pose.position.z;
+		target.velocity.x = 0.0;
+		target.velocity.y = 0.0;
+		target.velocity.z = 0.0;
+		target.acceleration.x = 0.0;
+		target.acceleration.y = 0.0;
+		target.acceleration.z = 0.0;
+		target.yaw = AutoFlight::rpy_from_quaternion(ps.pose.orientation);
+		this->updateTargetWithState(target);
 	}
 
 	void flightBase::updateTargetWithState(const tracking_controller::msg::Target& target){
 		this->stateTgt_ = target;
-		this->poseControl_ = false;
 	}
 	
 	bool flightBase::isReach(const geometry_msgs::msg::PoseStamped& poseTgt, bool useYaw){

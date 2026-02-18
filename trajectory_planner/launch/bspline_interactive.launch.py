@@ -1,4 +1,6 @@
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.actions import Node, SetParameter
 from launch_ros.substitutions import FindPackageShare
@@ -17,6 +19,12 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='false',
+            description='Use simulation clock if true'
+        ),
+        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
         Node(
             package='trajectory_planner',
             executable='bspline_node',

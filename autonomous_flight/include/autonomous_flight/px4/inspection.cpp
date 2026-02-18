@@ -5,6 +5,7 @@
 */
 
 #include <autonomous_flight/px4/inspection.h>
+#include <limits>
 
 namespace nav_msgs { using Path = nav_msgs::msg::Path; }
 namespace geometry_msgs {
@@ -24,8 +25,9 @@ namespace AutoFlight{
 	inspector::inspector(const rclcpp::Node::SharedPtr& node) : flightBase(node){
 		this->loadParam();
 		this->initPlanner();
+		auto mapQos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
 		this->mapSub_ = this->node_->create_subscription<octomap_msgs::msg::Octomap>(
-			"/octomap_full", rclcpp::QoS(1), std::bind(&inspector::mapCB, this, std::placeholders::_1));
+			"/octomap_full", mapQos, std::bind(&inspector::mapCB, this, std::placeholders::_1));
 			
 		// visualization
 		this->targetVisPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("/inspection_target", 100);
@@ -169,6 +171,10 @@ namespace AutoFlight{
 		this->node_->declare_parameter<int>("path_regeneration_num", 10);
 		this->node_->get_parameter("path_regeneration_num", this->pathRegenNum_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Path regeneration number: %d.", this->pathRegenNum_);
+
+		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
+		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Operator confirmation is set to: %s.", this->operatorConfirm_ ? "true" : "false");
 	}
 
 	void inspector::initPlanner(){
@@ -177,67 +183,157 @@ namespace AutoFlight{
 	}
 
 	void inspector::run(){
-		cout << "[AutoFlight]: Please double check all parameters. Then PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
-		this->takeoff();
-		
-
-		// cout << "[AutoFlight]: Ready to start please check hover conditions. Then PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-		// std::cin.get();
-		// this->lookAround();
-
-		// STEP 1: APPROACH TARGET
-		
-		cout << "[AutoFlight]: Ready to forward. Then PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
-
-		bool targetReach = false;
-		while (rclcpp::ok() and not targetReach){
-			this->forward();
-			this->lookAround(this->lookAroundAngle_); // check the wall condition	
-
-			targetReach = this->hasReachTarget();
-			if (not targetReach){
-				this->forwardNBV();
-			}	
+		if (this->missionActive_){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Inspection mission is already active.");
+			return;
 		}
 
-		cout << "[AutoFlight]: Please make sure UAV arrive the target. Then PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (!this->missionCbGroup_){
+			this->missionCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+		}
 
-		// STEP 2: EXPLORE TARGET
-		double height = this->takeoffHgt_; // current height
-		bool reachTargetHgt = false;
-		while (rclcpp::ok() and not reachTargetHgt){
-			this->checkSurroundings(); // check surroundings and dimensions of the surface and back to center
+		if (this->operatorConfirm_){
+			cout << "[AutoFlight]: Please double check all parameters. Continuing in non-blocking mode (CTRL+C to abort)." << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but legacy inspection run proceeds non-blocking.");
+		}
+		else{
+			cout << "[AutoFlight]: Please double check all parameters. Continuing automatically (set require_operator_confirmation=true to pause)." << endl;
+		}
 
-			height += this->stepAscendDelta_;
-			if (height >= this->maxTargetHgt_){
-				height = this->maxTargetHgt_;
-				reachTargetHgt = true;
+		this->missionActive_ = true;
+		this->missionFinished_ = false;
+		this->missionStage_ = MissionStage::TAKEOFF;
+		this->missionTargetReach_ = false;
+		this->missionExploreHeight_ = this->takeoffHgt_;
+		this->missionReachTargetHeight_ = false;
+		this->missionReturnSucceed_ = false;
+		this->missionApproachAttempts_ = 0;
+		this->missionExploreSteps_ = 0;
+		this->missionReturnAttempts_ = 0;
+
+		if (!this->missionTimer_){
+			this->missionTimer_ = this->node_->create_wall_timer(
+				std::chrono::milliseconds(50),
+				std::bind(&inspector::missionStepCB, this),
+				this->missionCbGroup_);
+		}
+		else{
+			this->missionTimer_->reset();
+		}
+	}
+
+	bool inspector::isMissionFinished() const{
+		return this->missionFinished_;
+	}
+
+	void inspector::missionStepCB(){
+		if (!this->missionActive_){
+			if (this->missionTimer_){
+				this->missionTimer_->cancel();
 			}
-
-			this->moveUp(height);
-			this->lookAround(this->checkTargetLookAroundAngle_);
-			targetReach = this->hasReachTarget();
+			return;
 		}
 
-		
-		// STEP 3: INSPECTION
-		this->inspect(); // inspect the surface by zig-zag path
-	
-		// STEP 4: RETURN
-		bool returnSucceed = false;
-		while (rclcpp::ok() and not returnSucceed){
-			returnSucceed = this->backward();
+		const int maxApproachAttempts = 60;
+		const int maxExploreSteps = 30;
+		const int maxReturnAttempts = 200;
+
+		switch (this->missionStage_){
+			case MissionStage::TAKEOFF: {
+				this->takeoff();
+				if (this->operatorConfirm_){
+					cout << "[AutoFlight]: Ready to forward. Continuing in non-blocking mode (CTRL+C to abort)." << endl;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but forward stage proceeds non-blocking.");
+				}
+				else{
+					cout << "[AutoFlight]: Ready to forward. Continuing automatically." << endl;
+				}
+				this->missionStage_ = MissionStage::APPROACH;
+				break;
+			}
+			case MissionStage::APPROACH: {
+				if (this->missionTargetReach_ || this->missionApproachAttempts_ >= maxApproachAttempts){
+					if (!this->missionTargetReach_){
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Target not reached after %d approach attempts. Continue mission.", maxApproachAttempts);
+					}
+					if (this->operatorConfirm_){
+						cout << "[AutoFlight]: Target approach complete. Continuing in non-blocking mode (CTRL+C to abort)." << endl;
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but explore stage proceeds non-blocking.");
+					}
+					else{
+						cout << "[AutoFlight]: Target approach complete. Continuing automatically." << endl;
+					}
+					this->missionStage_ = MissionStage::EXPLORE;
+					break;
+				}
+
+				++this->missionApproachAttempts_;
+				this->forward();
+				this->lookAround(this->lookAroundAngle_);
+				this->missionTargetReach_ = this->hasReachTarget();
+				if (!this->missionTargetReach_){
+					this->forwardNBV();
+				}
+				break;
+			}
+			case MissionStage::EXPLORE: {
+				if (this->missionReachTargetHeight_ || this->missionExploreSteps_ >= maxExploreSteps){
+					if (!this->missionReachTargetHeight_){
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Explore stage reached max step count (%d).", maxExploreSteps);
+					}
+					this->missionStage_ = MissionStage::INSPECT;
+					break;
+				}
+
+				++this->missionExploreSteps_;
+				this->checkSurroundings();
+
+				this->missionExploreHeight_ += this->stepAscendDelta_;
+				if (this->missionExploreHeight_ >= this->maxTargetHgt_){
+					this->missionExploreHeight_ = this->maxTargetHgt_;
+					this->missionReachTargetHeight_ = true;
+				}
+
+				this->moveUp(this->missionExploreHeight_);
+				this->lookAround(this->checkTargetLookAroundAngle_);
+				this->missionTargetReach_ = this->hasReachTarget();
+				break;
+			}
+			case MissionStage::INSPECT: {
+				this->inspect();
+				this->missionStage_ = MissionStage::RETURN;
+				break;
+			}
+			case MissionStage::RETURN: {
+				if (this->missionReturnSucceed_ || this->missionReturnAttempts_ >= maxReturnAttempts){
+					this->missionStage_ = MissionStage::COMPLETE;
+					break;
+				}
+
+				++this->missionReturnAttempts_;
+				this->missionReturnSucceed_ = this->backward();
+				if (this->missionReturnSucceed_ || this->missionReturnAttempts_ >= maxReturnAttempts){
+					this->missionStage_ = MissionStage::COMPLETE;
+				}
+				break;
+			}
+			case MissionStage::COMPLETE: {
+				if (!this->missionReturnSucceed_){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Return stage did not converge after %d attempts.", maxReturnAttempts);
+				}
+				cout << "[AutoFlight]: Mission Complete. PRESS CTRL+C to land." << endl;
+				this->missionActive_ = false;
+				this->missionFinished_ = true;
+				this->missionStage_ = MissionStage::IDLE;
+				if (this->missionTimer_){
+					this->missionTimer_->cancel();
+				}
+				break;
+			}
+			case MissionStage::IDLE:
+			default:
+				break;
 		}
-		cout << "[AutoFlight]: Mission Complete. PRESS CTRL+C to land." << endl;
 	}
 
 
@@ -263,9 +359,14 @@ namespace AutoFlight{
 		double t = 0.0;
 		rclcpp::Rate r(1.0/this->sampleTime_);
 		rclcpp::Time tStart = this->node_->now();
-		while (rclcpp::ok() and (not this->isReach(ps) or t < this->pwlPlanner_->getDuration())){
+		const double maxLookAroundTime = std::max(this->pwlPlanner_->getDuration() + 2.0, 2.0);
+		while ((not this->isReach(ps) or t < this->pwlPlanner_->getDuration())){
 			rclcpp::Time tCurr = this->node_->now();
 			t = (tCurr - tStart).seconds();
+			if (t > maxLookAroundTime){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: lookAround timeout after %.2fs.", t);
+				break;
+			}
 			geometry_msgs::PoseStamped targetPose = this->pwlPlanner_->getPose(t);
 			this->updateTarget(targetPose);
 			r.sleep();
@@ -285,22 +386,22 @@ namespace AutoFlight{
 		
 		cout << "[AutoFlight]: Start direct forwarding..." << endl;
 		geometry_msgs::PoseStamped psTargetCurr;
-		while (rclcpp::ok()){
+		const int maxSegmentsPerCall = 5;
+		for (int seg = 0; seg < maxSegmentsPerCall; ++seg){
 			bool forwardSuccess = this->executeWaypointPathToTime(forwardPath, this->sampleTime_, psTargetCurr, true);
-			if (not forwardSuccess){
+			if (!forwardSuccess){
 				break;
 			}
 
-			forwardPath = this->getForwardPathFromPose(psTargetCurr, success);
-			if (not success){
+			nav_msgs::Path nextPath = this->getForwardPathFromPose(psTargetCurr, success);
+			if (!success){
 				break;
 			}
-			this->updatePathVis(forwardPath);
-
-			double pathLength = this->findPathLength(forwardPath);
-			if (pathLength <= 0.2){
+			this->updatePathVis(nextPath);
+			if (this->findPathLength(nextPath) <= 0.2){
 				break;
 			}
+			forwardPath = nextPath;
 		}
 		cout << "[AutoFlight]: Done." << endl;
 	}
@@ -321,10 +422,9 @@ namespace AutoFlight{
 			else{
 				this->rrtPathRegen(goalVec, forwardNBVPath);
 				this->pwlPlanner_->updatePath(forwardNBVPath);
-				cout << "[AutoFlight]: Press ENTER To avoid." << endl;
-				std::cin.clear();
-				fflush(stdin);
-				std::cin.get();
+				if (this->operatorConfirm_){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but avoidance step proceeds non-blocking.");
+				}
 				
 			}
 			cout << "[AutoFlight]: NBV forward for obstacle avoidance..." << endl; 
@@ -344,10 +444,9 @@ namespace AutoFlight{
 			this->updatePathVis(forwardNBVPath);
 
 			cout << "[AutoFlight]: NBV forward for obstacle avoidance..." << endl; 
-			cout << "[AutoFlight]: Press ENTER To avoid." << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but avoidance step proceeds non-blocking.");
+			}
 		}
 		this->updatePathVis(forwardNBVPath);
 
@@ -388,23 +487,32 @@ namespace AutoFlight{
 		// check surroundings and go back to center position
 		octomap::point3d pLeftOrigin = this->getPoint3dPos();
 		octomap::point3d leftDirection (0.0, 1.0, 0.0);
-		octomap::point3d leftEnd;
+		octomap::point3d leftEnd = pLeftOrigin;
 
 		bool leftFirstTime = true;
 		bool leftDone = this->map_->castRay(pLeftOrigin, leftDirection, leftEnd);
-		while (rclcpp::ok() and not leftDone){
+		int leftSearchSteps = 0;
+		const int maxSearchSteps = 30;
+		const int maxLeftChunkSteps = 5;
+		for (int chunk = 0; !leftDone && leftSearchSteps < maxSearchSteps && chunk < maxLeftChunkSteps; ++chunk){
+			++leftSearchSteps;
 
 			if (leftFirstTime){
 				this->moveToAngle(AutoFlight::quaternion_from_rpy(0, 0, PI_const/2));
 				leftFirstTime = false;
 			}
-			// find left most point to go which keeps safe distance
+			// bounded-step left search to reduce callback blocking
 			nav_msgs::Path leftCheckPath = this->checkSurroundingsLeft();
 
 			this->updatePathVis(leftCheckPath);
 
 			this->executeWaypointPathHeading(leftCheckPath, true);
 			leftDone = this->map_->castRay(pLeftOrigin, leftDirection, leftEnd);
+		}
+		if (!leftDone){
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Left-side check still searching (non-blocking single-step mode).");
+			leftEnd = this->getPoint3dPos();
+			leftEnd.y() += this->sideSafeDist_;
 		}
 		cout << "[AutoFlight]: Left is Okay!" << endl;
 		// back to origin angle
@@ -415,16 +523,19 @@ namespace AutoFlight{
 		cout << "[AutoFlight]: Check Right Side..." << endl;
 		octomap::point3d pRightOrigin = this->getPoint3dPos();
 		octomap::point3d rightDirection (0.0, -1.0, 0.0);
-		octomap::point3d rightEnd;
+		octomap::point3d rightEnd = pRightOrigin;
 
 		bool rightFirstTime = true;
 		bool rightDone = this->map_->castRay(pRightOrigin, rightDirection, rightEnd);
-		while (rclcpp::ok() and not rightDone){
+		int rightSearchSteps = 0;
+		const int maxRightChunkSteps = 5;
+		for (int chunk = 0; !rightDone && rightSearchSteps < maxSearchSteps && chunk < maxRightChunkSteps; ++chunk){
+			++rightSearchSteps;
 			if (rightFirstTime){
 				this->moveToAngle(AutoFlight::quaternion_from_rpy(0, 0, -PI_const/2));
 				rightFirstTime = false;
 			}
-			// find left most point to go which keeps safe distance
+			// bounded-step right search to reduce callback blocking
 			nav_msgs::Path rightCheckPath = this->checkSurroundingsRight();
 			this->pwlPlanner_->updatePath(rightCheckPath);
 
@@ -433,6 +544,11 @@ namespace AutoFlight{
 			this->executeWaypointPathHeading(rightCheckPath, true);
 
 			rightDone = this->map_->castRay(pRightOrigin, rightDirection, rightEnd);
+		}
+		if (!rightDone){
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Right-side check still searching (non-blocking single-step mode).");
+			rightEnd = this->getPoint3dPos();
+			rightEnd.y() -= this->sideSafeDist_;
 		}
 		cout << "[AutoFlight]: Right is Okay!" << endl;
 		cout << "[AutoFlight]: Left Target Limit: " << leftEnd.y() << " m, Right Target Limit: " << rightEnd.y() << " m." << endl;
@@ -453,10 +569,10 @@ namespace AutoFlight{
 		
 		this->updatePathVis(zigZagPath);
 
-		cout << "[AutoFlight]: Ready for Inpsection please check the zig-zag path. PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		cout << "[AutoFlight]: Ready for Inpsection, please check the zig-zag path. Continuing in non-blocking mode (CTRL+C to abort)." << endl;
+		if (this->operatorConfirm_){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but inspection execution proceeds non-blocking.");
+		}
 		cout << "[AutoFlight]: Start Inpection..." << endl;
 		this->executeWaypointPath(zigZagPath, true, false);
 		cout << "[AutoFlight]: Done." << endl;
@@ -473,10 +589,9 @@ namespace AutoFlight{
 			else{
 				this->rrtPathRegen(goalVec, backPath);
 				this->updatePathVis(backPath);
-				cout << "[AutoFlight]: Ready to return please check the back path. PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-				std::cin.clear();
-				fflush(stdin);
-				std::cin.get();
+				if (this->operatorConfirm_){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but return execution proceeds non-blocking.");
+				}
 			}
 			cout << "[AutoFlight]: Start Returning..." << endl;
 		}
@@ -489,10 +604,9 @@ namespace AutoFlight{
 
 			this->updatePathVis(backPath);
 
-			cout << "[AutoFlight]: Ready to return please check the back path. PRESS ENTER to continue or PRESS CTRL+C to land." << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but return execution proceeds non-blocking.");
+			}
 			cout << "[AutoFlight]: Start Returning..." << endl;;
 		}
 		this->updatePathVis(backPath);
@@ -504,7 +618,8 @@ namespace AutoFlight{
 		for (size_t i=0; i<backPath.poses.size(); ++i){
 			backPath.poses[i].pose.orientation = quatBack;
 		}
-		this->executeWaypointPath(backPath, true, false);
+		geometry_msgs::PoseStamped psTargetCurr;
+		this->executeWaypointPathToTime(backPath, 0.5, psTargetCurr, false);
 		bool succeed = (this->poseDistance(this->getCurrPose(), backPath.poses.back()) < 1.0);// use distance to check whether we have reached the goal
 
 		// bool succeed = this->executeWaypointPathHeading(backPath, false);	
@@ -583,7 +698,7 @@ namespace AutoFlight{
 		lineVec.push_back(p2);
 
 		visualization_msgs::Marker lineMarker;
-		lineMarker.header.frame_id = "map";
+		lineMarker.header.frame_id = this->mapFrameId_;
 		lineMarker.header.stamp = this->node_->now();
 		lineMarker.ns = "inspection_target";
 		lineMarker.id = id;
@@ -665,7 +780,7 @@ namespace AutoFlight{
 				lineVec.push_back(pNext.pose.position);
 
 				visualization_msgs::Marker lineMarker;
-				lineMarker.header.frame_id = "map";
+				lineMarker.header.frame_id = this->mapFrameId_;
 				lineMarker.header.stamp = this->node_->now();
 				lineMarker.ns = "avoidance_path";
 				lineMarker.id = id;
@@ -701,7 +816,7 @@ namespace AutoFlight{
 
 	void inspector::publishPathVis(){
 		this->inspectionPath_.header.stamp = this->node_->now();
-		this->inspectionPath_.header.frame_id = "map";
+		this->inspectionPath_.header.frame_id = this->mapFrameId_;
 		this->pathPub_->publish(this->inspectionPath_);
 	}
 
@@ -716,10 +831,22 @@ namespace AutoFlight{
 		// cast a ray along the x direction and check collision
 		float res = this->mapRes_;
 		octomap::point3d pForward = p;
-		while (rclcpp::ok() and not this->checkCollision(pForward)){
+		bool foundCollision = false;
+		const int maxRaySteps = std::max(1, static_cast<int>(std::ceil((this->frontSafeDist_ + 20.0) / std::max<double>(res, 1e-3))));
+		for (int step = 0; step < maxRaySteps; ++step){
+			if (this->checkCollision(pForward)){
+				foundCollision = true;
+				break;
+			}
 			pForward.x() += res;
-			// cout << res << endl;
-			// cout << pForward << endl;
+		}
+		if (!foundCollision){
+			success = false;
+			geometry_msgs::PoseStamped ps;
+			ps.header.frame_id = this->mapFrameId_;
+			ps.header.stamp = this->node_->now();
+			ps.pose = this->odom_.pose.pose;
+			return ps;
 		}
 		octomap::point3d pGoal = pForward;
 		pGoal.x() -= res;
@@ -738,7 +865,7 @@ namespace AutoFlight{
 		}
 
 		geometry_msgs::PoseStamped ps;
-		ps.header.frame_id = "map";
+		ps.header.frame_id = this->mapFrameId_;
 		ps.header.stamp = this->node_->now();
 		ps.pose.position.x = pGoal.x();
 		ps.pose.position.y = pGoal.y();
@@ -754,10 +881,22 @@ namespace AutoFlight{
 		// cast a ray along the x direction and check collision
 		float res = this->mapRes_;
 		octomap::point3d pForward = p;
-		while (rclcpp::ok() and not this->checkCollision(pForward)){
+		bool foundCollision = false;
+		const int maxRaySteps = std::max(1, static_cast<int>(std::ceil((this->frontSafeDist_ + 20.0) / std::max<double>(res, 1e-3))));
+		for (int step = 0; step < maxRaySteps; ++step){
+			if (this->checkCollision(pForward)){
+				foundCollision = true;
+				break;
+			}
 			pForward.x() += res;
-			// cout << res << endl;
-			// cout << pForward << endl;
+		}
+		if (!foundCollision){
+			success = false;
+			geometry_msgs::PoseStamped ps;
+			ps.header.frame_id = this->mapFrameId_;
+			ps.header.stamp = this->node_->now();
+			ps.pose = psTarget.pose;
+			return ps;
 		}
 		octomap::point3d pGoal = pForward;
 		pGoal.x() -= res;
@@ -776,7 +915,7 @@ namespace AutoFlight{
 		}
 
 		geometry_msgs::PoseStamped ps;
-		ps.header.frame_id = "map";
+		ps.header.frame_id = this->mapFrameId_;
 		ps.header.stamp = this->node_->now();
 		ps.pose.position.x = pGoal.x();
 		ps.pose.position.y = pGoal.y();
@@ -794,7 +933,7 @@ namespace AutoFlight{
 		forwardPathVec.push_back(startPs);
 		forwardPathVec.push_back(goalPs);
 		nav_msgs::Path forwardPath;
-		forwardPath.header.frame_id = "map";
+		forwardPath.header.frame_id = this->mapFrameId_;
 		forwardPath.header.stamp = this->node_->now();
 		forwardPath.poses = forwardPathVec;
 		return forwardPath;
@@ -809,7 +948,7 @@ namespace AutoFlight{
 		forwardPathVec.push_back(startPs);
 		forwardPathVec.push_back(goalPs);
 		nav_msgs::Path forwardPath;
-		forwardPath.header.frame_id = "map";
+		forwardPath.header.frame_id = this->mapFrameId_;
 		forwardPath.header.stamp = this->node_->now();
 		forwardPath.poses = forwardPathVec;
 		return forwardPath;
@@ -933,7 +1072,7 @@ namespace AutoFlight{
 		double xPlusRes = this->mapRes_;
 		double xPlusForward = 0.0;
 		octomap::point3d pXPlusCheck = p;
-		while (rclcpp::ok() and xPlusForward <= this->frontSafeDist_ + xPlusRes){
+		while (xPlusForward <= this->frontSafeDist_ + xPlusRes){
 			xPlusForward += xPlusRes;
 			pXPlusCheck.x() = p.x() + xPlusForward;
 			bool hasCollisionXPlus = this->checkCollision(pXPlusCheck);
@@ -948,7 +1087,7 @@ namespace AutoFlight{
 		double yPlusForward = 0.0;
 		octomap::point3d pYPlusCheck = p;
 		// ros::Time yPlusStart = ros::Time::now();
-		while (rclcpp::ok() and yPlusForward <= this->sideSafeDist_ * sideSafeReduceFactor + yPlusRes){
+		while (yPlusForward <= this->sideSafeDist_ * sideSafeReduceFactor + yPlusRes){
 			yPlusForward += yPlusRes;
 			pYPlusCheck.y() = p.y() + yPlusForward;
 			bool hasCollisionYPlus = this->checkCollision(pYPlusCheck);
@@ -963,7 +1102,7 @@ namespace AutoFlight{
 		double yMinusForward = 0.0;
 		octomap::point3d pYMinusCheck = p;
 		// ros::Time yMinusStart = ros::Time::now();
-		while (rclcpp::ok() and yMinusForward <= this->sideSafeDist_ * sideSafeReduceFactor + yMinusRes){
+		while (yMinusForward <= this->sideSafeDist_ * sideSafeReduceFactor + yMinusRes){
 			yMinusForward += yMinusRes;
 			pYMinusCheck.y() = p.y() - yMinusForward;
 			bool hasCollisionYMinus = this->checkCollision(pYMinusCheck);
@@ -987,7 +1126,10 @@ namespace AutoFlight{
 		bool hasSafePoint = false;
 		rclcpp::Time sampleStart = this->node_->now();
 		int count = 0;
-		while (rclcpp::ok() and not hasSafePoint){
+		int sampleAttempt = 0;
+		const int maxSampleAttempts = 5000;
+		while (not hasSafePoint and sampleAttempt < maxSampleAttempts){
+			++sampleAttempt;
 			rclcpp::Time sampleCurr = this->node_->now();
 			double t = (sampleCurr - sampleStart).seconds();
 			if (t >= this->sampleTimeout_){
@@ -1005,6 +1147,10 @@ namespace AutoFlight{
 
 			// check safety of current point
 			hasSafePoint = this->checkPointSafe(safePoint, totalReduceFactor);
+		}
+		if (!hasSafePoint){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: randomSample fallback after %d attempts.", maxSampleAttempts);
+			safePoint = this->getPoint3dPos();
 		}
 		return safePoint;
 	}
@@ -1105,7 +1251,8 @@ namespace AutoFlight{
 		resultVec.clear();
 		bool stopCriteria = false;
 		int count = 0;
-		while (rclcpp::ok() and not stopCriteria){
+		const int maxSteps = std::max(1, static_cast<int>(std::ceil(40.0 / std::max<double>(this->mapRes_, 1e-3))));
+		while (not stopCriteria and count < maxSteps){
 			float coeff = count * this->mapRes_;
 			octomap::point3d delta = direction * coeff;
 			octomap::point3d pCheck = pStart + delta;
@@ -1117,6 +1264,9 @@ namespace AutoFlight{
 				stopCriteria = true;
 			}
 			++count;
+		}
+		if (resultVec.empty()){
+			return 0.0;
 		}
 		octomap::point3d pLast = resultVec[resultVec.size()-1];
 		double dist = 0.0;
@@ -1218,9 +1368,15 @@ namespace AutoFlight{
 		octomap::point3d pCheck = pCurr;
 		// double res = this->mapRes_;
 		double res = 0.1;
-		while (rclcpp::ok() and not hasCollision){
+		const int maxSteps = 300;
+		int step = 0;
+		while (not hasCollision and step < maxSteps){
+			++step;
 			pCheck.y() += res;
 			hasCollision = this->checkCollision(pCheck);
+		}
+		if (!hasCollision){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: findInspectionStartPoint reached max steps without collision.");
 		}
 		octomap::point3d pChecklimit = pCheck;
 		pChecklimit.y() -= this->mapRes_;
@@ -1237,9 +1393,15 @@ namespace AutoFlight{
 		bool hasCollisionPlus = false;
 		// double res = this->mapRes_;
 		double res = 0.1; // use finer resolution
-		while (rclcpp::ok() and not hasCollisionPlus){
+		const int maxSteps = 300;
+		int plusStep = 0;
+		while (not hasCollisionPlus and plusStep < maxSteps){
+			++plusStep;
 			pCheckPlus.y() += res;
 			hasCollisionPlus = this->checkCollision(pCheckPlus, true);
+		}
+		if (!hasCollisionPlus){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: getInspectionLimit (+Y) reached max steps.");
 		}
 		octomap::point3d pLimitPlus = pCheckPlus;
 		pLimitPlus.y() -= this->mapRes_;
@@ -1248,9 +1410,14 @@ namespace AutoFlight{
 		// Minus Y direction
 		octomap::point3d pCheckMinus = p;
 		bool hasCollisionMinus = false;
-		while (rclcpp::ok() and not hasCollisionMinus){
+		int minusStep = 0;
+		while (not hasCollisionMinus and minusStep < maxSteps){
+			++minusStep;
 			pCheckMinus.y() -=  res;
 			hasCollisionMinus = this->checkCollision(pCheckMinus, true);
+		}
+		if (!hasCollisionMinus){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: getInspectionLimit (-Y) reached max steps.");
 		}
 		octomap::point3d pLimitMinus = pCheckMinus;
 		pLimitMinus.y() += this->mapRes_;
@@ -1296,7 +1463,10 @@ namespace AutoFlight{
 
 		octomap::point3d pInspectionHgt = pInspection;
 		double height = pInspectionHgt.z();
-		while (rclcpp::ok() and not (height <= this->takeoffHgt_)){
+		int levelCount = 0;
+		const int maxLevels = 200;
+		while (not (height <= this->takeoffHgt_) and levelCount < maxLevels){
+			++levelCount;
 			std::vector<octomap::point3d> pLimitCheck = this->getInspectionLimit(pInspectionHgt);
 			geometry_msgs::PoseStamped psLimit1 = this->pointToPose(pLimitCheck[0]);
 			geometry_msgs::PoseStamped psLimit2 = this->pointToPose(pLimitCheck[1]);
@@ -1310,6 +1480,9 @@ namespace AutoFlight{
 			if (not (height <= this->takeoffHgt_)){
 				zzPathVec.push_back(psLimit2Lower); 
 			}
+		}
+		if (levelCount >= maxLevels){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: generateZigZagPath reached max levels (%d).", maxLevels);
 		}
 		
 		// return to the center of zig zig at takeoff height
@@ -1377,8 +1550,14 @@ namespace AutoFlight{
 		double t = 0.0;
 		double startTime = 0.0; double endTime = yawDiffAbs/this->desiredAngularVel_;
 		rclcpp::Time tStart = this->node_->now();
+		const double maxWaitSec = std::max(endTime + 2.0, 2.0);
 		rclcpp::Rate r(1.0/this->sampleTime_);
-		while (rclcpp::ok() and not this->isReach(ps)){
+		while (not this->isReach(ps)){
+			if (t > maxWaitSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: moveToAngle timeout after %.2fs.", t);
+				this->updateTarget(ps);
+				return;
+			}
 			if (t >= endTime){
 				this->updateTarget(ps);
 				r.sleep();
@@ -1401,9 +1580,17 @@ namespace AutoFlight{
 		bool hasCollision = false;
 		double res = this->mapRes_;
 		octomap::point3d pCheck = pLeftOrigin;
-		while (rclcpp::ok() and not hasCollision){ 
+		const double lateralScanLimit = std::max(10.0, this->maxTargetWidth_ + this->sideSafeDist_);
+		const int maxScanSteps = std::max(1, static_cast<int>(std::ceil(lateralScanLimit / std::max(res, 1e-3))));
+		int scanSteps = 0;
+		while (not hasCollision and scanSteps < maxScanSteps){ 
 			pCheck.y() += res;
 			hasCollision = this->checkCollision(pCheck); 
+			++scanSteps;
+		}
+		if (!hasCollision){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: checkSurroundingsLeft reached scan limit without collision; using current pose side bound.");
+			pCheck = pLeftOrigin;
 		}
 		octomap::point3d pLeftGoal = pCheck;
 		pLeftGoal.y() -= res;
@@ -1432,9 +1619,17 @@ namespace AutoFlight{
 		bool hasCollision = false;
 		double res = this->mapRes_;
 		octomap::point3d pCheck = pRightOrigin;
-		while (rclcpp::ok() and not hasCollision){ 
+		const double lateralScanLimit = std::max(10.0, this->maxTargetWidth_ + this->sideSafeDist_);
+		const int maxScanSteps = std::max(1, static_cast<int>(std::ceil(lateralScanLimit / std::max(res, 1e-3))));
+		int scanSteps = 0;
+		while (not hasCollision and scanSteps < maxScanSteps){ 
 			pCheck.y() -= res;
 			hasCollision = this->checkCollision(pCheck); 
+			++scanSteps;
+		}
+		if (!hasCollision){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: checkSurroundingsRight reached scan limit without collision; using current pose side bound.");
+			pCheck = pRightOrigin;
 		}
 		octomap::point3d pRightGoal = pCheck;
 		pRightGoal.y() += res;
@@ -1463,11 +1658,16 @@ namespace AutoFlight{
 
 		double t = 0.0;
 		rclcpp::Time tStart = this->node_->now();
+		const double maxWaitSec = std::max(this->pwlPlanner_->getDuration() + 2.0, 2.0);
 		rclcpp::Rate r(1.0/this->sampleTime_);
 		geometry_msgs::PoseStamped psGoal = path.poses.back();
-		while (rclcpp::ok() and (not this->isReach(psGoal) or t <= this->pwlPlanner_->getDuration())){
+		while ((not this->isReach(psGoal) || t <= this->pwlPlanner_->getDuration())){
 			rclcpp::Time tCurr = this->node_->now();
 			t = (tCurr - tStart).seconds();
+			if (t > maxWaitSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: executeWaypointPath timeout after %.2fs.", t);
+				return false;
+			}
 			geometry_msgs::PoseStamped psT = this->pwlPlanner_->getPose(t);
 			this->updateTarget(psT);
 			// ros::Time tCollision = ros::Time::now();
@@ -1476,7 +1676,6 @@ namespace AutoFlight{
 					cout << "[AutoFlight]: Online future collision detected! Stop motion and continue with next action..." << endl;
 					r.sleep();
 					return false;
-					break;
 				}
 			}
 			// ros::Time tCollisionAfter = ros::Time::now();
@@ -1494,18 +1693,22 @@ namespace AutoFlight{
 
 		double t = 0.0;
 		rclcpp::Time tStart = this->node_->now();
+		const double maxWaitSec = std::max(this->pwlPlanner_->getDuration() + 2.0, 2.0);
 		rclcpp::Rate r(1.0/this->sampleTime_);
 		geometry_msgs::PoseStamped psGoal = path.poses.back();
-		while (rclcpp::ok() and not this->isReach(psGoal, false)){
+		while (not this->isReach(psGoal, false)){
 			rclcpp::Time tCurr = this->node_->now();
 			t = (tCurr - tStart).seconds();
+			if (t > maxWaitSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: executeWaypointPathHeading timeout after %.2fs.", t);
+				return false;
+			}
 			geometry_msgs::PoseStamped psT = this->pwlPlanner_->getPose(t);
 			this->updateTarget(psT);
 			if (onlineCollisionCheck){
 				if (this->onlineHeadingCollisionCheck()){
 					cout << "[AutoFlight]: Online future collision detected! Stop motion and continue with next action..." << endl;
 					return false;
-					break;
 				}
 			}
 			r.sleep();
@@ -1518,11 +1721,16 @@ namespace AutoFlight{
 
 		double t = 0.0;
 		rclcpp::Time tStart = this->node_->now();
+		const double maxWaitSec = std::max(time + 2.0, 2.0);
 		rclcpp::Rate r(1.0/this->sampleTime_);
 		geometry_msgs::PoseStamped psGoal = path.poses.back();
-		while (rclcpp::ok() and not this->isReach(psGoal) and t <= time){
+		while (not this->isReach(psGoal) and t <= time){
 			rclcpp::Time tCurr = this->node_->now();
 			t = (tCurr - tStart).seconds();
+			if (t > maxWaitSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: executeWaypointPathToTime timeout after %.2fs.", t);
+				return false;
+			}
 			geometry_msgs::PoseStamped psT = this->pwlPlanner_->getPose(t);
 			this->updateTarget(psT);
 			// ros::Time tCollision = ros::Time::now();
@@ -1530,7 +1738,6 @@ namespace AutoFlight{
 				if (this->onlineFrontCollisionCheck()){
 					cout << "[AutoFlight]: Online future collision detected! Stop motion and continue with next action..." << endl;
 					return false;
-					break;
 				}
 			}	
 			psTargetCurr = psT;
@@ -1544,11 +1751,16 @@ namespace AutoFlight{
 
 		double t = 0.0;
 		rclcpp::Time tStart = this->node_->now();
+		const double maxWaitSec = std::max(this->pwlPlanner_->getDuration() + 2.0, 2.0);
 		rclcpp::Rate r(1.0/this->sampleTime_);
 		geometry_msgs::PoseStamped psGoal = path.poses.back();
-		while (rclcpp::ok() and not this->isReach(psGoal)){
+		while (not this->isReach(psGoal)){
 			rclcpp::Time tCurr = this->node_->now();
 			t = (tCurr - tStart).seconds();
+			if (t > maxWaitSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: executeAvoidancePath timeout after %.2fs.", t);
+				return false;
+			}
 			geometry_msgs::PoseStamped psT = this->pwlPlanner_->getPose(t);
 			this->updateTarget(psT);
 			// ros::Time tCollision = ros::Time::now();
@@ -1556,7 +1768,6 @@ namespace AutoFlight{
 				if (this->onlineFrontCollisionCheck(this->avoidSafeDist_)){
 					cout << "[AutoFlight]: Online future collision detected! Stop motion and continue with next action..." << endl;
 					return false;
-					break;
 				}
 			}
 			
@@ -1595,7 +1806,7 @@ namespace AutoFlight{
 		octomap::point3d pCheck = pCurr;
 		double frontIncrement = 0.0;
 		double res = this->mapRes_;
-		while (rclcpp::ok() and frontIncrement <= safeDist + res){
+		while (frontIncrement <= safeDist + res){
 			frontIncrement += res;
 			pCheck.x() = pCurr.x() + frontIncrement;
 			bool hasCollision = this->checkCollision(pCheck);
@@ -1612,7 +1823,7 @@ namespace AutoFlight{
 		octomap::point3d pCheck = pCurr;
 		double frontIncrement = 0.0;
 		double res = this->mapRes_;
-		while (rclcpp::ok() and frontIncrement <= this->frontSafeDist_ + res){
+		while (frontIncrement <= this->frontSafeDist_ + res){
 			frontIncrement += res;
 			pCheck.x() = pCurr.x() + frontIncrement;
 			bool hasCollision = this->checkCollision(pCheck);
@@ -1632,7 +1843,7 @@ namespace AutoFlight{
 		double headingIncrement = 0.0;
 		double res = this->mapRes_;
 		int count = 0;
-		while (rclcpp::ok() and headingIncrement <= this->frontSafeDist_ + res){
+		while (headingIncrement <= this->frontSafeDist_ + res){
 			headingIncrement += res;
 			pCheck.x() = pCurr.x() + count * res * direction.x();
 			pCheck.y() = pCurr.y() + count * res * direction.y();
@@ -1648,49 +1859,8 @@ namespace AutoFlight{
 	}
 
 	void inspector::rrtPathRegenInteractive(const std::vector<double>& goalVec, nav_msgs::Path& path){
-		std::vector<double> range = this->rrtPlanner_->getEnvBox();
-		std::vector<double> startVec = this->getVecPos();	
-
-		range[0] = startVec[0]; // xmin
-		range[1] = goalVec[0]; // xmax
-		this->rrtPlanner_->updateEnvBox(range);
-		this->rrtPlanner_->updateGoal(goalVec);
-
-
-		bool pathAdmitted = false;
-		char type;
-		while (rclcpp::ok() and not pathAdmitted){
-			startVec = this->getVecPos();	
-			this->rrtPlanner_->updateStart(startVec);
-			this->rrtPlanner_->makePlan(path);
-			this->updatePathVis(path);
-			do
-			{
-			    cout << "[AutoFlight]: Do you accept current path? [y/n]" << endl;
-
-			    std::cin.clear();
-				fflush(stdin);
-				// type = std::cin.get();
-			    std::cin >> type;
-			    std::cin.clear();
-				fflush(stdin);
-			    if (type!='y' && type!='n'){
-					cout << "[AutoFlight]: Please ENTER y or n!!!" << endl;
-				}
-			}
-			while( !std::cin.fail() && type!='y' && type!='n' );
-
-			if (type=='y'){
-				cout << "[AutoFlight]: Current path admitted." << endl;
-				pathAdmitted = true;
-			}
-			if (type=='n'){
-				cout << "[AutoFlight]: Not admitted. Start path regeneration..." << endl; 
-			}
-		}
-
-		this->rrtPlanner_->clearEnvBox();
-		std::cin.get();
+		RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: interactive_regeneration requested, but interactive input is disabled in non-blocking migration mode. Using automatic regeneration.");
+		this->rrtPathRegen(goalVec, path);
 	}
 
 	void inspector::rrtPathRegen(const std::vector<double>& goalVec, nav_msgs::Path& path){
@@ -1738,7 +1908,7 @@ namespace AutoFlight{
 			octomap::point3d pDirection (cos(direction), sin(direction), 0);
 			double forwardDist = 0.0;
 			int count = 0; 
-			while (rclcpp::ok() and forwardDist < maxDist){
+			while (forwardDist < maxDist){
 				octomap::point3d pCheck;
 				pCheck.x() = p.x() + count * checkRes * pDirection.x();
 				pCheck.y() = p.y() + count * checkRes * pDirection.y();

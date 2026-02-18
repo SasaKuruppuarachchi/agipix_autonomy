@@ -115,7 +115,7 @@ private:
 
 					initStart_ = true;
 					initGoal_ = false;
-					startMarker_.header.frame_id = "map";
+					startMarker_.header.frame_id = "drone0/map";
 					startMarker_.header.stamp = this->now();
 					startMarker_.ns = "start_vis";
 					startMarker_.id = 0;
@@ -143,7 +143,7 @@ private:
 					cout << "[Planner Node]: goal point OK. (" << goal_[0] << " " << goal_[1] << " " << goal_[2] << ")" << endl;
 
 					initGoal_ = true;
-					goalMarker_.header.frame_id = "map";
+					goalMarker_.header.frame_id = "drone0/map";
 					goalMarker_.header.stamp = this->now();
 					goalMarker_.ns = "goal_vis";
 					goalMarker_.id = 0;

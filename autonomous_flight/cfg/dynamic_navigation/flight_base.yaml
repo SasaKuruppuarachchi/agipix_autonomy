@@ -1,7 +1,11 @@
 dynamic_navigation_node:
   ros__parameters:
     takeoff_height: 1.0 # m
+    frame_id: drone0/map
+    odom_topic: /drone0/sensor_measurements/odom
     wait_for_topics_ready: false
+    takeoff_wait_timeout_sec: 8.0
+    require_takeoff_feedback: false
     use_global_planner: false
     no_yaw_turning: false
     use_yaw_control: false

@@ -95,23 +95,34 @@ namespace AutoFlight{
 		this->trajExeCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->visCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Callback groups created. creating timers");
+
 		this->plannerTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(20), std::bind(&dynamicNavigation::plannerCB, this), this->plannerCbGroup_);
+
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Planner timer created.");
 
 		// collision check callback
 		this->replanCheckTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(10), std::bind(&dynamicNavigation::replanCheckCB, this), this->replanCbGroup_);
 
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Replan check timer created.");
+
 		// trajectory execution callback
 		this->trajExeTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(10), std::bind(&dynamicNavigation::trajExeCB, this), this->trajExeCbGroup_);
 
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Trajectory execution timer created.");
+
 		// visualization callback
 		this->visTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(33), std::bind(&dynamicNavigation::visCB, this), this->visCbGroup_);
+		
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Visualization timer created.");
 	}
 
 	void dynamicNavigation::plannerCB(){
+		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: plannerCB is running.");
 		if (not this->firstGoal_) return;
 
 		if (this->replan_){
@@ -124,6 +135,7 @@ namespace AutoFlight{
 			// bspline trajectory generation
 			double finalTime; // final time for bspline trajectory
 			double initTs = this->bsplineTraj_->getInitTs();
+			const int maxInputCheckIters = 12;
 			if (this->useGlobalPlanner_){
 				if (this->needGlobalPlan_){
 					this->rrtPlanner_->updateStart(this->odom_.pose.pose);
@@ -149,7 +161,7 @@ namespace AutoFlight{
 						double finalTimeTemp;
 						rclcpp::Time startTime = this->node_->now();
 						rclcpp::Time currTime;
-						while (rclcpp::ok()){
+						for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 							currTime = this->node_->now();
 							if ((currTime - startTime).seconds() >= 0.05){
 								cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -189,7 +201,7 @@ namespace AutoFlight{
 						double finalTimeTemp;
 						rclcpp::Time startTime = this->node_->now();
 						rclcpp::Time currTime;
-						while (rclcpp::ok()){
+						for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 							currTime = this->node_->now();
 							if ((currTime - startTime).seconds() >= 0.05){
 								cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -233,7 +245,7 @@ namespace AutoFlight{
 							double finalTimeTemp;
 							rclcpp::Time startTime = this->node_->now();
 							rclcpp::Time currTime;
-							while (rclcpp::ok()){
+							for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 								currTime = this->node_->now();
 								if ((currTime - startTime).seconds() >= 0.05){
 									cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -264,7 +276,7 @@ namespace AutoFlight{
 							double finalTimeTemp;
 							rclcpp::Time startTime = this->node_->now();
 							rclcpp::Time currTime;
-							while (rclcpp::ok()){
+							for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 								currTime = this->node_->now();
 								if ((currTime - startTime).seconds() >= 0.05){
 									cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -354,6 +366,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::replanCheckCB(){
+		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: replanCheckCB is running.");
 		/*
 			Replan if
 			1. collision detected
@@ -366,7 +379,8 @@ namespace AutoFlight{
 			if (not this->noYawTurning_ and not this->useYawControl_){
 				double yaw = atan2(this->goal_.pose.position.y - this->odom_.pose.pose.position.y, this->goal_.pose.position.x - this->odom_.pose.pose.position.x);
 				this->facingYaw_ = yaw;
-				this->moveToOrientation(yaw, this->desiredAngularVel_);
+				// Avoid blocking inside timer callback. Yaw is tracked during trajectory execution.
+				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Skip blocking pre-rotation in replan callback (non-blocking mode).");
 			}
 			this->firstTimeSave_ = true;
 			this->replan_ = true;
@@ -411,6 +425,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::trajExeCB(){
+		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: trajExeCB is running.");
 		if (this->trajectoryReady_){
 			rclcpp::Time currTime = this->node_->now();
 			double realTime = (currTime - this->trajStartTime_).seconds();
@@ -461,6 +476,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::visCB(){
+		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: visCB is running.");
 		if (this->rrtPathMsg_.poses.size() != 0){
 			this->rrtPathPub_->publish(this->rrtPathMsg_);
 		}
@@ -592,7 +608,7 @@ namespace AutoFlight{
 
 	nav_msgs::msg::Path dynamicNavigation::getCurrentTraj(double dt){
 		nav_msgs::msg::Path currentTraj;
-		currentTraj.header.frame_id = "map";
+		currentTraj.header.frame_id = this->mapFrameId_;
 		currentTraj.header.stamp = this->node_->now();
 	
 		if (this->trajectoryReady_){

@@ -20,6 +20,8 @@ Mission-level autonomy package for AgiAUTO.
 
 ## ROS 2 usage
 
+By default, launch files use DDS controller backend (`controller_backend:=dds`).
+
 ```bash
 # takeoff and hover
 ros2 launch autonomous_flight takeoff_and_hover.launch.py
@@ -43,6 +45,14 @@ ros2 launch autonomous_flight dynamic_exploration.launch.py
 ros2 launch autonomous_flight inspection.launch.py
 ```
 
+## Build
+
+- DDS build:
+
+```bash
+colcon build --packages-select autonomous_flight
+```
+
 ## Parameters
 
 Configuration files are under `cfg/` by mode, for example:
@@ -62,6 +72,10 @@ This package depends on:
 - `global_planner`
 - `trajectory_planner`
 - `time_optimizer`
+
+Runtime notes:
+
+- DDS-first mission ownership is handled via `px4_control_interface` + `tracking_controller` DDS backend.
 
 ## Credits
 

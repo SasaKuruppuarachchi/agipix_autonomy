@@ -2,17 +2,23 @@
 
 #include <Eigen/Core>
 
+#include <array>
 #include <cmath>
+#include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include <rclcpp/rclcpp.hpp>
 
 #include <px4_ros2/components/mode.hpp>
+#include <px4_ros2/components/mode_executor.hpp>
 #include <px4_ros2/control/setpoint_types/experimental/trajectory.hpp>
 #include <px4_ros2/odometry/local_position.hpp>
 
 #include <tracking_controller/msg/target.hpp>
+
+#include <px4_control_interface/agi_controller.hpp>
 
 namespace px4_control_interface
 {
@@ -30,6 +36,31 @@ public:
     _target_timeout_s = node.declare_parameter<double>("target_timeout_s", 0.2);
     _use_input_yaw = node.declare_parameter<bool>("use_input_yaw", true);
 
+    const std::string controller_type =
+      node.declare_parameter<std::string>("middle_level_controller", "cascaded_pid");
+    const Eigen::Vector3f kp_pos = vectorParamToEigen(
+      node.declare_parameter<std::vector<double>>("controller.kp_pos", {2.0, 2.0, 2.5}),
+      {2.f, 2.f, 2.5f});
+    const Eigen::Vector3f kd_vel = vectorParamToEigen(
+      node.declare_parameter<std::vector<double>>("controller.kd_vel", {1.2, 1.2, 1.6}),
+      {1.2f, 1.2f, 1.6f});
+    const Eigen::Vector3f ki_pos = vectorParamToEigen(
+      node.declare_parameter<std::vector<double>>("controller.ki_pos", {0.0, 0.0, 0.0}),
+      {0.f, 0.f, 0.f});
+    const float integral_limit = static_cast<float>(
+      node.declare_parameter<double>("controller.integral_limit", 0.5));
+
+    if (controller_type == "cascaded_pid") {
+      _controller = std::make_unique<CascadedPidAgiController>(kp_pos, kd_vel, ki_pos, integral_limit);
+    } else {
+      _controller = std::make_unique<PassThroughAgiController>();
+    }
+
+    RCLCPP_INFO(
+      node.get_logger(),
+      "[px4_control_interface]: middle_level_controller=%s",
+      _controller->name().c_str());
+
     _target_sub = node.create_subscription<tracking_controller::msg::Target>(
       _target_topic,
       rclcpp::QoS(10),
@@ -44,11 +75,17 @@ public:
   void onActivate() override
   {
     _hold_position_ned = _local_position->positionNed();
+    AgiControllerState state;
+    state.position_ned = _local_position->positionNed();
+    state.velocity_ned = _local_position->velocityNed();
+    state.acceleration_ned = _local_position->accelerationNed();
+    state.yaw_ned = _local_position->heading();
+    _controller->reset(state);
   }
 
   void onDeactivate() override {}
 
-  void updateSetpoint(float /*dt_s*/) override
+  void updateSetpoint(float dt_s) override
   {
     tracking_controller::msg::Target target;
     bool has_fresh_target = false;
@@ -62,21 +99,53 @@ public:
       }
     }
 
-    px4_ros2::TrajectorySetpoint sp;
+    AgiControllerState state;
+    state.position_ned = _local_position->positionNed();
+    state.velocity_ned = _local_position->velocityNed();
+    state.acceleration_ned = _local_position->accelerationNed();
+    state.yaw_ned = _local_position->heading();
 
+    AgiControllerReference reference;
     if (has_fresh_target) {
-      const Eigen::Vector3f pos_ned = enuToNed(target.position.x, target.position.y, target.position.z);
-      const Eigen::Vector3f vel_ned = enuToNed(target.velocity.x, target.velocity.y, target.velocity.z);
-      const Eigen::Vector3f acc_ned = enuToNed(target.acceleration.x, target.acceleration.y, target.acceleration.z);
-
-      sp.withPosition(pos_ned).withVelocity(vel_ned).withAcceleration(acc_ned);
-      if (_use_input_yaw) {
-        sp.withYaw(enuYawToNed(target.yaw));
-      }
-
-      _hold_position_ned = pos_ned;
+      reference.position_ned = enuToNed(target.position.x, target.position.y, target.position.z);
+      reference.velocity_ned = enuToNed(target.velocity.x, target.velocity.y, target.velocity.z);
+      reference.acceleration_ned = enuToNed(target.acceleration.x, target.acceleration.y, target.acceleration.z);
+      reference.yaw_ned = _use_input_yaw ? enuYawToNed(target.yaw) : state.yaw_ned;
+      reference.type_mask = target.type_mask;
+      _hold_position_ned = reference.position_ned;
     } else {
-      sp.withPosition(_hold_position_ned);
+      reference.position_ned = _hold_position_ned;
+      reference.velocity_ned = Eigen::Vector3f::Zero();
+      reference.acceleration_ned = Eigen::Vector3f::Zero();
+      reference.yaw_ned = state.yaw_ned;
+      reference.type_mask = tracking_controller::msg::Target::IGNORE_ACC_VEL;
+    }
+
+    _controller->setReference(reference);
+    const tracking_controller::msg::Target controlled_target = _controller->update(state, dt_s);
+
+    const bool ignore_acc_vel = controlled_target.type_mask == tracking_controller::msg::Target::IGNORE_ACC_VEL;
+    const bool ignore_acc = controlled_target.type_mask == tracking_controller::msg::Target::IGNORE_ACC;
+
+    px4_ros2::TrajectorySetpoint sp;
+    sp.withPosition(Eigen::Vector3f{
+      controlled_target.position.x,
+      controlled_target.position.y,
+      controlled_target.position.z});
+    if (!ignore_acc_vel) {
+      sp.withVelocity(Eigen::Vector3f{
+        controlled_target.velocity.x,
+        controlled_target.velocity.y,
+        controlled_target.velocity.z});
+    }
+    if (!ignore_acc_vel && !ignore_acc) {
+      sp.withAcceleration(Eigen::Vector3f{
+        controlled_target.acceleration.x,
+        controlled_target.acceleration.y,
+        controlled_target.acceleration.z});
+    }
+    if (_use_input_yaw) {
+      sp.withYaw(controlled_target.yaw);
     }
 
     _trajectory_sp->update(sp);
@@ -97,6 +166,19 @@ private:
     return std::atan2(std::sin(raw), std::cos(raw));
   }
 
+  static Eigen::Vector3f vectorParamToEigen(
+    const std::vector<double> & values,
+    const std::array<float, 3> & fallback)
+  {
+    if (values.size() < 3) {
+      return {fallback[0], fallback[1], fallback[2]};
+    }
+    return {
+      static_cast<float>(values[0]),
+      static_cast<float>(values[1]),
+      static_cast<float>(values[2])};
+  }
+
   std::shared_ptr<px4_ros2::TrajectorySetpointType> _trajectory_sp;
   std::shared_ptr<px4_ros2::OdometryLocalPosition> _local_position;
 
@@ -104,6 +186,7 @@ private:
   std::string _target_topic;
   double _target_timeout_s{0.2};
   bool _use_input_yaw{true};
+  std::unique_ptr<AgiController> _controller;
 
   std::mutex _target_mutex;
   tracking_controller::msg::Target _last_target{};
@@ -111,6 +194,83 @@ private:
   bool _target_received{false};
 
   Eigen::Vector3f _hold_position_ned{0.f, 0.f, 0.f};
+};
+
+class AgipixTrackingExecutor : public px4_ros2::ModeExecutorBase
+{
+public:
+  AgipixTrackingExecutor(rclcpp::Node & node, px4_ros2::ModeBase & owned_mode)
+  : ModeExecutorBase(node, px4_ros2::ModeExecutorBase::Settings{}, owned_mode), _node(node)
+  {}
+
+  void onActivate() override
+  {
+    RCLCPP_INFO(
+      _node.get_logger(),
+      "[px4_control_interface]: Executor activated, starting sequence");
+
+    runState(State::TakingOff, px4_ros2::Result::Success);
+  }
+
+  void onDeactivate(DeactivateReason reason) override
+  {
+    RCLCPP_INFO(
+      _node.get_logger(),
+      "[px4_control_interface]: Executor deactivated (reason=%d)",
+      static_cast<int>(reason));
+  }
+
+private:
+
+  enum class State
+  {
+    Reset,
+    TakingOff,
+    TrackingMode,
+    RTL,
+    WaitUntilDisarmed,
+  };
+
+  void runState(State state, px4_ros2::Result previous_result)
+  {
+    if (previous_result != px4_ros2::Result::Success) {
+      RCLCPP_ERROR(
+        _node.get_logger(),
+        "[px4_control_interface]: Previous state failed: %s",
+        px4_ros2::resultToString(previous_result));
+      return;
+    }
+
+    switch (state) {
+      case State::Reset:
+        break;
+
+      case State::TakingOff:
+        takeoff([this](px4_ros2::Result result) {runState(State::TrackingMode, result);});
+        break;
+
+      case State::TrackingMode:
+        scheduleMode(
+          ownedMode().id(), [this](px4_ros2::Result result) {runState(State::RTL, result);});
+        break;
+
+      case State::RTL:
+        rtl([this](px4_ros2::Result result) {runState(State::WaitUntilDisarmed, result);});
+        break;
+
+      case State::WaitUntilDisarmed:
+        waitUntilDisarmed([this](px4_ros2::Result result) {
+          RCLCPP_INFO(
+            _node.get_logger(),
+            "[px4_control_interface]: Mission sequence complete (%s)",
+            px4_ros2::resultToString(result));
+        });
+        break;
+    }
+  }
+
+  rclcpp::Node & _node;
+  // No additional parameters required; safety/arming handled by the interface library
 };
 
 }  // namespace px4_control_interface

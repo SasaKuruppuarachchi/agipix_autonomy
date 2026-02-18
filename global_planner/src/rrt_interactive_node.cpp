@@ -62,7 +62,7 @@ private:
 			awaitingStart_ = false;
 			initStart_ = true;
 			initGoal_ = false;
-			startMarker_.header.frame_id = "map";
+			startMarker_.header.frame_id = "drone0/map";
 			startMarker_.header.stamp = node_->now();
 			startMarker_.ns = "start_vis";
 			startMarker_.id = 0;
@@ -92,7 +92,7 @@ private:
 
 				initStart_ = true;
 				initGoal_ = false;
-				startMarker_.header.frame_id = "map";
+				startMarker_.header.frame_id = "drone0/map";
 				startMarker_.header.stamp = node_->now();
 				startMarker_.ns = "start_vis";
 				startMarker_.id = 0;
@@ -119,7 +119,7 @@ private:
 		newPlanRequested_ = true;
 
 		initGoal_ = true;
-		goalMarker_.header.frame_id = "map";
+		goalMarker_.header.frame_id = "drone0/map";
 		goalMarker_.header.stamp = node_->now();
 		goalMarker_.ns = "goal_vis";
 		goalMarker_.id = 0;
@@ -150,7 +150,7 @@ private:
 
 		initStart_ = true;
 		initGoal_ = false;
-		startMarker_.header.frame_id = "map";
+		startMarker_.header.frame_id = "drone0/map";
 		startMarker_.header.stamp = node_->now();
 		startMarker_.ns = "start_vis";
 		startMarker_.id = 0;

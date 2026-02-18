@@ -6,6 +6,7 @@
 
 #include <autonomous_flight/px4/dynamicInspection.h>
 #include <tracking_controller/msg/target.hpp>
+#include <limits>
 
 namespace nav_msgs { using Path = nav_msgs::msg::Path; }
 namespace geometry_msgs {
@@ -192,9 +193,14 @@ namespace AutoFlight{
 		this->node_->get_parameter("replan_time_for_dynamic_obstacles", this->replanTimeForDynamicObstacle_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Dynamic obstacle replan time is set to: %.2fs.", this->replanTimeForDynamicObstacle_);
 
+		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
+		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Operator confirmation is set to: %s", this->operatorConfirm_ ? "true" : "false");
+
 	}
 
 	void dynamicInspection::initModules(){
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Initializing dynamic inspection modules.");
 		// initialize map
 		this->map_.reset(new mapManager::dynamicMap (this->node_));
 		this->map_->initMap();
@@ -277,24 +283,30 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::run(){
-		cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Then PRESS ENTER to continue or PRESS CTRL+C to stop.\033[0m" << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (this->operatorConfirm_){
+			cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but dynamic inspection startup proceeds non-blocking.");
+		}
+		else{
+			cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Continuing automatically (set require_operator_confirmation=true to pause).\033[0m" << endl;
+		}
 		this->takeoff();
 
 		// int temp1 = system("mkdir -p ~/rosbag_inspection_info &");
 		// int temp2 = system("mv ~/rosbag_inspection_info/inspection_info ~/rosbag_inspection_info/previous &");
-		// int temp3 = system("ros2 bag record -o ~/rosbag_inspection_info/inspection_info /inspection/rrt_path /inspection/poly_trajectory /inspection/pwl_trajectory /inspection/bspline_trajectory /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose --ros-args -r __node:=inspection_bag_info &");
+		// int temp3 = system("ros2 bag record -o ~/rosbag_inspection_info/inspection_info /inspection/rrt_path /inspection/poly_trajectory /inspection/pwl_trajectory /inspection/bspline_trajectory /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /drone0/sensor_measurements/odom --ros-args -r __node:=inspection_bag_info &");
 		// if (temp1==-1 or temp2==-1 or temp3==-1){
 		// 	cout << "[AutoFlight]: Recording fails." << endl;
 		// }
 
 
-		cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Then PRESS ENTER to continue or PRESS CTRL+C to land.\033[0m" << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (this->operatorConfirm_){
+			cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but post-takeoff flow proceeds non-blocking.");
+		}
+		else{
+			cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Continuing automatically.\033[0m" << endl;
+		}
 		this->registerCallback();
 	}
 
@@ -900,6 +912,7 @@ namespace AutoFlight{
 		this->fringePlanned_ = false;
 		this->actionActive_ = false;
 		this->actionTimeoutSec_ = 0.0;
+		this->actionDoneCb_ = nullptr;
 	}
 
 	void dynamicInspection::startAction(const nav_msgs::msg::Path& path, double duration, const geometry_msgs::msg::PoseStamped& goal, bool useYaw){
@@ -910,6 +923,11 @@ namespace AutoFlight{
 		this->actionStartTime_ = this->node_->now();
 		this->actionActive_ = true;
 		this->actionTimeoutSec_ = std::max(duration + 2.0, 2.0);
+	}
+
+	void dynamicInspection::startActionAsync(const nav_msgs::msg::Path& path, double duration, const geometry_msgs::msg::PoseStamped& goal, bool useYaw, const std::function<void(bool)>& doneCb){
+		this->actionDoneCb_ = doneCb;
+		this->startAction(path, duration, goal, useYaw);
 	}
 
 	void dynamicInspection::startYawAction(double yaw){
@@ -963,19 +981,117 @@ namespace AutoFlight{
 		if (!this->actionActive_){
 			return true;
 		}
-		const bool reach = this->isReach(this->actionGoal_, false);
+		const bool reach = this->isReach(this->actionGoal_, this->actionUseYaw_);
 		const bool timeDone = this->td_.getRemainTime() <= 0.0;
 		const double elapsed = (this->node_->now() - this->actionStartTime_).seconds();
 		return (reach && timeDone) || (elapsed >= this->actionTimeoutSec_);
 	}
 
+	bool dynamicInspection::finalizeActionIfDone(bool& success){
+		success = false;
+		if (!this->actionActive_){
+			return true;
+		}
+
+		const bool reach = this->isReach(this->actionGoal_, this->actionUseYaw_);
+		const bool timeDone = this->td_.getRemainTime() <= 0.0;
+		const double elapsed = (this->node_->now() - this->actionStartTime_).seconds();
+		const bool timeout = elapsed >= this->actionTimeoutSec_;
+
+		if (!(timeout || (reach && timeDone))){
+			return false;
+		}
+
+		success = !timeout;
+		if (timeout){
+			RCLCPP_WARN(this->node_->get_logger(),
+				"[AutoFlight]: Action timeout after %.2fs (limit %.2fs).",
+				elapsed,
+				this->actionTimeoutSec_);
+		}
+
+		this->actionActive_ = false;
+		this->useYaw_ = false;
+		return true;
+	}
+
+	bool dynamicInspection::moveToPositionAsync(const geometry_msgs::msg::Point& position, double vel, const std::function<void(bool)>& doneCb){
+		if (this->actionActive_){
+			return false;
+		}
+
+		geometry_msgs::msg::PoseStamped psStart, psGoal;
+		psGoal.pose.position = position;
+		psGoal.pose.orientation = this->odom_.pose.pose.orientation;
+		psStart.pose = this->odom_.pose.pose;
+
+		nav_msgs::msg::Path linePath;
+		linePath.poses = {psStart, psGoal};
+		double duration = this->makePWLTraj(linePath.poses, vel, this->pwlTrajMsg_);
+		this->startActionAsync(this->pwlTrajMsg_, duration, psGoal, false, doneCb);
+		return true;
+	}
+
+	bool dynamicInspection::moveToOrientationAsync(const geometry_msgs::msg::Quaternion& orientation, const std::function<void(bool)>& doneCb){
+		if (this->actionActive_){
+			return false;
+		}
+
+		double yawTgt = AutoFlight::rpy_from_quaternion(orientation);
+		double yawCurr = AutoFlight::rpy_from_quaternion(this->odom_.pose.pose.orientation);
+		geometry_msgs::msg::PoseStamped ps;
+		ps.pose = this->odom_.pose.pose;
+		ps.pose.orientation = orientation;
+
+		double yawDiff = yawTgt - yawCurr;
+		double direction = 0.0;
+		double yawDiffAbs = std::abs(yawDiff);
+		if ((yawDiffAbs <= PI_const) and (yawDiff > 0)){
+			direction = 1.0;
+		}
+		else if ((yawDiffAbs <= PI_const) and (yawDiff < 0)){
+			direction = -1.0;
+		}
+		else if ((yawDiffAbs > PI_const) and (yawDiff > 0)){
+			direction = -1.0;
+			yawDiffAbs = 2 * PI_const - yawDiffAbs;
+		}
+		else if ((yawDiffAbs > PI_const) and (yawDiff < 0)){
+			direction = 1.0;
+			yawDiffAbs = 2 * PI_const - yawDiffAbs;
+		}
+
+		double endTime = yawDiffAbs / std::max(this->desiredAngularVel_, 1e-3);
+		if (endTime <= 0.0){
+			endTime = 0.1;
+		}
+
+		nav_msgs::msg::Path rotationPath;
+		std::vector<geometry_msgs::msg::PoseStamped> rotationPathVec;
+		for (double t = 0.0; t <= endTime; t += 0.1){
+			double currYawTgt = yawCurr + direction * (t / endTime) * yawDiffAbs;
+			geometry_msgs::msg::Quaternion quatT = trajPlanner::quaternion_from_rpy(0, 0, currYawTgt);
+			geometry_msgs::msg::PoseStamped psT = ps;
+			psT.pose.orientation = quatT;
+			rotationPathVec.push_back(psT);
+		}
+		rotationPath.poses = rotationPathVec;
+		this->startActionAsync(rotationPath, endTime, ps, true, doneCb);
+		return true;
+	}
+
 	bool dynamicInspection::checkSurroundingsStep(){
 		if (this->checkState_ == CheckSurroundState::INIT){
 			const double currHeight = this->odom_.pose.pose.position.z;
-			double heightTemp = currHeight;
-			while (heightTemp < this->inspectionHeight_){
+			if (this->ascendStep_ <= 1e-6){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: ascend_step <= 0 detected. Using single-level surroundings check.");
+			}
+			const double ascendStep = std::max(this->ascendStep_, 1e-3);
+			int heightIter = 0;
+			for (double heightTemp = currHeight;
+				heightTemp < this->inspectionHeight_ && heightIter < 1000;
+				heightTemp += ascendStep, ++heightIter){
 				this->checkHeights_.push_back(heightTemp);
-				heightTemp += this->ascendStep_;
 			}
 			this->checkHeights_.push_back(this->inspectionHeight_);
 			this->checkHeightIdx_ = 0;
@@ -1064,11 +1180,15 @@ namespace AutoFlight{
 		}
 
 		if (this->actionActive_){
-			if (!this->isActionDone()){
+			bool actionSuccess = false;
+			if (!this->finalizeActionIfDone(actionSuccess)){
 				return;
 			}
-			this->actionActive_ = false;
-			this->useYaw_ = false;
+			if (this->actionDoneCb_){
+				auto doneCb = this->actionDoneCb_;
+				this->actionDoneCb_ = nullptr;
+				doneCb(actionSuccess);
+			}
 		}
 
 		switch (this->inspectPhase_){
@@ -1104,23 +1224,32 @@ namespace AutoFlight{
 			}
 			case InspectPhase::MOVE_TO_GOAL: {
 				geometry_msgs::msg::PoseStamped pGoal = this->eigen2ps(this->inspectionGoal_);
-				std::vector<geometry_msgs::msg::PoseStamped> pathVec{this->eigen2ps(Eigen::Vector3d(this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z)), pGoal};
-				double duration = this->makePWLTraj(pathVec, this->inspectionVel_, this->pwlTrajMsg_);
-				this->startAction(this->pwlTrajMsg_, duration, pGoal, false);
-				this->inspectPhase_ = InspectPhase::ORIENT_GOAL;
+				if (this->moveToPositionAsync(pGoal.pose.position, this->inspectionVel_, [this](bool success){
+					if (!success){
+						this->inspectionActive_ = false;
+						this->changeState(FLIGHT_STATE::BACKWARD);
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: MOVE_TO_GOAL action failed/timed out. Switching to BACKWARD.");
+						return;
+					}
+					this->inspectPhase_ = InspectPhase::ORIENT_GOAL;
+				})){
+					// phase advanced by callback
+				}
 				break;
 			}
 			case InspectPhase::ORIENT_GOAL: {
 				geometry_msgs::msg::Quaternion quat = AutoFlight::quaternion_from_rpy(0, 0, this->inspectionOrientation_);
-				geometry_msgs::msg::PoseStamped pGoal;
-				pGoal.pose = this->odom_.pose.pose;
-				pGoal.pose.orientation = quat;
-				geometry_msgs::msg::PoseStamped pStart;
-				pStart.pose = this->odom_.pose.pose;
-				std::vector<geometry_msgs::msg::PoseStamped> pathVec{pStart, pGoal};
-				double duration = this->makePWLTraj(pathVec, this->pwlTrajMsg_);
-				this->startAction(this->pwlTrajMsg_, duration, pGoal, true);
-				this->inspectPhase_ = InspectPhase::ZIGZAG;
+				if (this->moveToOrientationAsync(quat, [this](bool success){
+					if (!success){
+						this->inspectionActive_ = false;
+						this->changeState(FLIGHT_STATE::BACKWARD);
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: ORIENT_GOAL action failed/timed out. Switching to BACKWARD.");
+						return;
+					}
+					this->inspectPhase_ = InspectPhase::ZIGZAG;
+				})){
+					// phase advanced by callback
+				}
 				break;
 			}
 			case InspectPhase::ZIGZAG: {
@@ -1462,51 +1591,11 @@ namespace AutoFlight{
 	}
 
 	bool dynamicInspection::moveToPosition(const geometry_msgs::msg::Point& position){
-		geometry_msgs::PoseStamped psStart, psGoal;
-		psGoal.pose.position = position;
-		psGoal.pose.orientation = this->odom_.pose.pose.orientation;
-		psStart.pose = this->odom_.pose.pose;
-
-		std::vector<geometry_msgs::PoseStamped> linePathVec;
-		linePathVec.push_back(psStart);
-		linePathVec.push_back(psGoal);
-		nav_msgs::msg::Path linePath;
-		linePath.poses = linePathVec;
-
-		this->pwlTraj_->updatePath(linePath, this->desiredVel_);
-		this->pwlTraj_->makePlan(this->pwlTrajMsg_, 0.1);	
-		this->td_.updateTrajectory(this->pwlTrajMsg_, this->pwlTraj_->getDuration());
-
-		rclcpp::Rate r(100.0);
-		while (rclcpp::ok() and not this->isReach(psGoal, false)){
-			rclcpp::spin_some(this->node_);
-			r.sleep();
-		}
-		return true;
+		return this->moveToPositionAsync(position, this->desiredVel_, [](bool){});
 	}
 
 	bool dynamicInspection::moveToPosition(const geometry_msgs::msg::Point& position, double vel){
-		geometry_msgs::PoseStamped psStart, psGoal;
-		psGoal.pose.position = position;
-		psGoal.pose.orientation = this->odom_.pose.pose.orientation;
-		psStart.pose = this->odom_.pose.pose;
-
-		std::vector<geometry_msgs::PoseStamped> linePathVec;
-		linePathVec.push_back(psStart);
-		linePathVec.push_back(psGoal);
-		nav_msgs::msg::Path linePath;
-		linePath.poses = linePathVec;
-
-		this->pwlTraj_->updatePath(linePath, vel);
-		this->pwlTraj_->makePlan(this->pwlTrajMsg_, 0.1);
-		this->td_.updateTrajectory(this->pwlTrajMsg_, this->pwlTraj_->getDuration());
-
-		rclcpp::Rate r(100.0);
-		while (rclcpp::ok() and not this->isReach(psGoal, false)){
-			rclcpp::spin_some(this->node_);
-			r.sleep();
-		}
-		return true;
+		return this->moveToPositionAsync(position, vel, [](bool){});
 	}
 
 	bool dynamicInspection::moveToPosition(const Eigen::Vector3d& position){
@@ -1514,8 +1603,7 @@ namespace AutoFlight{
 		p.x = position(0);
 		p.y = position(1);
 		p.z = position(2);
-		this->moveToPosition(p);
-		return true;
+		return this->moveToPosition(p);
 	}
 
 	bool dynamicInspection::moveToPosition(const Eigen::Vector3d& position, double vel){
@@ -1523,66 +1611,16 @@ namespace AutoFlight{
 		p.x = position(0);
 		p.y = position(1);
 		p.z = position(2);
-		this->moveToPosition(p, vel);
-		return true;
+		return this->moveToPosition(p, vel);
 	}
 	
 	bool dynamicInspection::moveToOrientation(const geometry_msgs::Quaternion& orientation){
-		double yawTgt = AutoFlight::rpy_from_quaternion(orientation);
-		double yawCurr = AutoFlight::rpy_from_quaternion(this->odom_.pose.pose.orientation);
-		geometry_msgs::PoseStamped ps;
-		ps.pose = this->odom_.pose.pose;
-		ps.pose.orientation = orientation;
-
-		double yawDiff = yawTgt - yawCurr; // difference between yaw
-		double direction = 0;
-		double yawDiffAbs = std::abs(yawDiff);
-		if ((yawDiffAbs <= PI_const) and (yawDiff>0)){
-			direction = 1.0; // counter clockwise
-		} 
-		else if ((yawDiffAbs <= PI_const) and (yawDiff<0)){
-			direction = -1.0; // clockwise
-		}
-		else if ((yawDiffAbs > PI_const) and (yawDiff>0)){
-			direction = -1.0; // rotate in clockwise direction
-			yawDiffAbs = 2 * PI_const - yawDiffAbs;
-		}
-		else if ((yawDiffAbs > PI_const) and (yawDiff<0)){
-			direction = 1.0; // counter clockwise
-			yawDiffAbs = 2 * PI_const - yawDiffAbs;
-		}
-
-
-		double t = 0.0;
-		double startTime = 0.0; double endTime = yawDiffAbs/this->desiredAngularVel_;
-
-		nav_msgs::msg::Path rotationPath;
-		std::vector<geometry_msgs::PoseStamped> rotationPathVec;
-		while (t <= endTime){
-			double currYawTgt = yawCurr + (double) direction * (t-startTime)/(endTime-startTime) * yawDiffAbs;
-			geometry_msgs::Quaternion quatT = trajPlanner::quaternion_from_rpy(0, 0, currYawTgt);
-			geometry_msgs::PoseStamped psT = ps;
-			psT.pose.orientation = quatT;
-			rotationPathVec.push_back(psT);
-			t += 0.1;
-		}
-		rotationPath.poses = rotationPathVec;
-		this->useYaw_ = true;
-		this->td_.updateTrajectory(rotationPath, endTime);
-
-		rclcpp::Rate r(100.0);
-		while (rclcpp::ok() and not this->isReach(ps)){
-			rclcpp::spin_some(this->node_);
-			r.sleep();
-		}
-		this->useYaw_ = false;
-		return true;
+		return this->moveToOrientationAsync(orientation, [](bool){});
 	}
 
 	bool dynamicInspection::moveToOrientation(double yaw){
 		geometry_msgs::Quaternion quat = AutoFlight::quaternion_from_rpy(0, 0, yaw);
-		this->moveToOrientation(quat);
-		return true;
+		return this->moveToOrientation(quat);
 	}
 
 	bool dynamicInspection::moveToOrientationStep(double yaw){
@@ -1603,43 +1641,19 @@ namespace AutoFlight{
 			direction = 1;
 		}
 
-		int count = 1; double divider = 1.0;
 		double maxRotationAngle = PI_const/3.0;
-		double newAngleDiff = angleDiff;
-		while (rclcpp::ok() and newAngleDiff > maxRotationAngle){
-			count += 1;
-			divider += 1.0;
-			newAngleDiff = angleDiff / divider;
-		}
+		int count = std::max(1, static_cast<int>(std::ceil(angleDiff / maxRotationAngle)));
+		double newAngleDiff = angleDiff / static_cast<double>(count);
 
         if (angleDiff >= this->confirmMaxAngle_){
-            cout << "\033[1;32m[AutoFlight]: Turning...Wait for a few seconds. Then PRESS ENTER to continue or PRESS CTRL+C to land.\033[0m" << endl;
-            std::cin.clear();
-            fflush(stdin);
-            std::cin.get();
+            cout << "\033[1;32m[AutoFlight]: Turning... continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but turn-step helper proceeds non-blocking.");
+			}
         }
 
-		for (int i=1; i<=count; ++i){
-			this->moveToOrientation(currYaw + direction * newAngleDiff * i);
-			// wait for some time
-			rclcpp::Rate r(100.0);
-			rclcpp::Time startTime = this->node_->now();
-			rclcpp::Time endTime;
-			while (rclcpp::ok()){
-				endTime = this->node_->now();
-				if ((endTime - startTime).seconds() > 1.0){
-					break;
-				}
-				r.sleep();
-			}	
-			if (angleDiff >= this->confirmMaxAngle_){
-				cout << "\033[1;32m[AutoFlight]: Turning...Wait for a few seconds. Then PRESS ENTER to continue or PRESS CTRL+C to land.\033[0m" << endl;
-				std::cin.clear();
-				fflush(stdin);
-				std::cin.get();			
-			}
-		}
-		return true;
+		const double targetYaw = currYaw + direction * newAngleDiff * static_cast<double>(count);
+		return this->moveToOrientation(targetYaw);
 	}
 
 	double dynamicInspection::makePWLTraj(const std::vector<geometry_msgs::msg::PoseStamped>& waypoints, nav_msgs::msg::Path& resultPath){
@@ -1827,7 +1841,7 @@ namespace AutoFlight{
 		lineVec.push_back(p2);
 
 		visualization_msgs::Marker lineMarker;
-		lineMarker.header.frame_id = "map";
+		lineMarker.header.frame_id = this->mapFrameId_;
 		lineMarker.header.stamp = this->node_->now();
 		lineMarker.ns = "inspection_target";
 		lineMarker.id = id;
@@ -1897,16 +1911,21 @@ namespace AutoFlight{
 		// 1. find all the height level
 		std::vector<double> heightLevels;
 		double currHeight = this->odom_.pose.pose.position.z;
-		double heightTemp = currHeight;
-		while (rclcpp::ok() and heightTemp < this->inspectionHeight_){
+		if (this->ascendStep_ <= 1e-6){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: ascend_step <= 0 detected. Using single-level checkSurroundings().");
+		}
+		const double ascendStep = std::max(this->ascendStep_, 1e-3);
+		int heightIter = 0;
+		for (double heightTemp = currHeight;
+			heightTemp < this->inspectionHeight_ && heightIter < 1000;
+			heightTemp += ascendStep, ++heightIter){
 			heightLevels.push_back(heightTemp);
-			heightTemp += this->ascendStep_;
 		}
 		heightLevels.push_back(this->inspectionHeight_);
 
 		// 2. for each height level check left and right
 		double maxRayLength = 7.0;
-		rclcpp::Rate r(100.0);
+		const int maxLateralShiftSteps = 20;
 
 		for (size_t i=0; i<heightLevels.size(); ++i){
 			Eigen::Vector3d pHeight (this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, heightLevels[i]);
@@ -1919,18 +1938,19 @@ namespace AutoFlight{
 			if (not castLeftSuccess){
 				this->moveToOrientationStep(PI_const/2);
 				// translation
-				while (rclcpp::ok() and not castLeftSuccess){
+				for (int shiftStep = 0; shiftStep < maxLateralShiftSteps && !castLeftSuccess; ++shiftStep){
 					geometry_msgs::PoseStamped pStart, pGoal;
 					pStart.pose = this->odom_.pose.pose;
 					pGoal = pStart; pGoal.pose.position.y += 1.0;
-					std::vector<geometry_msgs::PoseStamped> pathVec {pStart, pGoal};
-					double duration = this->makePWLTraj(pathVec, this->pwlTrajMsg_);
-					this->td_.updateTrajectory(this->pwlTrajMsg_, duration);
+					if (!this->moveToPosition(pGoal.pose.position, this->inspectionVel_)){
+						break;
+					}
 
 					Eigen::Vector3d pCurr(this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z);
 					castLeftSuccess = this->map_->castRay(pCurr, Eigen::Vector3d (0, 1, 0), leftEnd, maxRayLength);
-					rclcpp::spin_some(this->node_);
-					r.sleep();
+				}
+				if (!castLeftSuccess){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Left wall search did not converge within bounded steps.");
 				}
 
 				this->moveToOrientationStep(0);
@@ -1942,18 +1962,19 @@ namespace AutoFlight{
 			bool castRightSuccess = this->map_->castRay(pHeight, Eigen::Vector3d(0, -1, 0), rightEnd, maxRayLength);
 			if (not castRightSuccess){
 				this->moveToOrientation(-PI_const/2);
-				while (rclcpp::ok() and not castRightSuccess){
+				for (int shiftStep = 0; shiftStep < maxLateralShiftSteps && !castRightSuccess; ++shiftStep){
 					geometry_msgs::PoseStamped pStart, pGoal;
 					pStart.pose = this->odom_.pose.pose;
 					pGoal = pStart; pGoal.pose.position.y -= 1.0;
-					std::vector<geometry_msgs::PoseStamped> pathVec {pStart, pGoal};
-					double duration = this->makePWLTraj(pathVec, this->pwlTrajMsg_);
-					this->td_.updateTrajectory(this->pwlTrajMsg_, duration);
+					if (!this->moveToPosition(pGoal.pose.position, this->inspectionVel_)){
+						break;
+					}
 					
 					Eigen::Vector3d pCurr(this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z);
 					castRightSuccess = this->map_->castRay(pCurr, Eigen::Vector3d (0, -1, 0), rightEnd, maxRayLength);
-					rclcpp::spin_some(this->node_);
-					r.sleep();
+				}
+				if (!castRightSuccess){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Right wall search did not converge within bounded steps.");
 				}
 
 				this->moveToOrientationStep(0);
@@ -1975,10 +1996,10 @@ namespace AutoFlight{
 
 	void dynamicInspection::inspectZigZag(){
 		if (this->inspectionConfirm_){
-			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Then PRESS ENTER to continue ZIG-ZAG or PRESS CTRL+C to land.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Continuing ZIG-ZAG in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but inspection callback flow is non-blocking; continuing without stdin wait.");
+			}
 		}
 		cout << "[AutoFlight]: Start Zig-Zag Inspection..." << endl;
 		std::vector<geometry_msgs::PoseStamped> zigzagPathVec;
@@ -1987,10 +2008,15 @@ namespace AutoFlight{
 		std::vector<double> heightLevels;
 		
 		double currHeight = this->odom_.pose.pose.position.z;
-		double heightTemp = currHeight;
-		while (rclcpp::ok() and heightTemp > this->takeoffHgt_){
+		if (this->descendStep_ <= 1e-6){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: descend_step <= 0 detected. Using direct descend target for zig-zag path.");
+		}
+		const double descendStep = std::max(this->descendStep_, 1e-3);
+		int heightIter = 0;
+		for (double heightTemp = currHeight;
+			heightTemp > this->takeoffHgt_ && heightIter < 1000;
+			heightTemp -= descendStep, ++heightIter){
 			heightLevels.push_back(heightTemp);
-			heightTemp -= this->descendStep_;
 		}
 		heightLevels.push_back(this->takeoffHgt_);
 
@@ -2067,10 +2093,10 @@ namespace AutoFlight{
 
 	void dynamicInspection::inspectZigZagRange(){
 		if (this->inspectionConfirm_){
-			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Then PRESS ENTER to continue ZIG-ZAG or PRESS CTRL+C to land.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Continuing ZIG-ZAG in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but inspection callback flow is non-blocking; continuing without stdin wait.");
+			}
 		}
 		cout << "[AutoFlight]: Start Zig-Zag Inspection..." << endl;
 		std::vector<geometry_msgs::PoseStamped> zigzagPathVec;
@@ -2095,10 +2121,15 @@ namespace AutoFlight{
 		std::vector<double> heightLevels;
 		
 		double currHeight = this->inspectionHeight_;
-		double heightTemp = currHeight;
-		while (rclcpp::ok() and heightTemp > this->takeoffHgt_){
+		if (this->descendStep_ <= 1e-6){
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: descend_step <= 0 detected. Using direct descend target for zig-zag range path.");
+		}
+		const double descendStep = std::max(this->descendStep_, 1e-3);
+		int heightIter = 0;
+		for (double heightTemp = currHeight;
+			heightTemp > this->takeoffHgt_ && heightIter < 1000;
+			heightTemp -= descendStep, ++heightIter){
 			heightLevels.push_back(heightTemp);
-			heightTemp -= this->descendStep_;
 		}
 		heightLevels.push_back(this->takeoffHgt_);
 		
@@ -2156,10 +2187,10 @@ namespace AutoFlight{
 
 	void dynamicInspection::inspectFringe(){
 		if (this->inspectionConfirm_){
-			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Then PRESS ENTER to continue FRINGE or PRESS CTRL+C to land.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Continuing FRINGE in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but inspection callback flow is non-blocking; continuing without stdin wait.");
+			}
 		}
 		cout << "[AutoFlight]: Start Fringe Inspection..." << endl;
 		Eigen::Vector3d pCurr (this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z);
@@ -2237,10 +2268,10 @@ namespace AutoFlight{
 
 	void dynamicInspection::inspectFringeRange(){
 		if (this->inspectionConfirm_){
-			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Then PRESS ENTER to continue FRINGE or PRESS CTRL+C to land.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Check flight conditions. Continuing FRINGE in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but inspection callback flow is non-blocking; continuing without stdin wait.");
+			}
 		}
 		cout << "[AutoFlight]: Start Fringe Inspection..." << endl;
 		Eigen::Vector3d pCurr (this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z);
@@ -2388,7 +2419,7 @@ namespace AutoFlight{
 
 	nav_msgs::msg::Path dynamicInspection::getCurrentTraj(double dt){
 	nav_msgs::msg::Path currentTraj;
-		currentTraj.header.frame_id = "map";
+		currentTraj.header.frame_id = this->mapFrameId_;
 		currentTraj.header.stamp = this->node_->now();
 	
 		if (this->trajectoryReady_){

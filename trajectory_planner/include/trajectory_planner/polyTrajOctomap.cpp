@@ -697,7 +697,7 @@ namespace trajPlanner{
 			geometry_msgs::msg::Quaternion quat = quaternion_from_rpy(0, 0, p.yaw);
 			ps.pose.orientation = quat;
 			ps.header.stamp = this->clock_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 		}
 		else{
 			ps = this->pwlTrajSolver_->getPose(t);
@@ -745,7 +745,7 @@ namespace trajPlanner{
 		std::vector<geometry_msgs::msg::PoseStamped> trajVisVec;
 		for (pose p: trajectory){
 			geometry_msgs::msg::PoseStamped ps;
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.header.stamp = this->clock_->now();
 			ps.pose.position.x = p.x;
 			ps.pose.position.y = p.y;
@@ -758,7 +758,7 @@ namespace trajPlanner{
 		visualization_msgs::msg::Marker samplePoint;
 		int count = 0;
 		for (pose p: trajectory){
-			samplePoint.header.frame_id = "map";
+			samplePoint.header.frame_id = "drone0/map";
 			samplePoint.header.stamp = this->clock_->now();
 			samplePoint.ns = "sample_point";
 			samplePoint.id = count;
@@ -785,7 +785,7 @@ namespace trajPlanner{
 		visualization_msgs::msg::Marker waypoint;
 		int waypointCount = 0;
 		for (pose p: this->path_){
-			waypoint.header.frame_id = "map";
+			waypoint.header.frame_id = "drone0/map";
 			waypoint.header.stamp = this->clock_->now();
 			waypoint.ns = "waypoint";
 			waypoint.id = waypointCount;
@@ -816,7 +816,7 @@ namespace trajPlanner{
 			std::unordered_map<double, trajPlanner::pose> timeToPose = segToTimePose[i];
 			for (auto itr: timeToPose){
 				trajPlanner::pose p = itr.second;
-				box.header.frame_id = "map";
+				box.header.frame_id = "drone0/map";
 				box.header.stamp = this->clock_->now();
 				box.ns = "corridor";
 				box.id = boxCount;
@@ -843,7 +843,7 @@ namespace trajPlanner{
 	void polyTrajOctomap::publishTrajectory(){
 		rclcpp::Rate r (10);
 		while (rclcpp::ok()){
-			this->trajVisMsg_.header.frame_id = "map";
+			this->trajVisMsg_.header.frame_id = "drone0/map";
 			this->trajVisMsg_.header.stamp = this->clock_->now();
 			this->trajVisPub_->publish(this->trajVisMsg_);
 			r.sleep();
@@ -885,7 +885,7 @@ namespace trajPlanner{
 		for (trajPlanner::pose pTemp: trajectoryTemp){
 			geometry_msgs::msg::PoseStamped ps;
 			ps.header.stamp = this->clock_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.pose.position.x = pTemp.x;
 			ps.pose.position.y = pTemp.y;
 			ps.pose.position.z = pTemp.z;
@@ -895,7 +895,7 @@ namespace trajPlanner{
 			trajVec.push_back(ps);
 		}
 		trajectory.header.stamp = this->clock_->now();
-		trajectory.header.frame_id = "map";
+		trajectory.header.frame_id = "drone0/map";
 		trajectory.poses = trajVec;
 	}
 }

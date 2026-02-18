@@ -52,6 +52,7 @@ global_planner (RRT/RRT*/DEP)                 trajectory_planner
 - `global_planner`: global path/exploration planners (RRT/RRT*, DEP)
 - `trajectory_planner`: smooth local trajectory generation (poly/PWL/B-spline)
 - `time_optimizer`: trajectory time allocation optimization utilities
+- `agi_viz`: centralized RViz launcher for autonomy stack visualization profiles
 
 ## PX4 ROS 2 interface setup
 

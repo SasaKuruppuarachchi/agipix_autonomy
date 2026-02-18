@@ -5,6 +5,7 @@
 */
 
 #include <onboard_detector/detectors/uvDetector.h>
+#include <algorithm>
 
 // UVbox
 namespace onboardDetector{
@@ -370,11 +371,32 @@ namespace onboardDetector{
     void UVdetector::extract_3Dbox()
     {   
         // this function returns 3D boxes in world frame for publishing
+        if (this->depth.empty()){
+            this->box3Ds.clear();
+            this->bounding_box_D.clear();
+            return;
+        }
+
         cv::Mat depth_resize;
         resize(depth, depth_resize, cv::Size(), this->col_scale, 1);
+        if (depth_resize.empty() || depth_resize.cols <= 0 || depth_resize.rows <= 0){
+            this->box3Ds.clear();
+            this->bounding_box_D.clear();
+            return;
+        }
         float histSize = this->depth.rows / this->row_downsample;
+        if (histSize <= 0){
+            this->box3Ds.clear();
+            this->bounding_box_D.clear();
+            return;
+        }
         // printf("rows, ros_downsmaple %d, %d\n", this->depth.rows, this->row_downsample);
         float bin_width = ceil((this->max_dist - this->min_dist) / histSize);
+        if (bin_width <= 0){
+            this->box3Ds.clear();
+            this->bounding_box_D.clear();
+            return;
+        }
         // printf("max, min, hist size , bin_width %d, %d, %f, %f\n",this->max_dist, this->min_dist, histSize, bin_width);
         int x;
         int y_up;
@@ -402,8 +424,12 @@ namespace onboardDetector{
 
         for (size_t b = 0; b < this->bounding_box_U.size(); b++) {
             // 
-            x = this->bounding_box_U[b].tl().x;
+            x = std::max(0, this->bounding_box_U[b].tl().x);
             width = this->bounding_box_U[b].width;
+            int x_end = std::min(depth_resize.cols, x + width);
+            if (x >= depth_resize.cols || x_end <= x){
+                continue;
+            }
 
             y_up = depth_resize.rows;
             // std::cout<<" y_up init "<<y_up<<std::endl;
@@ -416,12 +442,16 @@ namespace onboardDetector{
             depth_in_far = depth_of_depth*1.3 + depth_in_near; // assumed depth was truncated because of occlusion
             // printf("bin_s, bin_l, near, far %d, %d, %f, %f\n",bin_index_small, bin_index_large, depth_in_near, depth_in_far);
 
-            for (int i = x ; i < x + width; i++) { // for several middle coloums
-                for (int j = 0; j < depth_resize.rows - 1; j++) { // for each row
+            for (int i = x ; i < x_end; i++) { // for several middle coloums
+                for (int j = 0; j < std::max(0, depth_resize.rows - num_check - 1); j++) { // for each row
                     depth_resize_val = (float(depth_resize.at<unsigned short>(j,i))/this->depthScale_)*1000.0;
                     if (float(depth_resize_val) >= depth_in_near && depth_resize_val <= depth_in_far) {
                         for (int check = 0; check < num_check; check++) { // check some more points in the coloum
-                            depth_resize_val = (float(depth_resize.at<unsigned short>(j + check + 1,i))/this->depthScale_)*1000.0;
+                            int check_row = j + check + 1;
+                            if (check_row >= depth_resize.rows){
+                                break;
+                            }
+                            depth_resize_val = (float(depth_resize.at<unsigned short>(check_row,i))/this->depthScale_)*1000.0;
                             if (depth_resize_val < depth_in_near || 
                             depth_resize_val > depth_in_far) {
                                 // bad case
@@ -438,7 +468,7 @@ namespace onboardDetector{
 
             // save bounding boxes in depth
             float bb_x = x / this->col_scale;
-            float bb_width = width / this->col_scale;
+            float bb_width = (x_end - x) / this->col_scale;
             float bb_y = y_up;
             // std::cout<<" y_up  "<<y_up<<" y_down "<<y_down<<std::endl;
             float bb_height = y_down-y_up;

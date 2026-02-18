@@ -462,7 +462,7 @@ namespace trajPlanner{
 
 	nav_msgs::msg::Path polyTrajOccMap::getTrajectory(double dt){
 		nav_msgs::msg::Path trajectory;
-		trajectory.header.frame_id = "map";
+		trajectory.header.frame_id = "drone0/map";
 		for (double t=0; t<=this->getDuration(); t+=dt){
 			Eigen::Vector3d pos = this->getPos(t);
 			geometry_msgs::msg::PoseStamped ps;
@@ -489,7 +489,7 @@ namespace trajPlanner{
 				geometry_msgs::msg::Quaternion quat = quaternion_from_rpy(0, 0, p.yaw);
 				ps.pose.orientation = quat;
 				ps.header.stamp = this->clock_->now();
-				ps.header.frame_id = "map";
+				ps.header.frame_id = "drone0/map";
 			}
 			else{
 				ps = this->pwlTrajSolver_->getPose(t);
@@ -505,7 +505,7 @@ namespace trajPlanner{
 		geometry_msgs::msg::Quaternion quat = quaternion_from_rpy(0, 0, p.yaw);
 		ps.pose.orientation = quat;
 		ps.header.stamp = this->clock_->now();
-		ps.header.frame_id = "map";
+		ps.header.frame_id = "drone0/map";
 
 		return ps;
 	}
@@ -585,7 +585,7 @@ namespace trajPlanner{
 		for (trajPlanner::pose pTemp: trajectoryTemp){
 			geometry_msgs::msg::PoseStamped ps;
 			ps.header.stamp = this->clock_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.pose.position.x = pTemp.x;
 			ps.pose.position.y = pTemp.y;
 			ps.pose.position.z = pTemp.z;
@@ -595,7 +595,7 @@ namespace trajPlanner{
 			trajVec.push_back(ps);
 		}
 		trajectory.header.stamp = this->clock_->now();
-		trajectory.header.frame_id = "map";
+		trajectory.header.frame_id = "drone0/map";
 		trajectory.poses = trajVec;
 	}
 }

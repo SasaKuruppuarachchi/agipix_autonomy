@@ -5,6 +5,7 @@
 */
 
 #include <autonomous_flight/px4/dynamicExploration.h>
+#include <limits>
 
 namespace AutoFlight{
 	dynamicExploration::dynamicExploration(const rclcpp::Node::SharedPtr& node) : flightBase(node){
@@ -57,6 +58,10 @@ namespace AutoFlight{
 		this->node_->declare_parameter<double>("reach_goal_distance", 0.1);
 		this->node_->get_parameter("reach_goal_distance", this->reachGoalDistance_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Reach goal distance is set to: %.2fm.", this->reachGoalDistance_);
+
+		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
+		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Operator confirmation is set to: %s.", this->operatorConfirm_ ? "true" : "false");
 	}
 
 	void dynamicExploration::initModules(){
@@ -85,13 +90,10 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::registerCallback(){
-		// initialize exploration planner replan in another thread
-		this->exploreReplanWorker_ = std::thread(&dynamicExploration::exploreReplan, this);
-		this->exploreReplanWorker_.detach();
-
-		// exploration callback
-		// this->explorationTimer_ = this->node_->create_wall_timer(
-		// 	std::chrono::milliseconds(100), std::bind(&dynamicExploration::explorationCB, this), this->plannerCbGroup_);
+		// exploration replan callback
+		this->exploreReplanCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+		this->explorationTimer_ = this->node_->create_wall_timer(
+			std::chrono::milliseconds(300), std::bind(&dynamicExploration::exploreReplan, this), this->exploreReplanCbGroup_);
 
 		// planner callback
 		this->plannerCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -280,7 +282,7 @@ namespace AutoFlight{
 						}
 						else{
 							cout << "[AutoFlight]: Unable to generate a feasible trajectory." << endl;
-							cout << "\033[1;32m[AutoFlight]: Wait for new path. Press ENTER to Replan.\033[0m" << endl;
+							cout << "\033[1;32m[AutoFlight]: Wait for new path to replan.\033[0m" << endl;
 							this->replan_ = false;
 						}
 					}
@@ -304,6 +306,38 @@ namespace AutoFlight{
 			2. new goal point assigned
 			3. fixed distance
 		*/
+
+		if (this->waypointRotatePending_){
+			if (this->newWaypoints_){
+				// New global path supersedes pending rotate-to-waypoint transition.
+				this->waypointRotatePending_ = false;
+			}
+			else if (this->node_->now() < this->waypointRotateReadyTime_){
+				return;
+			}
+			else {
+				cout << "[AutoFlight]: Rotate and replan..." << endl;
+				this->moveToOrientation(this->waypointRotateYaw_, this->desiredAngularVel_);
+				cout << "[AutoFlight]: Finish rotation." << endl;
+
+				// change current goal
+				if (this->waypointIdx_ < int(this->waypoints_.poses.size())){
+					this->goal_ = this->waypoints_.poses[this->waypointIdx_];
+				}
+				if (this->waypointIdx_ + 1 > int(this->waypoints_.poses.size())){
+					cout << "\033[1;32m[AutoFlight]: Finishing entire path. Wait for new path to replan.\033[0m" << endl;
+					this->replan_ = false;
+				}
+				else{
+					cout << "[AutoFlight]: Start planning for next waypoint." << endl;
+					this->replan_ = true;
+				}
+				++this->waypointIdx_;
+				this->trajectoryReady_ = false;
+				this->waypointRotatePending_ = false;
+				return;
+			}
+		}
 
 		if (this->newWaypoints_){
 			this->replan_ = false;
@@ -342,37 +376,16 @@ namespace AutoFlight{
 			// std::cin.clear();
 			// fflush(stdin);
 			// std::cin.get();
-			cout << "[AutoFlight]: Rotate and replan..." << endl;
+			cout << "[AutoFlight]: Stabilizing before rotate and replan..." << endl;
 			geometry_msgs::msg::Quaternion quat = this->goal_.pose.orientation;
 			double yaw = AutoFlight::rpy_from_quaternion(quat);
-			this->waitTime(this->wpStablizeTime_);
-			this->moveToOrientation(yaw, this->desiredAngularVel_);
-			cout << "[AutoFlight]: Finish rotation." << endl;
-			// cout << "[AutoFlight]: Press ENTER to move forward." << endl;
-			// std::cin.clear();
-			// fflush(stdin);
-			// std::cin.get();	
-
-			// change current goal
-			if (this->waypointIdx_ < int(this->waypoints_.poses.size())){
-				this->goal_ = this->waypoints_.poses[this->waypointIdx_];
-			}
-			if (this->waypointIdx_ + 1 > int(this->waypoints_.poses.size())){
-				cout << "\033[1;32m[AutoFlight]: Finishing entire path. Wait for new path. Press ENTER to Replan.\033[0m" << endl;
-				this->replan_ = false;
-				// this->explorationReplan_ = true;
-			}
-			else{
-				cout << "[AutoFlight]: Start planning for next waypoint." << endl;
-				this->replan_ = true;
-			}
-			++this->waypointIdx_;
-			this->trajectoryReady_ = false;
-	
+			this->waypointRotateYaw_ = yaw;
+			this->waypointRotateReadyTime_ = this->node_->now() + rclcpp::Duration::from_seconds(std::max(0.0, this->wpStablizeTime_));
+			this->waypointRotatePending_ = true;
 			return;		
 		}
 		else if (this->waypoints_.poses.size() != 0 and this->isReach(this->goal_, this->reachGoalDistance_, true) and (this->replan_ or this->trajectoryReady_)){
-			cout << "\033[[AutoFlight]: Finishing entire path. Wait for new path. Press ENTER to Replan.\033[0m" << endl;
+			cout << "\033[[AutoFlight]: Finishing entire path. Wait for new path to replan.\033[0m" << endl;
 			this->replan_ = false;
 			this->trajectoryReady_ = false;
 			return;		
@@ -382,7 +395,7 @@ namespace AutoFlight{
 			if (not this->isGoalValid() and (this->replan_ or this->trajectoryReady_)){
 				this->replan_ = false;
 				this->trajectoryReady_ = false;
-				cout << "\033[1;32m[AutoFlight]: Current goal is invalid. Need new path. Press ENTER to Replan.\033[0m" << endl;
+				cout << "\033[1;32m[AutoFlight]: Current goal is invalid. Need new path to replan.\033[0m" << endl;
 				// this->explorationReplan_ = true;
 				return;
 			}
@@ -405,7 +418,7 @@ namespace AutoFlight{
 				this->trajectoryReady_ = false;
 				this->replan_ = false;
 				this->stop();
-				cout << "\033[1;32m[AutoFlight]: the goal of current local trajectory is not safe. Press ENTER to Replan.\033[0m" << endl;
+				cout << "\033[1;32m[AutoFlight]: the goal of current local trajectory is not safe. Need replan.\033[0m" << endl;
 				return;
 			}
 
@@ -495,30 +508,39 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::run(){
-		cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Then PRESS ENTER to continue or PRESS CTRL+C to stop.\033[0m" << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (this->operatorConfirm_){
+			cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but dynamic exploration startup proceeds non-blocking.");
+		}
+		else{
+			cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Continuing automatically (set require_operator_confirmation=true to pause).\033[0m" << endl;
+		}
 		this->takeoff();
 
-		cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Then PRESS ENTER to continue or PRESS CTRL+C to land.\033[0m" << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (this->operatorConfirm_){
+			cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but post-takeoff flow proceeds non-blocking.");
+		}
+		else{
+			cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Continuing automatically.\033[0m" << endl;
+		}
 
 		// int temp1 = system("mkdir -p ~/rosbag_exploration_info &");
 		// int temp2 = system("mv ~/rosbag_exploration_info/exploration_info ~/rosbag_exploration_info/previous &");
-		// int temp3 = system("ros2 bag record -o ~/rosbag_exploration_info/exploration_info /camera/aligned_depth_to_color/image_raw_t /camera/color/image_raw_t /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /mavros/local_position/pose /dynamicExploration/bspline_trajectory /mavros/setpoint_position/local /tracking_controller/target_pose /dep/best_paths /dep/roadmap /dep/candidate_paths /dep/best_paths /dep/frontier_regions /dynamic_map/occupancy_map_2D &");
+		// int temp3 = system("ros2 bag record -o ~/rosbag_exploration_info/exploration_info /camera/aligned_depth_to_color/image_raw_t /camera/color/image_raw_t /dynamic_map/inflated_voxel_map_t /onboard_detector/dynamic_bboxes /drone0/sensor_measurements/odom /dynamicExploration/bspline_trajectory /autonomous_flight/target_state /tracking_controller/target_pose /dep/best_paths /dep/roadmap /dep/candidate_paths /dep/best_paths /dep/frontier_regions /dynamic_map/occupancy_map_2D &");
 		// if (temp1==-1 or temp2==-1 or temp3==-1){
 		// 	cout << "[AutoFlight]: Recording fails." << endl;
 		// }
 
 		this->initExplore();
 
-		cout << "\033[1;32m[AutoFlight]: PRESS ENTER to Start Planning.\033[0m" << endl;
-		std::cin.clear();
-		fflush(stdin);
-		std::cin.get();
+		if (this->operatorConfirm_){
+			cout << "\033[1;32m[AutoFlight]: Start planning in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but planning start proceeds non-blocking.");
+		}
+		else{
+			cout << "\033[1;32m[AutoFlight]: Start planning.\033[0m" << endl;
+		}
 
 		this->registerCallback();
 	}
@@ -535,22 +557,22 @@ namespace AutoFlight{
 		if (this->initialScan_){
 			cout << "[AutoFlight]: Start initial scan..." << endl;
 			this->moveToOrientation(-PI_const/2, this->desiredAngularVel_);
-			cout << "\033[1;32m[AutoFlight]: Press ENTER to continue next 90 degree.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Continue initial scan to next 90 degree (non-blocking).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but initial scan proceeds non-blocking between steps.");
+			}
 						
 			this->moveToOrientation(-PI_const, this->desiredAngularVel_);
-			cout << "\033[1;32m[AutoFlight]: Press ENTER to continue next 90 degree.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Continue initial scan to next 90 degree (non-blocking).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but initial scan proceeds non-blocking between steps.");
+			}
 
 			this->moveToOrientation(PI_const/2, this->desiredAngularVel_);
-			cout << "\033[1;32m[AutoFlight]: Press ENTER to continue next 90 degree.\033[0m" << endl;
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();
+			cout << "\033[1;32m[AutoFlight]: Continue initial scan to next 90 degree (non-blocking).\033[0m" << endl;
+			if (this->operatorConfirm_){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but initial scan proceeds non-blocking between steps.");
+			}
 			
 			this->moveToOrientation(0, this->desiredAngularVel_);
 			cout << "[AutoFlight]: End initial scan." << endl; 
@@ -651,22 +673,19 @@ namespace AutoFlight{
 		// 	this->moveToOrientation(0, this->desiredAngularVel_);
 		// 	cout << "[AutoFlight]: End initial scan." << endl; 
 		// }
-		while (rclcpp::ok()){
-			this->expPlanner_->setMap(this->map_);
-			rclcpp::Time startTime = this->node_->now();
-			bool replanSuccess = this->expPlanner_->makePlan();
-			if (replanSuccess){
-				this->waypoints_ = this->expPlanner_->getBestPath();
-				this->newWaypoints_ = true;
-				this->waypointIdx_ = 1;
-			}
-			rclcpp::Time endTime = this->node_->now();
-			std::cin.clear();
-			fflush(stdin);
-			std::cin.get();		
-			cout << "[AutoFlight]: DEP planning time: " << (endTime - startTime).seconds() << "s." << endl;
-
+		this->expPlanner_->setMap(this->map_);
+		rclcpp::Time startTime = this->node_->now();
+		bool replanSuccess = this->expPlanner_->makePlan();
+		if (replanSuccess){
+			this->waypoints_ = this->expPlanner_->getBestPath();
+			this->newWaypoints_ = true;
+			this->waypointIdx_ = 1;
 		}
+		rclcpp::Time endTime = this->node_->now();
+		if (this->operatorConfirm_){
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: operator confirmation is enabled, but planner callback remains non-blocking.");
+		}
+		cout << "[AutoFlight]: DEP planning time: " << (endTime - startTime).seconds() << "s." << endl;
 	}
 
 	double dynamicExploration::computeExecutionDistance(){
@@ -741,7 +760,7 @@ namespace AutoFlight{
 
 	nav_msgs::msg::Path dynamicExploration::getCurrentTraj(double dt){
 		nav_msgs::msg::Path currentTraj;
-		currentTraj.header.frame_id = "map";
+		currentTraj.header.frame_id = this->mapFrameId_;
 		currentTraj.header.stamp = this->node_->now();
 	
 		if (this->trajectoryReady_){
@@ -860,16 +879,4 @@ namespace AutoFlight{
 		return currPath;		
 	}
 
-	void dynamicExploration::waitTime(double time){
-		rclcpp::Rate r (30);
-		rclcpp::Time startTime = this->node_->now();
-		rclcpp::Time currTime = this->node_->now();
-		double passtime = 0.0;
-		while (rclcpp::ok() && passtime < time){
-			currTime = this->node_->now();
-			passtime = (currTime - startTime).seconds();
-			rclcpp::spin_some(this->node_);
-			r.sleep();
-		}
-	}
 }

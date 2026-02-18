@@ -14,14 +14,14 @@
     desired_angular_velocity: 0.2
 
     # Inspection Target Parameters
-    min_target_area: 10 # m^2. the minimum area to be considered as the target area
+    min_target_area: 10.0 # m^2. the minimum area to be considered as the target area
     max_inspection_target_height: 2.0 # IMPORTANT: maximum height uav start inspection
     max_inspection_target_width: 8.0 # IMPORTANT: maximum width
     inspection_descend_height: 0.3 #m
     forward_min_distance: 0.2 #m
-    step_ascend_delta: 2 #m
-    look_around_angle: 45 # degree
-    check_target_look_around_angle: 60 #degree
+    step_ascend_delta: 2.0 #m
+    look_around_angle: 45.0 # degree
+    check_target_look_around_angle: 60.0 #degree
     start_free_range: [1.0, 1.0, 1.0]
 
     # Obstacle Avoidance
@@ -32,7 +32,7 @@
     # NBV Parameters
     nbv_sample_num: 10
     sensor_range: 5.0
-    sensor_vertical_angle: 45
+    sensor_vertical_angle: 45.0
 
     # Algorithm failsafe
     nbv_sample_time_out: 1.0
@@ -40,7 +40,7 @@
 
     #========================================RRT Param==========================================
     # Environment:
-    env_box: [-100, 100, -100, 100, 1, 1] # xmin, xmax, ymin, ymax, zmin, zmax
+    env_box: [-100.0, 100.0, -100.0, 100.0, 1.0, 1.0] # xmin, xmax, ymin, ymax, zmin, zmax
 
     # Planner parameters:
     timeout: 5.0 #s

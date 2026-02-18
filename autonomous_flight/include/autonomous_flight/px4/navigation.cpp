@@ -131,6 +131,7 @@ namespace AutoFlight{
 			// bspline trajectory generation
 			double finalTime; // final time for bspline trajectory
 			double initTs = this->bsplineTraj_->getInitTs();
+			const int maxInputCheckIters = 12;
 			if (this->useGlobalPlanner_){
 				if (this->needGlobalPlan_){
 					this->rrtPlanner_->updateStart(this->odom_.pose.pose);
@@ -156,7 +157,7 @@ namespace AutoFlight{
 						double finalTimeTemp;
 						rclcpp::Time startTime = this->node_->now();
 						rclcpp::Time currTime;
-						while (rclcpp::ok()){
+						for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 							currTime = this->node_->now();
 							if ((currTime - startTime).seconds() >= 0.05){
 								cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -196,7 +197,7 @@ namespace AutoFlight{
 					double finalTimeTemp;
 					rclcpp::Time startTime = this->node_->now();
 					rclcpp::Time currTime;
-					while (rclcpp::ok()){
+					for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 						currTime = this->node_->now();
 						if ((currTime - startTime).seconds() >= 0.05){
 							cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -243,7 +244,7 @@ namespace AutoFlight{
 						double finalTimeTemp;
 						rclcpp::Time startTime = this->node_->now();
 						rclcpp::Time currTime;
-						while (rclcpp::ok()){
+						for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 							currTime = this->node_->now();
 							if ((currTime - startTime).seconds() >= 0.05){
 								cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -275,7 +276,7 @@ namespace AutoFlight{
 						double finalTimeTemp;
 						rclcpp::Time startTime = this->node_->now();
 						rclcpp::Time currTime;
-						while (rclcpp::ok()){
+						for (int inputCheckIter = 0; inputCheckIter < maxInputCheckIters; ++inputCheckIter){
 							currTime = this->node_->now();
 							if ((currTime - startTime).seconds() >= 0.05){
 								cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
@@ -364,7 +365,8 @@ namespace AutoFlight{
 			if (not this->noYawTurning_ and not this->useYawControl_){
 				double yaw = atan2(this->goal_.pose.position.y - this->odom_.pose.pose.position.y, this->goal_.pose.position.x - this->odom_.pose.pose.position.x);
 				this->facingYaw_ = yaw;
-				this->moveToOrientation(yaw, this->desiredAngularVel_);
+				// Avoid blocking inside timer callback. Yaw is tracked during trajectory execution.
+				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Skip blocking pre-rotation in replan callback (non-blocking mode).");
 			}
 			this->firstTimeSave_ = true;
 			this->replan_ = true;
@@ -479,7 +481,7 @@ namespace AutoFlight{
 
 		// int temp1 = system("mkdir -p ~/rosbag_navigation_info &");
 		// int temp2 = system("mv ~/rosbag_navigation_info/navigation_info ~/rosbag_navigation_info/previous &");
-		// int temp3 = system("ros2 bag record -o ~/rosbag_navigation_info/navigation_info /camera/color/image_raw /occupancy_map/inflated_voxel_map /navigation/bspline_trajectory /mavros/local_position/pose /mavros/setpoint_position/local /tracking_controller/vel_and_acc_info /tracking_controller/target_pose /tracking_controller/trajectory_history /trajDivider/braking_zone /trajDivider/kdtree_range &");
+		// int temp3 = system("ros2 bag record -o ~/rosbag_navigation_info/navigation_info /camera/color/image_raw /occupancy_map/inflated_voxel_map /navigation/bspline_trajectory /drone0/sensor_measurements/odom /autonomous_flight/target_state /tracking_controller/vel_and_acc_info /tracking_controller/target_pose /tracking_controller/trajectory_history /trajDivider/braking_zone /trajDivider/kdtree_range &");
 		// if (temp1==-1 or temp2==-1 or temp3==-1){
 		// 	cout << "[AutoFlight]: Recording fails." << endl;
 		// }
@@ -549,7 +551,7 @@ namespace AutoFlight{
 
 	nav_msgs::msg::Path navigation::getCurrentTraj(double dt){
 		nav_msgs::msg::Path currentTraj;
-		currentTraj.header.frame_id = "map";
+		currentTraj.header.frame_id = this->mapFrameId_;
 		currentTraj.header.stamp = this->node_->now();
 	
 		if (this->trajectoryReady_){
@@ -614,15 +616,15 @@ namespace AutoFlight{
 			visualization_msgs::msg::Marker point;
 			int pointCount = 0;
 			for (int i=0; i<int(this->inputTrajMsg_.poses.size()); ++i){
-				point.header.frame_id = "map";
+				point.header.frame_id = this->mapFrameId_;
 				point.header.stamp = this->node_->now();
 				point.ns = "input_traj_points";
 				point.id = pointCount;
 				point.type = visualization_msgs::msg::Marker::SPHERE;
 				point.action = visualization_msgs::msg::Marker::ADD;
 				point.pose.position.x = this->inputTrajMsg_.poses[i].pose.position.x;
-				point.pose.position.y = this->inputTrajMsg_.poses[i].pose.position.x;
-				point.pose.position.z = this->inputTrajMsg_.poses[i].pose.position.x;
+				point.pose.position.y = this->inputTrajMsg_.poses[i].pose.position.y;
+				point.pose.position.z = this->inputTrajMsg_.poses[i].pose.position.z;
 				point.lifetime = rclcpp::Duration::from_seconds(0.05);
 				point.scale.x = 0.2;
 				point.scale.y = 0.2;

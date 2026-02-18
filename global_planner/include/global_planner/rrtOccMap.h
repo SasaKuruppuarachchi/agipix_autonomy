@@ -367,7 +367,7 @@ namespace globalPlanner{
 		for (KDTree::Point<N> p: pathTemp){
 			geometry_msgs::msg::PoseStamped ps;
 			ps.header.stamp = this->node_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.pose.position.x = p[0];
 			ps.pose.position.y = p[1];
 			ps.pose.position.z = p[2];
@@ -375,7 +375,7 @@ namespace globalPlanner{
 		}
 		path.poses = pathVec;
 		path.header.stamp = this->node_->now();
-		path.header.frame_id = "map";
+		path.header.frame_id = "drone0/map";
 	}
 
 	template <std::size_t N>
@@ -407,7 +407,7 @@ namespace globalPlanner{
 				lineVec.push_back(p2);
 			}
 			// waypoint
-			waypoint.header.frame_id = "map";
+			waypoint.header.frame_id = "drone0/map";
 			waypoint.id = 1+i;
 			waypoint.ns = "rrt_path";
 			waypoint.type = visualization_msgs::msg::Marker::SPHERE;
@@ -424,7 +424,7 @@ namespace globalPlanner{
 			waypoint.color.b = 0.5;
 			pathVisVec.push_back(waypoint);
 		}
-		line.header.frame_id = "map";
+		line.header.frame_id = "drone0/map";
 		line.points = lineVec;
 		line.ns = "rrt_path";
 		line.id = 0;

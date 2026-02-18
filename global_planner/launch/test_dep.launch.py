@@ -3,7 +3,7 @@ from ament_index_python import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
+from launch_ros.actions import Node, SetParameter
 from launch_ros.substitutions import FindPackageShare
 
 
@@ -18,6 +18,12 @@ def generate_launch_description():
         'rviz_config',
         default_value=rviz_config_path,
         description='Full path to the RViz config file'
+    )
+
+    use_sim_time_arg = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='false',
+        description='Use simulation clock if true'
     )
 
     # RViz Node
@@ -78,6 +84,8 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        use_sim_time_arg,
+        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
         rviz_config_arg,
         rviz_node,
         dep_param_arg,

@@ -98,14 +98,24 @@ namespace globalPlanner{
 		this->mapCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		rclcpp::SubscriptionOptions mapOptions;
 		mapOptions.callback_group = this->mapCbGroup_;
+		auto mapQos = rclcpp::QoS(rclcpp::KeepLast(1)).reliable().transient_local();
 		this->mapSub_ = this->node_->create_subscription<octomap_msgs::msg::Octomap>(
-			"/octomap_full", 1, std::bind(&rrtStarOctomap::mapCB, this, std::placeholders::_1), mapOptions);
+			"/octomap_full", mapQos, std::bind(&rrtStarOctomap::mapCB, this, std::placeholders::_1), mapOptions);
 		rclcpp::Rate r(10);
+		rclcpp::Time waitStart = this->node_->now();
+		const double mapWaitTimeoutSec = 3.0;
 		while (rclcpp::ok() and this->map_ == NULL){
 			cout << "[RRTPlanner]: Wait for Map..." << endl;
+			rclcpp::spin_some(this->node_);
+			if ((this->node_->now() - waitStart).seconds() > mapWaitTimeoutSec){
+				RCLCPP_WARN(this->node_->get_logger(), "[RRTPlanner]: Map wait timeout (%.1fs). Continue and wait asynchronously for /octomap_full.", mapWaitTimeoutSec);
+				break;
+			}
 			r.sleep();
 		}
-		cout << "[RRTPlanner]: Map Updated!" << endl;
+		if (this->map_ != NULL){
+			cout << "[RRTPlanner]: Map Updated!" << endl;
+		}
 		
 		// Visualization:
 		this->startVisModule();
@@ -129,6 +139,7 @@ namespace globalPlanner{
 			cout << "[RRTPlanner]: Failed to convert Octomap message (null tree)." << endl;
 			return;
 		}
+		cout << "[RRTPlanner]: Map received with " << treePtr->size() << " nodes." << endl;
 	   	this->map_ = std::shared_ptr<octomap::OcTree>(treePtr);		
    	 	double min_x, max_x, min_y, max_y, min_z, max_z;
 		this->map_->getMetricMax(max_x, max_y, max_z);

@@ -203,7 +203,7 @@ namespace onboardDetector{
 			for (std::vector<geometry_msgs::msg::Point> lineVec: allLines){
 				visualization_msgs::msg::Marker line;
 
-				line.header.frame_id = "map";
+				line.header.frame_id = "drone0/map";
 				line.ns = name;
 				line.points = lineVec;
 				line.id = count;

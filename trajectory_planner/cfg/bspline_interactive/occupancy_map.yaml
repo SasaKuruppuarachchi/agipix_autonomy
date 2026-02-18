@@ -6,8 +6,8 @@ bspline_node:
       depth_image_topic: /camera/depth/image_raw
       # depth_image_topic: /no_topic
       pose_topic: /mavros/local_position/pose
-      odom_topic: /mavros/local_position/odom
-      map_frame_id : map
+      odom_topic: /drone0/sensor_measurements/odom
+      map_frame_id : drone0/map
 
       # robot size
       robot_size: [0.8, 0.8, 0.3]

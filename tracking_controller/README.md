@@ -19,18 +19,28 @@ Primary parameter file:
 
 - `cfg/controller_param.yaml`
 
+Backend selection:
+
+- `controller.backend`: `dds` (default and only supported backend)
+- `controller.dds_target_topic`: default `/px4_control_interface/controller_target_state`
+- `controller.odom_topic`: default `/drone0/sensor_measurements/odom`
+- `controller.imu_topic`: default `/drone0/sensor_measurements/imu`
+
+Notes:
+
+- Publishes full `tracking_controller/msg/Target` (position/velocity/acceleration/yaw + `type_mask`) to the DDS bridge topic.
+
 ## Key interfaces
 
 Subscribes:
 
-- `/mavros/local_position/odom`
-- `/mavros/imu/data`
+- `/drone0/sensor_measurements/odom`
+- `/drone0/sensor_measurements/imu`
 - `/autonomous_flight/target_state`
 
 Publishes:
 
-- `/mavros/setpoint_raw/attitude`
-- `/mavros/setpoint_raw/local`
+- `/px4_control_interface/controller_target_state`
 - `/tracking_controller/robot_pose`
 - `/tracking_controller/trajectory_history`
 - `/tracking_controller/target_pose`

@@ -10,15 +10,16 @@
 #include <deque>
 #include <queue>
 #include <vector>
+#include <memory>
+#include <string>
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <mavros_msgs/msg/attitude_target.hpp>
-#include <mavros_msgs/msg/position_target.hpp>
 #include <tracking_controller/msg/target.hpp>
 #include <tracking_controller/utils.h>
+#include <tracking_controller/control_interfaces.h>
 
 using std::cout; using std::endl;
 namespace controller{
@@ -28,8 +29,6 @@ namespace controller{
 			rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomSub_; // Subscribe to odometry
 			rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imuSub_; // IMU data subscriber
 			rclcpp::Subscription<tracking_controller::msg::Target>::SharedPtr targetSub_; // subscriber for the tracking target states
-			rclcpp::Publisher<mavros_msgs::msg::AttitudeTarget>::SharedPtr cmdPub_; // command publisher
-			rclcpp::Publisher<mavros_msgs::msg::PositionTarget>::SharedPtr accCmdPub_; // acceleration command publisher
 			rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr poseVisPub_; // current pose publisher
 			rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr targetVisPub_; // target pose publisher
 			rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr histTrajVisPub_; // history trajectory publisher
@@ -51,6 +50,10 @@ namespace controller{
 			bool bodyRateControl_ = false;
 			bool attitudeControl_ = false;
 			bool accControl_ = true;
+			std::string backendType_ = "dds";
+			std::string ddsTargetTopic_ = "/px4_control_interface/controller_target_state";
+			std::string odomTopic_ = "/drone0/sensor_measurements/odom";
+			std::string imuTopic_ = "/drone0/sensor_measurements/imu";
 			Eigen::Vector3d pPos_, iPos_, dPos_;
 			Eigen::Vector3d pVel_, iVel_, dVel_;
 			double attitudeControlTau_;
@@ -92,6 +95,7 @@ namespace controller{
 			bool velFirstTime_ = true;
 			Eigen::Vector3d prevVel_;
 			rclcpp::Time velPrevTime_;
+			std::unique_ptr<SetpointSink> setpointSink_;
 
 
 		public:

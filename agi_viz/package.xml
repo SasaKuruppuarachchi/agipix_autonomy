@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>agi_viz</name>
+  <version>1.0.0</version>
+  <description>Launch utilities for RViz configurations used by the Agipix autonomy stack.</description>
+
+  <maintainer email="sasa@example.com">AgiAUTO</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>ament_index_python</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+
+  <exec_depend>autonomous_flight</exec_depend>
+  <exec_depend>global_planner</exec_depend>
+  <exec_depend>map_manager</exec_depend>
+  <exec_depend>onboard_detector</exec_depend>
+  <exec_depend>trajectory_planner</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

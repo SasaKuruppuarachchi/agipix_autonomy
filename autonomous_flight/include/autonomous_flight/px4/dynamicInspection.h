@@ -11,6 +11,7 @@
 #include <trajectory_planner/polyTrajOccMap.h>
 #include <trajectory_planner/piecewiseLinearTraj.h>
 #include <trajectory_planner/bsplineTraj.h>
+#include <functional>
 
 
 namespace AutoFlight{
@@ -67,6 +68,7 @@ namespace AutoFlight{
 		bool actionUseYaw_ = false;
 		rclcpp::Time actionStartTime_;
 		double actionTimeoutSec_ = 0.0;
+		std::function<void(bool)> actionDoneCb_;
 		bool lookAroundActive_ = false;
 		int lookAroundStep_ = 0;
 		bool backwardTurnPending_ = false;
@@ -123,6 +125,7 @@ namespace AutoFlight{
 		bool inspectionConfirm_;
 		bool backwardNoTurn_;
 		double replanTimeForDynamicObstacle_;
+		bool operatorConfirm_ = false;
 		// ***only used when we specify location***
 
 		// inspection data
@@ -163,9 +166,13 @@ namespace AutoFlight{
 		void inspectTimerCB();
 		bool checkSurroundingsStep();
 		void startAction(const nav_msgs::msg::Path& path, double duration, const geometry_msgs::msg::PoseStamped& goal, bool useYaw);
+		void startActionAsync(const nav_msgs::msg::Path& path, double duration, const geometry_msgs::msg::PoseStamped& goal, bool useYaw, const std::function<void(bool)>& doneCb);
 		void startYawAction(double yaw);
 		bool isActionDone();
+		bool finalizeActionIfDone(bool& success);
 		void resetInspectionSequence();
+		bool moveToPositionAsync(const geometry_msgs::msg::Point& position, double vel, const std::function<void(bool)>& doneCb);
+		bool moveToOrientationAsync(const geometry_msgs::msg::Quaternion& orientation, const std::function<void(bool)>& doneCb);
 
 		geometry_msgs::msg::PoseStamped getForwardGoal();
 		nav_msgs::msg::Path getRestGlobalPath();

@@ -216,7 +216,7 @@ namespace mapManager{
         void raycastUpdate();
         void cleanLocalMap();
         void inflateLocalMap();
-        void cleanDynamicObstacles();
+        virtual void cleanDynamicObstacles();
 
         // user functions
         bool isOccupied(const Eigen::Vector3d& pos);

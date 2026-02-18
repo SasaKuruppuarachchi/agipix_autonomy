@@ -27,7 +27,12 @@ def generate_launch_description():
                 "map_location",
                 default_value=PathJoinSubstitution([pkg_share, "map", "box.bt"]),
             ),
-            SetParameter(name="use_sim_time", value=False),
+            DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use simulation clock if true",
+            ),
+            SetParameter(name="use_sim_time", value=LaunchConfiguration("use_sim_time")),
             Node(
                 package="trajectory_planner",
                 executable="poly_RRTStar_goal_node",

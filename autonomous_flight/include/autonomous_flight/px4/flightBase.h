@@ -11,36 +11,30 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <mavros_msgs/srv/command_bool.hpp>
-#include <mavros_msgs/srv/set_mode.hpp>
-#include <mavros_msgs/msg/state.hpp>
 #include <tracking_controller/msg/target.hpp>
 #include <Eigen/Dense>
-#include <thread>
 #include <mutex>
+#include <string>
 
 using std::cout; using std::endl;
 namespace AutoFlight{
 	class flightBase{
 	protected:
 		rclcpp::Node::SharedPtr node_;
-		rclcpp::Subscription<mavros_msgs::msg::State>::SharedPtr stateSub_;
 		rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomSub_;
 		rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr clickSub_;
-		rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr posePub_;
 		rclcpp::Publisher<tracking_controller::msg::Target>::SharedPtr statePub_;
-		rclcpp::Client<mavros_msgs::srv::CommandBool>::SharedPtr armClient_;
-		rclcpp::Client<mavros_msgs::srv::SetMode>::SharedPtr setModeClient_;
 		rclcpp::TimerBase::SharedPtr stateUpdateTimer_;
+		rclcpp::TimerBase::SharedPtr targetPubTimer_;
 
 		// callback groups (critical callbacks are mutually exclusive)
 		rclcpp::CallbackGroup::SharedPtr stateCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr odomCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr clickCbGroup_;
+		rclcpp::CallbackGroup::SharedPtr targetPubCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr stateUpdateCbGroup_;
 		
 		nav_msgs::msg::Odometry odom_;
-		mavros_msgs::msg::State mavrosState_;
 		geometry_msgs::msg::PoseStamped poseTgt_;
 		tracking_controller::msg::Target stateTgt_;
 		geometry_msgs::msg::PoseStamped goal_;
@@ -53,28 +47,29 @@ namespace AutoFlight{
 		// parameters
 		double takeoffHgt_;
 		bool waitForTopicsReady_ = true;
+		double takeoffWaitTimeoutSec_ = 8.0;
+		bool requireTakeoffFeedback_ = false;
+		std::string controllerBackend_ = "dds";
+		std::string mapFrameId_ = "map";
+		std::string odomTopic_ = "/drone0/sensor_measurements/odom";
 		bool yawControl_;
 		int timeStep_;
 		double radius_;
 		double velocity_;
 
 		// status
-		bool poseControl_ = true;
 		bool odomReceived_ = false;
-		bool mavrosStateReceived_ = false;
 		bool firstGoal_ = false;
 		bool goalReceived_ = false;
 
 
 	public:
-		std::thread targetPubWorker_;
 
 		explicit flightBase(const rclcpp::Node::SharedPtr& node);
 		
 		void publishTarget();
 
 		// callback functions
-		void stateCB(const mavros_msgs::msg::State::SharedPtr state);
 		void odomCB(const nav_msgs::msg::Odometry::SharedPtr odom);
 		void clickCB(const geometry_msgs::msg::PoseStamped::SharedPtr cp);
 		void stateUpdateCB();

@@ -1213,7 +1213,7 @@ namespace trajPlanner{
 		visualization_msgs::msg::Marker point;
 		int pointCount = 0;
 		for (int i=0; i<this->optData_.controlPoints.cols(); ++i){
-			point.header.frame_id = "map";
+			point.header.frame_id = "drone0/map";
 			point.header.stamp = this->clock_->now();
 			point.ns = "control_points";
 			point.id = pointCount;
@@ -1253,7 +1253,7 @@ namespace trajPlanner{
 			std::vector<Eigen::Vector3d> path = this->astarPaths_[i];
 			for (size_t j=0; j<path.size(); ++j){
 				Eigen::Vector3d p = path[j];
-				point.header.frame_id = "map";
+				point.header.frame_id = "drone0/map";
 				point.header.stamp = this->clock_->now();
 				point.ns = "astar_path";
 				point.id = pointCount;
@@ -1292,7 +1292,7 @@ namespace trajPlanner{
 			int collisionEndIdx = this->collisionSeg_[i].second-1;
 			for (int j=collisionStartIdx; j<=collisionEndIdx; ++j){
 				Eigen::Vector3d p = this->optData_.controlPoints.col(j);
-				point.header.frame_id = "map";
+				point.header.frame_id = "drone0/map";
 				point.header.stamp = this->clock_->now();
 				point.ns = "collision_control_point";
 				point.id = numCollisionControlPoints;
@@ -1320,7 +1320,7 @@ namespace trajPlanner{
 			for (size_t j=0; j<this->optData_.guidePoints[i].size(); ++j){
 				visualization_msgs::msg::Marker pointG;
 				Eigen::Vector3d p = this->optData_.guidePoints[i][j]; 
-				pointG.header.frame_id = "map";
+				pointG.header.frame_id = "drone0/map";
 				pointG.header.stamp = this->clock_->now();
 				pointG.ns = "guide_points";
 				pointG.id = numGuidedPoints;
@@ -1359,7 +1359,7 @@ namespace trajPlanner{
 				p2.z = pGuide(2);
 				std::vector<geometry_msgs::msg::Point> pointsVec {p1, p2};
 				arrow.points = pointsVec;
-				arrow.header.frame_id = "map";
+				arrow.header.frame_id = "drone0/map";
 				arrow.header.stamp = this->clock_->now();
 				arrow.ns = "guide_direction";
 				arrow.id = numGuideDirections;
@@ -1392,7 +1392,7 @@ namespace trajPlanner{
 			for (size_t i=0; i<this->inputPathVis_.size(); ++i){
 				Eigen::Vector3d p = this->inputPathVis_[i];
 				visualization_msgs::msg::Marker point;
-				point.header.frame_id = "map";
+				point.header.frame_id = "drone0/map";
 				point.header.stamp = this->clock_->now();
 				point.ns = "input_trajectory_point";
 				point.id = i;
@@ -1439,7 +1439,7 @@ namespace trajPlanner{
 		geometry_msgs::msg::PoseStamped ps;
 		Eigen::Vector3d p = this->bspline_.at(t);
 
-		ps.header.frame_id = "map";
+		ps.header.frame_id = "drone0/map";
 		ps.header.stamp = this->clock_->now();
 		ps.pose.position.x = p(0);
 		ps.pose.position.y = p(1);
@@ -1573,7 +1573,7 @@ namespace trajPlanner{
 			pathVec.push_back(p);
 		}
 		path.poses = pathVec;
-		path.header.frame_id = "map";
+		path.header.frame_id = "drone0/map";
 		path.header.stamp = this->clock_->now();
 	}
 }

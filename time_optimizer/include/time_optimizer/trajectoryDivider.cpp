@@ -327,7 +327,7 @@ namespace timeOptimizer{
 				if (inInterval){
 				// if (this->mask_[i]){
 					visualization_msgs::msg::Marker point;
-					point.header.frame_id = "map";
+					point.header.frame_id = "drone0/map";
 					point.header.stamp = this->node_->now();
 					point.ns = "obstacle_trajectory_point";
 					point.id = countPointNum;
@@ -361,7 +361,7 @@ namespace timeOptimizer{
 			// sample range
 			visualization_msgs::msg::MarkerArray obTrajMarkers;
 			visualization_msgs::msg::Marker range;
-			range.header.frame_id = "map";
+			range.header.frame_id = "drone0/map";
 			range.header.stamp = this->node_->now();
 			range.ns = "range box";
 			range.id = 0;

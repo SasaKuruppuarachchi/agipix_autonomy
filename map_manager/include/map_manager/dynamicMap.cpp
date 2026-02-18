@@ -24,13 +24,20 @@ namespace mapManager{
 		this->registerCallback();
 		this->detector_ = std::make_shared<onboardDetector::dynamicDetector>(this->_node);
 		if (freeMap){
-			this->freeMapTimer_ = this->_node->create_wall_timer(std::chrono::milliseconds(33), std::bind(&dynamicMap::freeMapCB, this));
+			this->freeMapTimer_ = this->_node->create_wall_timer(std::chrono::milliseconds(33), std::bind(&dynamicMap::freeMapCB, this),this->mapGroup_);
 		}
 	}
 
 	void dynamicMap::freeMapCB(){
+		this->cleanDynamicObstacles();
+	}
+
+	void dynamicMap::cleanDynamicObstacles(){
 		std::vector<std::pair<Eigen::Vector3d, Eigen::Vector3d>> freeRegions;
 		std::vector<onboardDetector::box3D> dynamicBBoxes;
+		if (not this->detector_){
+			return;
+		}
 		this->detector_->getDynamicObstacles(dynamicBBoxes);
 		for (onboardDetector::box3D ob:dynamicBBoxes){
 			Eigen::Vector3d lowerBound (ob.x-ob.x_width/2-0.3, ob.y-ob.y_width/2-0.3, 0.0);

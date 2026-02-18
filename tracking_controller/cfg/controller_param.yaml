@@ -8,6 +8,12 @@
 /**:
   ros__parameters:
     controller:
+      # backend: dds
+      backend: dds
+      dds_target_topic: /px4_control_interface/controller_target_state
+      odom_topic: /drone0/sensor_measurements/odom
+      imu_topic: /drone0/sensor_measurements/imu
+
       # body
       body_rate_control: false # all parameters
       attitude_control: false # PID and hover thrust

@@ -46,7 +46,7 @@ public:
 			waypointPath.push_back(p);
 
 			visualization_msgs::msg::Marker waypoint;
-			waypoint.header.frame_id = "map";
+			waypoint.header.frame_id = "drone0/map";
 			waypoint.header.stamp = clock_->now();
 			waypoint.ns = "waypoint";
 			waypoint.id = waypointCount;
@@ -97,7 +97,7 @@ private:
 		for (trajPlanner::pose pTemp: trajectoryTemp){
 			geometry_msgs::msg::PoseStamped ps;
 			ps.header.stamp = clock_->now();
-			ps.header.frame_id = "map";
+			ps.header.frame_id = "drone0/map";
 			ps.pose.position.x = pTemp.x;
 			ps.pose.position.y = pTemp.y;
 			ps.pose.position.z = pTemp.z;
@@ -107,7 +107,7 @@ private:
 			trajVec.push_back(ps);
 		}
 		trajectory.header.stamp = clock_->now();
-		trajectory.header.frame_id = "map";
+		trajectory.header.frame_id = "drone0/map";
 		trajectory.poses = trajVec;
 	}
 

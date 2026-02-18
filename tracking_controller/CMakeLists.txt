@@ -13,7 +13,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-find_package(mavros_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -103,6 +102,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_lib
   include/${PROJECT_NAME}/trackingController.cpp
+  include/${PROJECT_NAME}/default_backends.cpp
 )
 
 target_include_directories(${PROJECT_NAME}_lib
@@ -118,7 +118,6 @@ set(dependencies
   nav_msgs
   sensor_msgs
   visualization_msgs
-  mavros_msgs
   tf2
   tf2_geometry_msgs
   Eigen3

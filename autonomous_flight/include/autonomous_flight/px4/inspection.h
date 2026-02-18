@@ -36,7 +36,7 @@ namespace AutoFlight{
 		double avoidSafeDist_;
 		double sideSafeDist_;
 		double zigZagSafeDist_;
-		double avoidanceOnlineCheck_;
+		bool avoidanceOnlineCheck_ = false;
 
 		double minTargetArea_; // min area to be considered as the target
 		double maxTargetHgt_; // max range of inspection target height
@@ -60,6 +60,7 @@ namespace AutoFlight{
 		bool pathRegenOption_;
 		bool interactivePathRegen_;
 		int pathRegenNum_;
+		bool operatorConfirm_ = false;
 
 		// target
 		std::vector<double> targetRange_;
@@ -79,12 +80,29 @@ namespace AutoFlight{
 		std::vector<visualization_msgs::msg::Marker> avoidancePathVisVec_;
 		visualization_msgs::msg::MarkerArray avoidancePathVisMsg_;
 
+		enum class MissionStage { IDLE, TAKEOFF, APPROACH, EXPLORE, INSPECT, RETURN, COMPLETE };
+		rclcpp::CallbackGroup::SharedPtr missionCbGroup_;
+		rclcpp::TimerBase::SharedPtr missionTimer_;
+		MissionStage missionStage_ = MissionStage::IDLE;
+		bool missionActive_ = false;
+		bool missionFinished_ = false;
+		bool missionTargetReach_ = false;
+		double missionExploreHeight_ = 0.0;
+		bool missionReachTargetHeight_ = false;
+		bool missionReturnSucceed_ = false;
+		int missionApproachAttempts_ = 0;
+		int missionExploreSteps_ = 0;
+		int missionReturnAttempts_ = 0;
+
+		void missionStepCB();
+
 
 	public:
 		explicit inspector(const rclcpp::Node::SharedPtr& node);
 		void loadParam();
 		void initPlanner();
 		void run();
+		bool isMissionFinished() const;
 		void lookAround(double angle);
 		void forward(); // get forward towards the wall
 		void forwardNBV(); // forward by Next Best View Criteria
