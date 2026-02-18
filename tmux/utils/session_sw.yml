@@ -50,8 +50,6 @@ windows:
             use_sim_time:=<%= simulation %> 
             start_legacy_stack:=true 
             mission:=takeoff_and_hover 
-            target_topic:=/autonomous_flight/target_state 
-            middle_level_controller:=cascaded_pid 
             2>&1 | tee /tmp/dds_mission_logs/01_takeoff_hover.log
 
   - CTRL-DEBUG:

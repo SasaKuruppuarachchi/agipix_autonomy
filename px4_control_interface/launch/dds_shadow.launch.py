@@ -42,6 +42,34 @@ def _include_legacy_stack(context):
     ]
 
 
+def _include_px4_mode_node(context):
+    mission = LaunchConfiguration("mission").perform(context)
+    start_legacy_stack = LaunchConfiguration("start_legacy_stack").perform(context).lower() == "true"
+
+    # takeoff_and_hover is now mode-executor based inside autonomous_flight package
+    # and should not run in parallel with px4_tracking_mode_node.
+    if start_legacy_stack and mission == "takeoff_and_hover":
+        return []
+
+    return [
+        Node(
+            package="px4_control_interface",
+            executable="px4_tracking_mode_node",
+            name="px4_tracking_mode_node",
+            output="screen",
+            parameters=[
+                {
+                    "target_topic": LaunchConfiguration("target_topic"),
+                    "target_timeout_s": 0.2,
+                    "use_input_yaw": True,
+                    "middle_level_controller": LaunchConfiguration("middle_level_controller"),
+                    "use_sim_time": LaunchConfiguration("use_sim_time"),
+                }
+            ],
+        )
+    ]
+
+
 def generate_launch_description():
     return LaunchDescription(
         [
@@ -75,20 +103,6 @@ def generate_launch_description():
                 description="Middle-level controller inside px4_tracking_mode_node: pass_through or cascaded_pid.",
             ),
             OpaqueFunction(function=_include_legacy_stack),
-            Node(
-                package="px4_control_interface",
-                executable="px4_tracking_mode_node",
-                name="px4_tracking_mode_node",
-                output="screen",
-                parameters=[
-                    {
-                        "target_topic": LaunchConfiguration("target_topic"),
-                        "target_timeout_s": 0.2,
-                        "use_input_yaw": True,
-                        "middle_level_controller": LaunchConfiguration("middle_level_controller"),
-                        "use_sim_time": LaunchConfiguration("use_sim_time"),
-                    }
-                ],
-            ),
+            OpaqueFunction(function=_include_px4_mode_node),
         ]
     )

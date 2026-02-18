@@ -22,8 +22,8 @@ def generate_launch_description():
             ),
             Node(
                 package="autonomous_flight",
-                executable="takeoff_and_hover_node",
-                name="takeoff_and_hover_node",
+                executable="takeoff_and_hover_executor_node",
+                name="takeoff_and_hover_executor_node",
                 output="screen",
                 parameters=af_params + [
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},

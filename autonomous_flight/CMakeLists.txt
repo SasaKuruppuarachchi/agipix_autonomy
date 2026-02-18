@@ -25,6 +25,7 @@ find_package(map_manager REQUIRED)
 find_package(time_optimizer REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(px4_ros2_cpp REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Target.msg"
@@ -126,6 +127,7 @@ target_link_libraries(${AUTONOMOUS_FLIGHT_LIB}
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/autonomous_flight_node.cpp)
 add_executable(takeoff_and_hover_node src/px4/takeoff_and_hover_node.cpp)
+add_executable(takeoff_and_hover_executor_node src/px4/takeoff_and_hover_executor_node.cpp)
 add_executable(takeoff_and_track_circle_node src/px4/takeoff_and_track_circle_node.cpp)
 add_executable(inspection_node src/px4/inspection_node.cpp)
 add_executable(navigation_node src/px4/navigation_node.cpp)
@@ -148,6 +150,11 @@ add_executable(dynamic_exploration_node src/px4/dynamic_exploration_node.cpp)
 #   ${catkin_LIBRARIES}
 # )
 target_link_libraries(takeoff_and_hover_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(takeoff_and_hover_executor_node
+  Eigen3::Eigen
+  px4_ros2_cpp::px4_ros2_cpp
+  rclcpp::rclcpp
+)
 target_link_libraries(takeoff_and_track_circle_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
@@ -156,6 +163,7 @@ target_link_libraries(dynamic_inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOM
 target_link_libraries(dynamic_exploration_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 
 ament_target_dependencies(takeoff_and_hover_node rclcpp)
+ament_target_dependencies(takeoff_and_hover_executor_node rclcpp px4_ros2_cpp)
 ament_target_dependencies(takeoff_and_track_circle_node rclcpp)
 ament_target_dependencies(inspection_node rclcpp)
 ament_target_dependencies(navigation_node rclcpp)
@@ -163,6 +171,7 @@ ament_target_dependencies(dynamic_navigation_node rclcpp)
 ament_target_dependencies(dynamic_inspection_node rclcpp)
 ament_target_dependencies(dynamic_exploration_node rclcpp)
 target_link_libraries(takeoff_and_hover_node "${cpp_typesupport_target}")
+target_link_libraries(takeoff_and_hover_executor_node "${cpp_typesupport_target}")
 target_link_libraries(takeoff_and_track_circle_node "${cpp_typesupport_target}")
 target_link_libraries(inspection_node "${cpp_typesupport_target}")
 target_link_libraries(navigation_node "${cpp_typesupport_target}")
@@ -179,6 +188,7 @@ install(TARGETS ${AUTONOMOUS_FLIGHT_LIB}
 
 install(TARGETS
   takeoff_and_hover_node
+  takeoff_and_hover_executor_node
   takeoff_and_track_circle_node
   inspection_node
   navigation_node
