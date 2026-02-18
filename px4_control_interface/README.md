@@ -1,16 +1,16 @@
 # px4_control_interface
 
-DDS control bridge package for AgiAUTO.
+Integrated PX4 mode + middle-level controller package for AgiAUTO.
 
 ## Current status
 
-Phase-1 bootstrap implemented:
+Integrated control path implemented:
 - External PX4 mode executor + mode node based on `px4_ros2_interface_lib`
-- Subscribes mission/controller target stream (`/autonomous_flight/target_state`)
-- Converts ENU setpoints to NED and publishes PX4 trajectory setpoints
+- Subscribes mission target stream (`/autonomous_flight/target_state`, type: `autonomous_flight/msg/Target`)
+- Runs middle-level controller in-process (`middle_level_controller:=pass_through|cascaded_pid`)
+- Converts ENU mission references to NED and publishes PX4 trajectory setpoints
 - Safe hold fallback when target stream times out
-- Optional auto-takeoff command on executor activation (`auto_takeoff:=true`)
-- Optional auto-arm before takeoff (`auto_arm:=true` to arm automatically, `auto_arm:=false` to wait for manual arm before takeoff)
+- Executor workflow follows `mode_with_executor` example (takeoff → tracking mode → RTL → disarm wait)
 
 ## Run
 
@@ -24,11 +24,11 @@ Run with a specific legacy mission stack in parallel (shadow mode):
 ros2 launch px4_control_interface dds_shadow.launch.py mission:=dynamic_navigation
 ```
 
-Use the controller DDS sink output as input to PX4 mode adapter:
+Select middle-level controller implementation:
 
 ```bash
 ros2 launch px4_control_interface dds_shadow.launch.py \
-	target_topic:=/px4_control_interface/controller_target_state
+	middle_level_controller:=cascaded_pid
 ```
 
 Available `mission` values:
@@ -47,16 +47,12 @@ Run only the PX4 external mode node (no legacy stack include):
 ros2 launch px4_control_interface dds_shadow.launch.py start_legacy_stack:=false
 ```
 
-Run full DDS shadow parity path (include `tracking_controller` in DDS mode and feed its DDS sink into PX4 mode adapter):
+Run only the PX4 external mode node (no legacy mission include):
 
 ```bash
 ros2 launch px4_control_interface dds_shadow.launch.py \
-	start_tracking_controller:=false \
-	tracking_backend:=dds \
-	tracking_dds_target_topic:=/px4_control_interface/controller_target_state \
-	target_topic:=/px4_control_interface/controller_target_state \
-	auto_takeoff:=true \
-	auto_arm:=true
+	start_legacy_stack:=false \
+	target_topic:=/autonomous_flight/target_state
 ```
 
-> Activation remains under PX4/QGC control. After activation, executor can issue takeoff and schedule tracking mode automatically.
+> Legacy standalone `tracking_controller` runtime path is deprecated in this package flow.

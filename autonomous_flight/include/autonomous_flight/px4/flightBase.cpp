@@ -24,14 +24,6 @@ namespace AutoFlight{
 		this->node_->get_parameter("require_takeoff_feedback", this->requireTakeoffFeedback_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Require takeoff feedback: %s.", this->requireTakeoffFeedback_ ? "true" : "false");
 
-		this->node_->declare_parameter<std::string>("controller.backend", "dds");
-		this->node_->get_parameter("controller.backend", this->controllerBackend_);
-		if (this->controllerBackend_ != "dds"){
-			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: MAVROS backend has been purged. Forcing backend to DDS.");
-			this->controllerBackend_ = "dds";
-		}
-		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Controller backend: %s.", this->controllerBackend_.c_str());
-
 		this->node_->declare_parameter<std::string>("frame_id", "map");
 		this->node_->get_parameter("frame_id", this->mapFrameId_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Frame ID: %s.", this->mapFrameId_.c_str());
@@ -58,7 +50,7 @@ namespace AutoFlight{
 			"/move_base_simple/goal", rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
 		
 	    // Publisher
-		this->statePub_ = this->node_->create_publisher<tracking_controller::msg::Target>("/autonomous_flight/target_state", 1000);
+		this->statePub_ = this->node_->create_publisher<autonomous_flight::msg::Target>("/autonomous_flight/target_state", 1000);
 
 
 		// Wait for odometry to be ready
@@ -162,17 +154,7 @@ namespace AutoFlight{
 			r.sleep();
 		}
 
-		// tracking_controller::Target psT;
-		// // psT.type_mask = psT.IGNORE_ACC_VEL;
-		// psT.header.frame_id = this->mapFrameId_;
-		// psT.header.stamp = ros::Time::now();
-		// psT.position.x = this->odom_.pose.pose.position.x;
-		// psT.position.y = this->odom_.pose.pose.position.y;
-		// psT.position.z = this->takeoffHgt_;
-		// psT.yaw = AutoFlight::rpy_from_quaternion(this->odom_.pose.pose.orientation);
-		// this->updateTargetWithState(psT);
-		
-		// cout << "[AutoFlight]: Switch to tracking controller." << endl;
+		// Keep publishing hold-target briefly to settle after takeoff command.
 		rclcpp::Time startTime = this->node_->now();
 		while (rclcpp::ok()){
 			rclcpp::Time currTime = this->node_->now();
@@ -248,7 +230,7 @@ namespace AutoFlight{
             vz = 0;
             az = 0;
             
-			tracking_controller::msg::Target target;
+			autonomous_flight::msg::Target target;
             target.position.x = x;
             target.position.y = y;
             target.position.z = z;
@@ -310,7 +292,7 @@ namespace AutoFlight{
                 theta += (PI_const*2)/180;
                 yaw = theta + PI_const / 2;
 
-				tracking_controller::msg::Target target;
+				autonomous_flight::msg::Target target;
                 target.position.x = x;
                 target.position.y = y;
                 target.position.z = z;
@@ -377,7 +359,7 @@ namespace AutoFlight{
 			double az = 0.0;
 
 			// state target message
-			tracking_controller::msg::Target target;
+			autonomous_flight::msg::Target target;
 			target.position.x = x;
 			target.position.y = y;
 			target.position.z = z;
@@ -426,7 +408,7 @@ namespace AutoFlight{
 		}
 
 		double endTime = yawDiffAbs/desiredAngularVel;
-		tracking_controller::msg::Target target;
+		autonomous_flight::msg::Target target;
 		geometry_msgs::msg::PoseStamped psT;
 		psT.pose = ps.pose;
 		rclcpp::Time startTime = this->node_->now();
@@ -460,7 +442,7 @@ namespace AutoFlight{
 	void flightBase::updateTarget(const geometry_msgs::msg::PoseStamped& ps){
 		this->poseTgt_ = ps;
 		this->poseTgt_.header.frame_id = this->mapFrameId_;
-		tracking_controller::msg::Target target;
+		autonomous_flight::msg::Target target;
 		target.position.x = ps.pose.position.x;
 		target.position.y = ps.pose.position.y;
 		target.position.z = ps.pose.position.z;
@@ -474,7 +456,7 @@ namespace AutoFlight{
 		this->updateTargetWithState(target);
 	}
 
-	void flightBase::updateTargetWithState(const tracking_controller::msg::Target& target){
+	void flightBase::updateTargetWithState(const autonomous_flight::msg::Target& target){
 		this->stateTgt_ = target;
 	}
 	

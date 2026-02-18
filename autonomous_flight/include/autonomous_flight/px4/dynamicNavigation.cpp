@@ -437,7 +437,7 @@ namespace AutoFlight{
 			double endTime = this->trajectory_.getDuration()/linearReparamFactor;
 
 			double leftTime = endTime - realTime; 
-			tracking_controller::msg::Target target;
+			autonomous_flight::msg::Target target;
 			if (leftTime <= 0.0){ // zero vel and zero acc if close to
 				target.position.x = pos(0);
 				target.position.y = pos(1);

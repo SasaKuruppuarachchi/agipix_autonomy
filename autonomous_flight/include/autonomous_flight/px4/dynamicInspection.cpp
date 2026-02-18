@@ -5,7 +5,6 @@
 */
 
 #include <autonomous_flight/px4/dynamicInspection.h>
-#include <tracking_controller/msg/target.hpp>
 #include <limits>
 
 namespace nav_msgs { using Path = nav_msgs::msg::Path; }
@@ -858,7 +857,7 @@ namespace AutoFlight{
 				double endTime = this->trajectory_.getDuration()/linearReparamFactor;
 
 				double leftTime = endTime - realTime; 
-				tracking_controller::msg::Target target;
+				autonomous_flight::msg::Target target;
 				if (leftTime <= 0.0){ // zero vel and zero acc if close to
 					target.position.x = pos(0);
 					target.position.y = pos(1);

@@ -419,7 +419,7 @@ namespace AutoFlight{
 
 			double leftTime = endTime - realTime; 
 			// cout << "left time: " << leftTime << endl;
-			tracking_controller::msg::Target target;
+			autonomous_flight::msg::Target target;
 			if (leftTime <= 0.0){ // zero vel and zero acc if close to
 				target.position.x = pos(0);
 				target.position.y = pos(1);
@@ -481,7 +481,6 @@ namespace AutoFlight{
 
 		// int temp1 = system("mkdir -p ~/rosbag_navigation_info &");
 		// int temp2 = system("mv ~/rosbag_navigation_info/navigation_info ~/rosbag_navigation_info/previous &");
-		// int temp3 = system("ros2 bag record -o ~/rosbag_navigation_info/navigation_info /camera/color/image_raw /occupancy_map/inflated_voxel_map /navigation/bspline_trajectory /drone0/sensor_measurements/odom /autonomous_flight/target_state /tracking_controller/vel_and_acc_info /tracking_controller/target_pose /tracking_controller/trajectory_history /trajDivider/braking_zone /trajDivider/kdtree_range &");
 		// if (temp1==-1 or temp2==-1 or temp3==-1){
 		// 	cout << "[AutoFlight]: Recording fails." << endl;
 		// }

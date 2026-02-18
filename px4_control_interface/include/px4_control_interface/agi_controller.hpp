@@ -6,7 +6,7 @@
 #include <mutex>
 #include <string>
 
-#include <tracking_controller/msg/target.hpp>
+#include <autonomous_flight/msg/target.hpp>
 
 namespace px4_control_interface
 {
@@ -25,7 +25,7 @@ struct AgiControllerReference
   Eigen::Vector3f velocity_ned{0.f, 0.f, 0.f};
   Eigen::Vector3f acceleration_ned{0.f, 0.f, 0.f};
   float yaw_ned{0.f};
-  uint8_t type_mask{tracking_controller::msg::Target::IGNORE_ACC_VEL};
+  uint8_t type_mask{autonomous_flight::msg::Target::IGNORE_ACC_VEL};
 };
 
 class AgiController
@@ -39,7 +39,7 @@ public:
 
   virtual void setReference(const AgiControllerReference & reference) = 0;
 
-  virtual tracking_controller::msg::Target update(const AgiControllerState & state, float dt_s) = 0;
+  virtual autonomous_flight::msg::Target update(const AgiControllerState & state, float dt_s) = 0;
 };
 
 class PassThroughAgiController : public AgiController
@@ -58,16 +58,16 @@ public:
     _reference = reference;
   }
 
-  tracking_controller::msg::Target update(const AgiControllerState & /*state*/, float /*dt_s*/) override
+  autonomous_flight::msg::Target update(const AgiControllerState & /*state*/, float /*dt_s*/) override
   {
     std::scoped_lock<std::mutex> lock(_reference_mutex);
     return toTargetMsg(_reference);
   }
 
 protected:
-  static tracking_controller::msg::Target toTargetMsg(const AgiControllerReference & ref)
+  static autonomous_flight::msg::Target toTargetMsg(const AgiControllerReference & ref)
   {
-    tracking_controller::msg::Target out;
+    autonomous_flight::msg::Target out;
     out.type_mask = ref.type_mask;
     out.position.x = ref.position_ned.x();
     out.position.y = ref.position_ned.y();
@@ -108,7 +108,7 @@ public:
     _pos_error_integral.setZero();
   }
 
-  tracking_controller::msg::Target update(const AgiControllerState & state, float dt_s) override
+  autonomous_flight::msg::Target update(const AgiControllerState & state, float dt_s) override
   {
     AgiControllerReference ref;
     {
@@ -121,10 +121,10 @@ public:
     Eigen::Vector3f velocity_ref = ref.velocity_ned;
     Eigen::Vector3f acceleration_ff = ref.acceleration_ned;
 
-    if (ref.type_mask == tracking_controller::msg::Target::IGNORE_ACC_VEL) {
+    if (ref.type_mask == autonomous_flight::msg::Target::IGNORE_ACC_VEL) {
       velocity_ref.setZero();
       acceleration_ff.setZero();
-    } else if (ref.type_mask == tracking_controller::msg::Target::IGNORE_ACC) {
+    } else if (ref.type_mask == autonomous_flight::msg::Target::IGNORE_ACC) {
       acceleration_ff.setZero();
     }
 
@@ -141,7 +141,7 @@ public:
       _kd_vel.cwiseProduct(vel_error) +
       _ki_pos.cwiseProduct(_pos_error_integral);
 
-    tracking_controller::msg::Target out;
+    autonomous_flight::msg::Target out;
     out.type_mask = 0U;  // emit full controlled state for the low-level setpoint writer
     out.position.x = ref.position_ned.x();
     out.position.y = ref.position_ned.y();

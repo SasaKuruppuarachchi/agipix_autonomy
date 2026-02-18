@@ -50,10 +50,7 @@ windows:
             use_sim_time:=<%= simulation %> 
             start_legacy_stack:=true 
             mission:=takeoff_and_hover 
-            start_tracking_controller:=false 
-            tracking_backend:=dds 
-            tracking_dds_target_topic:=/px4_control_interface/controller_target_state 
-            target_topic:=/px4_control_interface/controller_target_state 
+            target_topic:=/autonomous_flight/target_state 
             middle_level_controller:=cascaded_pid 
             2>&1 | tee /tmp/dds_mission_logs/01_takeoff_hover.log
 
@@ -61,7 +58,7 @@ windows:
       layout: tiled
       panes:
         - ros2 topic hz /autonomous_flight/target_state
-        - ros2 topic hz /px4_control_interface/controller_target_state
+                - ros2 topic hz /fmu/out/vehicle_local_position
         - ros2 topic hz /drone0/sensor_measurements/odom
         
 

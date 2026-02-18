@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(octomap REQUIRED)
@@ -21,10 +22,14 @@ find_package(onboard_detector REQUIRED)
 find_package(global_planner REQUIRED)
 find_package(trajectory_planner REQUIRED)
 find_package(map_manager REQUIRED)
-find_package(tracking_controller REQUIRED)
 find_package(time_optimizer REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(OpenCV REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Target.msg"
+  DEPENDENCIES std_msgs geometry_msgs
+)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -73,7 +78,9 @@ set(AUTONOMOUS_NODE_EXTRA_LIBS
   ${EXTRA_LINK_LIBS}
 )
 
-add_library(${PROJECT_NAME}
+set(AUTONOMOUS_FLIGHT_LIB ${PROJECT_NAME}_core)
+
+add_library(${AUTONOMOUS_FLIGHT_LIB}
   include/${PROJECT_NAME}/px4/flightBase.cpp
   include/${PROJECT_NAME}/px4/inspection.cpp
   include/${PROJECT_NAME}/px4/navigation.cpp
@@ -82,7 +89,7 @@ add_library(${PROJECT_NAME}
   include/${PROJECT_NAME}/px4/dynamicExploration.cpp
 )
 
-ament_target_dependencies(${PROJECT_NAME}
+ament_target_dependencies(${AUTONOMOUS_FLIGHT_LIB}
   rclcpp
   std_msgs
   geometry_msgs
@@ -97,11 +104,13 @@ ament_target_dependencies(${PROJECT_NAME}
   global_planner
   trajectory_planner
   map_manager
-  tracking_controller
   time_optimizer
 )
 
-target_link_libraries(${PROJECT_NAME}
+rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_typesupport_cpp")
+target_link_libraries(${AUTONOMOUS_FLIGHT_LIB} "${cpp_typesupport_target}")
+
+target_link_libraries(${AUTONOMOUS_FLIGHT_LIB}
   ${OCTOMAP_LIBRARIES}
   ${OpenCV_LIBS}
   ${EXTRA_LINK_LIBS}
@@ -138,13 +147,13 @@ add_executable(dynamic_exploration_node src/px4/dynamic_exploration_node.cpp)
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
-target_link_libraries(takeoff_and_hover_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(takeoff_and_track_circle_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(inspection_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(navigation_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(dynamic_navigation_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(dynamic_inspection_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
-target_link_libraries(dynamic_exploration_node ${PROJECT_NAME} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(takeoff_and_hover_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(takeoff_and_track_circle_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(dynamic_navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(dynamic_inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(dynamic_exploration_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 
 ament_target_dependencies(takeoff_and_hover_node rclcpp)
 ament_target_dependencies(takeoff_and_track_circle_node rclcpp)
@@ -153,9 +162,16 @@ ament_target_dependencies(navigation_node rclcpp)
 ament_target_dependencies(dynamic_navigation_node rclcpp)
 ament_target_dependencies(dynamic_inspection_node rclcpp)
 ament_target_dependencies(dynamic_exploration_node rclcpp)
+target_link_libraries(takeoff_and_hover_node "${cpp_typesupport_target}")
+target_link_libraries(takeoff_and_track_circle_node "${cpp_typesupport_target}")
+target_link_libraries(inspection_node "${cpp_typesupport_target}")
+target_link_libraries(navigation_node "${cpp_typesupport_target}")
+target_link_libraries(dynamic_navigation_node "${cpp_typesupport_target}")
+target_link_libraries(dynamic_inspection_node "${cpp_typesupport_target}")
+target_link_libraries(dynamic_exploration_node "${cpp_typesupport_target}")
 
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${AUTONOMOUS_FLIGHT_LIB}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -183,6 +199,7 @@ install(DIRECTORY
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(${PROJECT_NAME})
+ament_export_libraries(${AUTONOMOUS_FLIGHT_LIB})
+ament_export_dependencies(rosidl_default_runtime)
 
 ament_package()

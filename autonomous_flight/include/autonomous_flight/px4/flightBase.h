@@ -8,10 +8,10 @@
 #define FLIGHTBASE_H
 #include <rclcpp/rclcpp.hpp>
 #include <autonomous_flight/px4/utils.h>
+#include <autonomous_flight/msg/target.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
-#include <tracking_controller/msg/target.hpp>
 #include <Eigen/Dense>
 #include <mutex>
 #include <string>
@@ -23,7 +23,7 @@ namespace AutoFlight{
 		rclcpp::Node::SharedPtr node_;
 		rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomSub_;
 		rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr clickSub_;
-		rclcpp::Publisher<tracking_controller::msg::Target>::SharedPtr statePub_;
+		rclcpp::Publisher<autonomous_flight::msg::Target>::SharedPtr statePub_;
 		rclcpp::TimerBase::SharedPtr stateUpdateTimer_;
 		rclcpp::TimerBase::SharedPtr targetPubTimer_;
 
@@ -36,7 +36,7 @@ namespace AutoFlight{
 		
 		nav_msgs::msg::Odometry odom_;
 		geometry_msgs::msg::PoseStamped poseTgt_;
-		tracking_controller::msg::Target stateTgt_;
+		autonomous_flight::msg::Target stateTgt_;
 		geometry_msgs::msg::PoseStamped goal_;
 		Eigen::Vector3d currPos_;
 		double currYaw_;
@@ -49,7 +49,6 @@ namespace AutoFlight{
 		bool waitForTopicsReady_ = true;
 		double takeoffWaitTimeoutSec_ = 8.0;
 		bool requireTakeoffFeedback_ = false;
-		std::string controllerBackend_ = "dds";
 		std::string mapFrameId_ = "map";
 		std::string odomTopic_ = "/drone0/sensor_measurements/odom";
 		bool yawControl_;
@@ -81,7 +80,7 @@ namespace AutoFlight{
 		void moveToOrientation(double yaw, double desiredAngularVel);
 
 		void updateTarget(const geometry_msgs::msg::PoseStamped& ps);
-		void updateTargetWithState(const tracking_controller::msg::Target& target);
+		void updateTargetWithState(const autonomous_flight::msg::Target& target);
 		bool isReach(const geometry_msgs::msg::PoseStamped& poseTgt, bool useYaw=true);
 		bool isReach(const geometry_msgs::msg::PoseStamped& poseTgt, double dist, bool useYaw=true);
 	};
@@ -120,8 +119,8 @@ namespace AutoFlight{
 			return idx;
 		}
 
-		tracking_controller::msg::Target getState(){
-			tracking_controller::msg::Target target;
+		autonomous_flight::msg::Target getState(){
+			autonomous_flight::msg::Target target;
 			geometry_msgs::msg::PoseStamped ps = this->getPose();
 			target.position.x = ps.pose.position.x;
 			target.position.y = ps.pose.position.y;
@@ -136,8 +135,8 @@ namespace AutoFlight{
 			return target;
 		}
 
-		tracking_controller::msg::Target getState(const geometry_msgs::msg::Pose& psCurr){
-			tracking_controller::msg::Target target;
+		autonomous_flight::msg::Target getState(const geometry_msgs::msg::Pose& psCurr){
+			autonomous_flight::msg::Target target;
 			geometry_msgs::msg::PoseStamped ps = this->getPose(psCurr);
 			target.position.x = ps.pose.position.x;
 			target.position.y = ps.pose.position.y;
@@ -152,8 +151,8 @@ namespace AutoFlight{
 			return target;
 		}
 
-		tracking_controller::msg::Target getStateWithoutYaw(const geometry_msgs::msg::Pose& psCurr){
-			tracking_controller::msg::Target target;
+		autonomous_flight::msg::Target getStateWithoutYaw(const geometry_msgs::msg::Pose& psCurr){
+			autonomous_flight::msg::Target target;
 			geometry_msgs::msg::PoseStamped ps = this->getPoseWithoutYaw(psCurr);
 			target.position.x = ps.pose.position.x;
 			target.position.y = ps.pose.position.y;

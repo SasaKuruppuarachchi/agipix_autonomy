@@ -4,10 +4,15 @@ Low-level tracking and command output package for AgiAUTO.
 
 ## Status
 
-- ROS 1 → ROS 2 port completed
-- Build and runtime tested in integrated stack
+- **Deprecated as standalone runtime in the active DDS flow**.
+- Retained for message/interface compatibility and regression benchmarking.
+- Active mission execution now uses in-process middle-level control in `px4_control_interface`.
 
-## ROS 2 usage
+## Legacy standalone runtime
+
+This package can still be launched for comparison/debug only:
+
+## ROS 2 usage (legacy)
 
 ```bash
 ros2 launch tracking_controller tracking_controller.launch.py
@@ -26,7 +31,7 @@ Backend selection:
 - `controller.odom_topic`: default `/drone0/sensor_measurements/odom`
 - `controller.imu_topic`: default `/drone0/sensor_measurements/imu`
 
-Notes:
+Notes (legacy path):
 
 - Publishes full `tracking_controller/msg/Target` (position/velocity/acceleration/yaw + `type_mask`) to the DDS bridge topic.
 

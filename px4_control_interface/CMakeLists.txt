@@ -14,7 +14,7 @@ find_package(eigen3_cmake_module REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(px4_ros2_cpp REQUIRED)
-find_package(tracking_controller REQUIRED)
+find_package(autonomous_flight REQUIRED)
 
 include_directories(include ${Eigen3_INCLUDE_DIRS})
 
@@ -31,7 +31,7 @@ target_link_libraries(px4_tracking_mode_node
 ament_target_dependencies(px4_tracking_mode_node
   rclcpp
   px4_ros2_cpp
-  tracking_controller
+  autonomous_flight
 )
 
 install(TARGETS

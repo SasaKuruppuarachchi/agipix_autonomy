@@ -14,7 +14,7 @@
 
   <depend>rclcpp</depend>
   <depend>px4_ros2_cpp</depend>
-  <depend>tracking_controller</depend>
+  <depend>autonomous_flight</depend>
   <depend>eigen</depend>
 
   <test_depend>ament_lint_auto</test_depend>

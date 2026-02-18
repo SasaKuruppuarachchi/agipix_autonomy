@@ -16,7 +16,7 @@
 #include <px4_ros2/control/setpoint_types/experimental/trajectory.hpp>
 #include <px4_ros2/odometry/local_position.hpp>
 
-#include <tracking_controller/msg/target.hpp>
+#include <autonomous_flight/msg/target.hpp>
 
 #include <px4_control_interface/agi_controller.hpp>
 
@@ -61,10 +61,10 @@ public:
       "[px4_control_interface]: middle_level_controller=%s",
       _controller->name().c_str());
 
-    _target_sub = node.create_subscription<tracking_controller::msg::Target>(
+    _target_sub = node.create_subscription<autonomous_flight::msg::Target>(
       _target_topic,
       rclcpp::QoS(10),
-      [this](const tracking_controller::msg::Target::SharedPtr msg) {
+      [this](const autonomous_flight::msg::Target::SharedPtr msg) {
         std::scoped_lock<std::mutex> lock(_target_mutex);
         _last_target = *msg;
         _last_target_rx = this->node().get_clock()->now();
@@ -87,7 +87,7 @@ public:
 
   void updateSetpoint(float dt_s) override
   {
-    tracking_controller::msg::Target target;
+    autonomous_flight::msg::Target target;
     bool has_fresh_target = false;
 
     {
@@ -118,31 +118,31 @@ public:
       reference.velocity_ned = Eigen::Vector3f::Zero();
       reference.acceleration_ned = Eigen::Vector3f::Zero();
       reference.yaw_ned = state.yaw_ned;
-      reference.type_mask = tracking_controller::msg::Target::IGNORE_ACC_VEL;
+      reference.type_mask = autonomous_flight::msg::Target::IGNORE_ACC_VEL;
     }
 
     _controller->setReference(reference);
-    const tracking_controller::msg::Target controlled_target = _controller->update(state, dt_s);
+    const autonomous_flight::msg::Target controlled_target = _controller->update(state, dt_s);
 
-    const bool ignore_acc_vel = controlled_target.type_mask == tracking_controller::msg::Target::IGNORE_ACC_VEL;
-    const bool ignore_acc = controlled_target.type_mask == tracking_controller::msg::Target::IGNORE_ACC;
+    const bool ignore_acc_vel = controlled_target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC_VEL;
+    const bool ignore_acc = controlled_target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC;
 
     px4_ros2::TrajectorySetpoint sp;
     sp.withPosition(Eigen::Vector3f{
-      controlled_target.position.x,
-      controlled_target.position.y,
-      controlled_target.position.z});
+      static_cast<float>(controlled_target.position.x),
+      static_cast<float>(controlled_target.position.y),
+      static_cast<float>(controlled_target.position.z)});
     if (!ignore_acc_vel) {
       sp.withVelocity(Eigen::Vector3f{
-        controlled_target.velocity.x,
-        controlled_target.velocity.y,
-        controlled_target.velocity.z});
+        static_cast<float>(controlled_target.velocity.x),
+        static_cast<float>(controlled_target.velocity.y),
+        static_cast<float>(controlled_target.velocity.z)});
     }
     if (!ignore_acc_vel && !ignore_acc) {
       sp.withAcceleration(Eigen::Vector3f{
-        controlled_target.acceleration.x,
-        controlled_target.acceleration.y,
-        controlled_target.acceleration.z});
+        static_cast<float>(controlled_target.acceleration.x),
+        static_cast<float>(controlled_target.acceleration.y),
+        static_cast<float>(controlled_target.acceleration.z)});
     }
     if (_use_input_yaw) {
       sp.withYaw(controlled_target.yaw);
@@ -182,14 +182,14 @@ private:
   std::shared_ptr<px4_ros2::TrajectorySetpointType> _trajectory_sp;
   std::shared_ptr<px4_ros2::OdometryLocalPosition> _local_position;
 
-  rclcpp::Subscription<tracking_controller::msg::Target>::SharedPtr _target_sub;
+  rclcpp::Subscription<autonomous_flight::msg::Target>::SharedPtr _target_sub;
   std::string _target_topic;
   double _target_timeout_s{0.2};
   bool _use_input_yaw{true};
   std::unique_ptr<AgiController> _controller;
 
   std::mutex _target_mutex;
-  tracking_controller::msg::Target _last_target{};
+  autonomous_flight::msg::Target _last_target{};
   rclcpp::Time _last_target_rx{0};
   bool _target_received{false};
 

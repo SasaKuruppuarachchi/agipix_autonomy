@@ -21,12 +21,16 @@
   <depend>octomap_ros</depend>
   <depend>octomap_msgs</depend>
   <depend>onboard_detector</depend>
-  <depend>tracking_controller</depend>
   <depend>global_planner</depend>
   <depend>trajectory_planner</depend>
   <depend>map_manager</depend>
   <depend>time_optimizer</depend>
   <depend>Eigen3</depend>
+
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

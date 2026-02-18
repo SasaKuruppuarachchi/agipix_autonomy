@@ -49,7 +49,7 @@ def generate_launch_description():
                 "mission",
                 default_value="navigation",
                 description=(
-                    "Legacy mission stack to include in shadow run. "
+                    "Mission stack to include in integrated run. "
                     "One of: takeoff_and_hover, takeoff_and_track_circle, navigation, "
                     "dynamic_navigation, dynamic_inspection, dynamic_exploration, inspection"
                 ),
@@ -57,34 +57,12 @@ def generate_launch_description():
             DeclareLaunchArgument(
                 "start_legacy_stack",
                 default_value="true",
-                description="If true, include autonomous_flight legacy mission stack in parallel.",
+                description="If true, include autonomous_flight mission stack in parallel.",
             ),
             DeclareLaunchArgument(
                 "target_topic",
                 default_value="/autonomous_flight/target_state",
-                description=(
-                    "Target topic consumed by px4_tracking_mode_node. "
-                    "Use /autonomous_flight/target_state for mission shadow input or "
-                    "/px4_control_interface/controller_target_state for tracking_controller DDS sink output."
-                ),
-            ),
-            DeclareLaunchArgument(
-                "start_tracking_controller",
-                default_value="false",
-                description=(
-                    "If true, include tracking_controller in this launch. "
-                    "Keep false when start_legacy_stack=true because mission launches already start tracking_controller."
-                ),
-            ),
-            DeclareLaunchArgument(
-                "tracking_backend",
-                default_value="dds",
-                description="tracking_controller backend when included: mavros or dds.",
-            ),
-            DeclareLaunchArgument(
-                "tracking_dds_target_topic",
-                default_value="/px4_control_interface/controller_target_state",
-                description="tracking_controller DDS sink target topic.",
+                description="Mission target topic consumed by px4_tracking_mode_node.",
             ),
             DeclareLaunchArgument(
                 "use_sim_time",
@@ -97,19 +75,6 @@ def generate_launch_description():
                 description="Middle-level controller inside px4_tracking_mode_node: pass_through or cascaded_pid.",
             ),
             OpaqueFunction(function=_include_legacy_stack),
-            IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(
-                    PathJoinSubstitution(
-                        [FindPackageShare("tracking_controller"), "launch", "tracking_controller.launch.py"]
-                    )
-                ),
-                condition=IfCondition(LaunchConfiguration("start_tracking_controller")),
-                launch_arguments={
-                    "controller_backend": LaunchConfiguration("tracking_backend"),
-                    "controller_dds_target_topic": LaunchConfiguration("tracking_dds_target_topic"),
-                    "use_sim_time": LaunchConfiguration("use_sim_time"),
-                }.items(),
-            ),
             Node(
                 package="px4_control_interface",
                 executable="px4_tracking_mode_node",

@@ -20,7 +20,7 @@ Mission-level autonomy package for AgiAUTO.
 
 ## ROS 2 usage
 
-By default, launch files use DDS controller backend (`controller_backend:=dds`).
+Mission launch files now publish mission references only (no standalone controller node launch).
 
 ```bash
 # takeoff and hover
@@ -66,16 +66,20 @@ Configuration files are under `cfg/` by mode, for example:
 
 This package depends on:
 
-- `tracking_controller`
 - `map_manager`
 - `onboard_detector`
 - `global_planner`
 - `trajectory_planner`
 - `time_optimizer`
 
+Message interfaces:
+
+- `autonomous_flight/msg/Target` is now the mission reference contract consumed by `px4_control_interface`.
+
 Runtime notes:
 
-- DDS-first mission ownership is handled via `px4_control_interface` + `tracking_controller` DDS backend.
+- Active runtime path is integrated: `autonomous_flight` mission references -> `px4_control_interface` in-process middle-level controller -> PX4 setpoints.
+- Standalone `tracking_controller` runtime launch is deprecated for normal mission execution.
 
 ## Credits
 
