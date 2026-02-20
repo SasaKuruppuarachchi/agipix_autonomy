@@ -56,6 +56,8 @@ namespace AutoFlight{
 		double desiredAngularVel_;
 		std::string trajSavePath_;
 		bool useTimeOptimizer_;
+		int maxConsecutivePlanFailuresBeforeStop_{3};
+		double collisionReplanCooldownSec_{0.30};
 
 		// navigation data
 		bool replan_ = false;
@@ -73,6 +75,9 @@ namespace AutoFlight{
 		double facingYaw_;
 		trajPlanner::bspline trajectory_; // trajectory data for tracking
 		bool firstTimeSave_ = false;
+		int consecutivePlanFailureCount_{0};
+		double lastCollisionReplanSec_{-1.0};
+		std::mutex navStateMutex_;
 		
 
 

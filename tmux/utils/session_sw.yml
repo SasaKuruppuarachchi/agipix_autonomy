@@ -46,11 +46,11 @@ windows:
   - CTRL-MISSION:
       layout: tiled
       panes:
-        - mkdir -p /tmp/dds_mission_logs; stdbuf -oL -eL timeout 240s ros2 launch px4_control_interface dds_shadow.launch.py 
-            use_sim_time:=<%= simulation %> 
+        - mkdir -p /tmp/dds_mission_logs; stdbuf -oL -eL timeout 300s ros2 launch px4_control_interface dds_shadow.launch.py 
+            use_sim_time:=true 
             start_legacy_stack:=true 
-            mission:=takeoff_and_hover 
-            2>&1 | tee /tmp/dds_mission_logs/01_takeoff_hover.log
+            mission:=navigation 
+            2>&1 | tee /tmp/dds_mission_logs/03_navigation.log
 
   - CTRL-DEBUG:
       layout: tiled

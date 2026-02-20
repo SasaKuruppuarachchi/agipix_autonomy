@@ -54,6 +54,20 @@ namespace AutoFlight{
 		this->node_->declare_parameter<bool>("use_time_optimizer", false);
 		this->node_->get_parameter("use_time_optimizer", this->useTimeOptimizer_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Use time optimizer is set to: %s.", this->useTimeOptimizer_ ? "true" : "false");
+
+		this->node_->declare_parameter<int>("max_consecutive_plan_failures_before_stop", 3);
+		this->node_->get_parameter("max_consecutive_plan_failures_before_stop", this->maxConsecutivePlanFailuresBeforeStop_);
+		RCLCPP_INFO(
+			this->node_->get_logger(),
+			"[AutoFlight]: Max consecutive plan failures before stop: %d.",
+			this->maxConsecutivePlanFailuresBeforeStop_);
+
+		this->node_->declare_parameter<double>("collision_replan_cooldown_sec", 0.30);
+		this->node_->get_parameter("collision_replan_cooldown_sec", this->collisionReplanCooldownSec_);
+		RCLCPP_INFO(
+			this->node_->get_logger(),
+			"[AutoFlight]: Collision replan cooldown: %.2fs.",
+			this->collisionReplanCooldownSec_);
 	}
 
 	void navigation::initModules(){
@@ -121,6 +135,7 @@ namespace AutoFlight{
 	}
 
 	void navigation::plannerCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (not this->firstGoal_) return;
 
 		if (this->replan_){
@@ -301,6 +316,7 @@ namespace AutoFlight{
 				nav_msgs::msg::Path bsplineTrajMsgTemp;
 				bool planSuccess = this->bsplineTraj_->makePlan(bsplineTrajMsgTemp);
 				if (planSuccess){
+					this->consecutivePlanFailureCount_ = 0;
 					this->bsplineTrajMsg_ = bsplineTrajMsgTemp;
 					this->trajStartTime_ = this->node_->now();
 					this->trajTime_ = 0.0; // reset trajectory time
@@ -315,7 +331,7 @@ namespace AutoFlight{
 					}
 					this->trajectoryReady_ = true;
 					this->replan_ = false;
-					cout << "\033[1;32m[AutoFlight]: Trajectory generated successfully.\033[0m " << endl;
+					RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Trajectory generated successfully.");
 
 					if (this->trajSavePath_ != "No" and this->firstTimeSave_){
 						this->bsplineTraj_->writeCurrentTrajInfo(this->trajSavePath_, 0.05);
@@ -323,36 +339,63 @@ namespace AutoFlight{
 					}
 				}
 				else{
+					++this->consecutivePlanFailureCount_;
 					// if the current trajectory is still valid, then just ignore this iteration
 					// if the current trajectory/or new goal point is assigned is not valid, then just stop
-					if (this->hasCollision()){
+					if (
+						this->trajectoryReady_ &&
+						this->consecutivePlanFailureCount_ < this->maxConsecutivePlanFailuresBeforeStop_)
+					{
+						RCLCPP_WARN(
+							this->node_->get_logger(),
+							"[AutoFlight]: Planner failure (%d/%d). Keep previous trajectory and retry.",
+							this->consecutivePlanFailureCount_,
+							this->maxConsecutivePlanFailuresBeforeStop_);
+						this->replan_ = true;
+					}
+					else if (this->hasCollision()){
 						this->trajectoryReady_ = false;
 						this->stop();
-						cout << "[AutoFlight]: Stop!!! Trajectory generation fails." << endl;
+						RCLCPP_ERROR(this->node_->get_logger(), "[AutoFlight]: Stop! Trajectory generation failed with collision.");
 						this->replan_ = false;
 					}
 					else{
 						if (this->trajectoryReady_){
-							cout << "[AutoFlight]: Trajectory fail. Use trajectory from previous iteration." << endl;
+							RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Trajectory fail. Use trajectory from previous iteration.");
 							this->replan_ = false;
 						}
 						else{
-							cout << "[AutoFlight]: Unable to generate a feasible trajectory. Please provide a new goal." << endl;
+							RCLCPP_ERROR(this->node_->get_logger(), "[AutoFlight]: Unable to generate a feasible trajectory. Please provide a new goal.");
 							this->replan_ = false;
 						}
 					}
 				}
 			}
 			else{
-				this->trajectoryReady_ = false;
-				this->stop();
-				this->replan_ = false;
-				cout << "[AutoFlight]: Goal is not valid. Stop." << endl;
+				++this->consecutivePlanFailureCount_;
+				if (
+					this->trajectoryReady_ &&
+					this->consecutivePlanFailureCount_ < this->maxConsecutivePlanFailuresBeforeStop_)
+				{
+					RCLCPP_WARN(
+						this->node_->get_logger(),
+						"[AutoFlight]: Goal/path invalid (%d/%d). Keep previous trajectory and retry.",
+						this->consecutivePlanFailureCount_,
+						this->maxConsecutivePlanFailuresBeforeStop_);
+					this->replan_ = true;
+				}
+				else{
+					this->trajectoryReady_ = false;
+					this->stop();
+					this->replan_ = false;
+					RCLCPP_ERROR(this->node_->get_logger(), "[AutoFlight]: Goal is not valid. Stop.");
+				}
 			}
 		}
 	}
 
 	void navigation::replanCheckCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		/*
 			Replan if
 			1. collision detected
@@ -372,20 +415,39 @@ namespace AutoFlight{
 			this->replan_ = true;
 			this->goalReceived_ = false;
 			if (this->useGlobalPlanner_){
-				cout << "[AutoFlight]: Start global planning." << endl;
+				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Start global planning.");
 				this->needGlobalPlan_ = true;
 				this->globalPlanReady_ = false;
 			}
 
-			cout << "[AutoFlight]: Replan for new goal position." << endl; 
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Replan for new goal position.");
+			return;
+		}
+
+		// A replan is already pending; avoid repeated checks/logging until planner consumes it.
+		if (this->replan_){
 			return;
 		}
 
 		// return;
 		if (this->trajectoryReady_){
 			if (this->hasCollision()){ // if trajectory not ready, do not replan
-				this->replan_ = true;
-				cout << "[AutoFlight]: Replan for collision." << endl;
+				const double nowSec = this->node_->now().seconds();
+				const bool cooldownElapsed =
+					(this->lastCollisionReplanSec_ < 0.0) ||
+					((nowSec - this->lastCollisionReplanSec_) >= this->collisionReplanCooldownSec_);
+				if (cooldownElapsed){
+					this->replan_ = true;
+					this->lastCollisionReplanSec_ = nowSec;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Replan for collision.");
+				}
+				else{
+					RCLCPP_WARN_THROTTLE(
+						this->node_->get_logger(),
+						*this->node_->get_clock(),
+						1000,
+						"[AutoFlight]: Collision detected but replan is rate-limited by cooldown.");
+				}
 				return;
 			}
 
@@ -398,6 +460,7 @@ namespace AutoFlight{
 	}
 
 	void navigation::trajExeCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->trajectoryReady_){
 			rclcpp::Time currTime = this->node_->now();
 			double realTime = (currTime - this->trajStartTime_).seconds();
@@ -459,6 +522,7 @@ namespace AutoFlight{
 
 
 	void navigation::visCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->rrtPathMsg_.poses.size() != 0){
 			this->rrtPathPub_->publish(this->rrtPathMsg_);
 		}
@@ -476,8 +540,8 @@ namespace AutoFlight{
 	}
 
 	void navigation::run(){
-		// take off the drone
-		this->takeoff();
+		// Executor-native path: takeoff/state transitions are handled by flightBaseExecutor.
+		// This node only generates mission targets for /autonomous_flight/target_state.
 
 		// int temp1 = system("mkdir -p ~/rosbag_navigation_info &");
 		// int temp2 = system("mv ~/rosbag_navigation_info/navigation_info ~/rosbag_navigation_info/previous &");

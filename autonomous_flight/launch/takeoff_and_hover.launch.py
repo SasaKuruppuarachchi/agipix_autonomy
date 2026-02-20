@@ -26,6 +26,7 @@ def generate_launch_description():
                 name="takeoff_and_hover_executor_node",
                 output="screen",
                 parameters=af_params + [
+                    {"builtin_profile": "hover"},
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),

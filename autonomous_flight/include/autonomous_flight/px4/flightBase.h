@@ -12,9 +12,11 @@
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <visualization_msgs/msg/marker.hpp>
 #include <Eigen/Dense>
 #include <mutex>
 #include <string>
+#include <atomic>
 
 using std::cout; using std::endl;
 namespace AutoFlight{
@@ -23,7 +25,9 @@ namespace AutoFlight{
 		rclcpp::Node::SharedPtr node_;
 		rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odomSub_;
 		rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr clickSub_;
+		rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr clickSubLegacy_;
 		rclcpp::Publisher<autonomous_flight::msg::Target>::SharedPtr statePub_;
+		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr targetMarkerPub_;
 		rclcpp::TimerBase::SharedPtr stateUpdateTimer_;
 		rclcpp::TimerBase::SharedPtr targetPubTimer_;
 
@@ -33,6 +37,7 @@ namespace AutoFlight{
 		rclcpp::CallbackGroup::SharedPtr clickCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr targetPubCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr stateUpdateCbGroup_;
+		std::atomic_bool hasStateTarget_{false};
 		
 		nav_msgs::msg::Odometry odom_;
 		geometry_msgs::msg::PoseStamped poseTgt_;
@@ -51,10 +56,18 @@ namespace AutoFlight{
 		bool requireTakeoffFeedback_ = false;
 		std::string mapFrameId_ = "map";
 		std::string odomTopic_ = "/drone0/sensor_measurements/odom";
+		std::string goalTopic_ = "/goal_pose";
+		std::string legacyGoalTopic_ = "/move_base_simple/goal";
+		bool subscribeLegacyGoalTopic_ = true;
 		bool yawControl_;
 		int timeStep_;
 		double radius_;
 		double velocity_;
+		bool skipTakeoffIfFlying_ = true;
+		double flyingHeightThreshold_ = 0.35;
+		bool publishTargetMarker_ = false;
+		std::string targetMarkerTopic_ = "/autonomous_flight/target_state_marker";
+		double targetMarkerScale_ = 0.20;
 
 		// status
 		bool odomReceived_ = false;
@@ -67,6 +80,7 @@ namespace AutoFlight{
 		explicit flightBase(const rclcpp::Node::SharedPtr& node);
 		
 		void publishTarget();
+		void publishTargetMarker(const autonomous_flight::msg::Target& target);
 
 		// callback functions
 		void odomCB(const nav_msgs::msg::Odometry::SharedPtr odom);

@@ -46,9 +46,9 @@ def _include_px4_mode_node(context):
     mission = LaunchConfiguration("mission").perform(context)
     start_legacy_stack = LaunchConfiguration("start_legacy_stack").perform(context).lower() == "true"
 
-    # takeoff_and_hover is now mode-executor based inside autonomous_flight package
-    # and should not run in parallel with px4_tracking_mode_node.
-    if start_legacy_stack and mission == "takeoff_and_hover":
+    # executor-native missions should not run in parallel with px4_tracking_mode_node.
+    executor_native_missions = {"takeoff_and_hover", "takeoff_and_track_circle", "navigation"}
+    if start_legacy_stack and mission in executor_native_missions:
         return []
 
     return [

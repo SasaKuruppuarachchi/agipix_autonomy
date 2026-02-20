@@ -22,10 +22,11 @@ def generate_launch_description():
             ),
             Node(
                 package="autonomous_flight",
-                executable="takeoff_and_track_circle_node",
-                name="takeoff_and_track_circle_node",
+                executable="takeoff_and_track_circle_executor_node",
+                name="takeoff_and_track_circle_executor_node",
                 output="screen",
                 parameters=af_params + [
+                    {"builtin_profile": "circle"},
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),

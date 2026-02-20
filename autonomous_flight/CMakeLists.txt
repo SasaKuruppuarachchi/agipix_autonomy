@@ -129,6 +129,8 @@ target_link_libraries(${AUTONOMOUS_FLIGHT_LIB}
 add_executable(takeoff_and_hover_node src/px4/takeoff_and_hover_node.cpp)
 add_executable(takeoff_and_hover_executor_node src/px4/takeoff_and_hover_executor_node.cpp)
 add_executable(takeoff_and_track_circle_node src/px4/takeoff_and_track_circle_node.cpp)
+add_executable(takeoff_and_track_circle_executor_node src/px4/takeoff_and_track_circle_executor_node.cpp)
+add_executable(mission_tracking_executor_node src/px4/mission_tracking_executor_node.cpp)
 add_executable(inspection_node src/px4/inspection_node.cpp)
 add_executable(navigation_node src/px4/navigation_node.cpp)
 add_executable(dynamic_navigation_node src/px4/dynamic_navigation_node.cpp)
@@ -156,6 +158,16 @@ target_link_libraries(takeoff_and_hover_executor_node
   rclcpp::rclcpp
 )
 target_link_libraries(takeoff_and_track_circle_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(takeoff_and_track_circle_executor_node
+  Eigen3::Eigen
+  px4_ros2_cpp::px4_ros2_cpp
+  rclcpp::rclcpp
+)
+target_link_libraries(mission_tracking_executor_node
+  Eigen3::Eigen
+  px4_ros2_cpp::px4_ros2_cpp
+  rclcpp::rclcpp
+)
 target_link_libraries(inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(dynamic_navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
@@ -163,8 +175,10 @@ target_link_libraries(dynamic_inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOM
 target_link_libraries(dynamic_exploration_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 
 ament_target_dependencies(takeoff_and_hover_node rclcpp)
-ament_target_dependencies(takeoff_and_hover_executor_node rclcpp px4_ros2_cpp)
+ament_target_dependencies(takeoff_and_hover_executor_node rclcpp px4_ros2_cpp visualization_msgs)
 ament_target_dependencies(takeoff_and_track_circle_node rclcpp)
+ament_target_dependencies(takeoff_and_track_circle_executor_node rclcpp px4_ros2_cpp visualization_msgs)
+ament_target_dependencies(mission_tracking_executor_node rclcpp px4_ros2_cpp visualization_msgs)
 ament_target_dependencies(inspection_node rclcpp)
 ament_target_dependencies(navigation_node rclcpp)
 ament_target_dependencies(dynamic_navigation_node rclcpp)
@@ -173,6 +187,8 @@ ament_target_dependencies(dynamic_exploration_node rclcpp)
 target_link_libraries(takeoff_and_hover_node "${cpp_typesupport_target}")
 target_link_libraries(takeoff_and_hover_executor_node "${cpp_typesupport_target}")
 target_link_libraries(takeoff_and_track_circle_node "${cpp_typesupport_target}")
+target_link_libraries(takeoff_and_track_circle_executor_node "${cpp_typesupport_target}")
+target_link_libraries(mission_tracking_executor_node "${cpp_typesupport_target}")
 target_link_libraries(inspection_node "${cpp_typesupport_target}")
 target_link_libraries(navigation_node "${cpp_typesupport_target}")
 target_link_libraries(dynamic_navigation_node "${cpp_typesupport_target}")
@@ -190,6 +206,8 @@ install(TARGETS
   takeoff_and_hover_node
   takeoff_and_hover_executor_node
   takeoff_and_track_circle_node
+  takeoff_and_track_circle_executor_node
+  mission_tracking_executor_node
   inspection_node
   navigation_node
   dynamic_navigation_node

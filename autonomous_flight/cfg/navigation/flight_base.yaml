@@ -3,9 +3,14 @@ navigation_node:
     takeoff_height: 1.0 # m
     frame_id: drone0/map
     odom_topic: /drone0/sensor_measurements/odom
+    goal_topic: /goal_pose
+    subscribe_legacy_goal_topic: true
+    legacy_goal_topic: /move_base_simple/goal
     wait_for_topics_ready: false
     takeoff_wait_timeout_sec: 8.0
     require_takeoff_feedback: false
+    skip_takeoff_if_flying: true
+    flying_height_threshold: 0.35
     use_global_planner: true
     no_yaw_turning: false
     use_yaw_control: false
@@ -13,4 +18,18 @@ navigation_node:
     desired_acceleration: 3.0 # m/s^2
     desired_angular_velocity: 0.5 # rad/s
     trajectory_info_save_path: "No"
-    use_time_optimizer: false
+    use_time_optimizer: true
+    target_timeout_s: 2.5
+    publish_target_marker: true
+    targetMarkerScale_: 0.50
+
+mission_tracking_executor_node:
+  ros__parameters:
+    # Keep consistent with navigation target publication behavior.
+    target_topic: /autonomous_flight/target_state
+    target_timeout_s: 2.5
+    use_input_yaw: true
+    skip_takeoff_if_flying: true
+    flying_height_threshold: 0.35
+    debug_mode: false
+    publish_target_rx_marker: true

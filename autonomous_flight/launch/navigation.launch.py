@@ -54,5 +54,16 @@ def generate_launch_description():
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),
+            Node(
+                package="autonomous_flight",
+                executable="mission_tracking_executor_node",
+                name="mission_tracking_executor_node",
+                output="screen",
+                parameters=af_params + [
+                    {"builtin_profile": "external_target"},
+                    {"target_topic": "/autonomous_flight/target_state"},
+                    {"use_sim_time": LaunchConfiguration("use_sim_time")},
+                ],
+            ),
         ]
     )

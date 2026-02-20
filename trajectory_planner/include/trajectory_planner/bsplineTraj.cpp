@@ -422,7 +422,13 @@ namespace trajPlanner{
 
 	bool bsplineTraj::makePlan(nav_msgs::msg::Path& trajectory, bool yaw){
 		bool success = this->makePlan();
-		trajectory = this->evalTrajToMsg(yaw);
+		if (success){
+			trajectory = this->evalTrajToMsg(yaw);
+		}
+		else{
+			trajectory.poses.clear();
+			trajectory.header.stamp = this->clock_->now();
+		}
 		return success;
 	}
 
@@ -1238,6 +1244,16 @@ namespace trajPlanner{
 	}
 
 	void bsplineTraj::publishCurrTraj(){
+		if (this->optData_.controlPoints.rows() != 3 || this->optData_.controlPoints.cols() <= bsplineDegree) {
+			RCLCPP_WARN_THROTTLE(
+				this->logger_,
+				*this->clock_,
+				2000,
+				"[BsplineTraj]: Skip trajectory visualization due to invalid control-point matrix (%ldx%ld).",
+				this->optData_.controlPoints.rows(),
+				this->optData_.controlPoints.cols());
+			return;
+		}
 		nav_msgs::msg::Path trajMsg = this->evalTrajToMsg();
 		this->currTrajVisPub_->publish(trajMsg);
 	}
@@ -1473,6 +1489,16 @@ namespace trajPlanner{
 
 	std::vector<Eigen::Vector3d> bsplineTraj::evalTraj(double dt){
 		std::vector<Eigen::Vector3d> traj;
+		if (this->optData_.controlPoints.rows() != 3 || this->optData_.controlPoints.cols() <= bsplineDegree) {
+			RCLCPP_WARN_THROTTLE(
+				this->logger_,
+				*this->clock_,
+				2000,
+				"[BsplineTraj]: Invalid control-point matrix (%ldx%ld). Return empty trajectory.",
+				this->optData_.controlPoints.rows(),
+				this->optData_.controlPoints.cols());
+			return traj;
+		}
 		Eigen::Vector3d p;
 		trajPlanner::bspline bsplineTraj = trajPlanner::bspline (bsplineDegree, this->optData_.controlPoints, this->controlPointsTs_);
 		for (double t=0; t<=bsplineTraj.getDuration(); t+=dt){

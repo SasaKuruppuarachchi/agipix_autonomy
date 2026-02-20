@@ -32,6 +32,38 @@ namespace AutoFlight{
 		this->node_->get_parameter("odom_topic", this->odomTopic_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom topic: %s.", this->odomTopic_.c_str());
 
+		this->node_->declare_parameter<std::string>("goal_topic", "/goal_pose");
+		this->node_->get_parameter("goal_topic", this->goalTopic_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Goal topic: %s.", this->goalTopic_.c_str());
+
+		this->node_->declare_parameter<bool>("subscribe_legacy_goal_topic", true);
+		this->node_->get_parameter("subscribe_legacy_goal_topic", this->subscribeLegacyGoalTopic_);
+		this->node_->declare_parameter<std::string>("legacy_goal_topic", "/move_base_simple/goal");
+		this->node_->get_parameter("legacy_goal_topic", this->legacyGoalTopic_);
+		if (this->subscribeLegacyGoalTopic_){
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Legacy goal topic enabled: %s.", this->legacyGoalTopic_.c_str());
+		}
+
+		this->node_->declare_parameter<bool>("skip_takeoff_if_flying", true);
+		this->node_->get_parameter("skip_takeoff_if_flying", this->skipTakeoffIfFlying_);
+		this->node_->declare_parameter<double>("flying_height_threshold", 0.35);
+		this->node_->get_parameter("flying_height_threshold", this->flyingHeightThreshold_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Skip takeoff if flying: %s (|z| >= %.2fm).",
+			this->skipTakeoffIfFlying_ ? "true" : "false", this->flyingHeightThreshold_);
+
+		this->node_->declare_parameter<bool>("publish_target_marker", false);
+		this->node_->get_parameter("publish_target_marker", this->publishTargetMarker_);
+		this->node_->declare_parameter<std::string>("target_marker_topic", "/autonomous_flight/target_state_marker");
+		this->node_->get_parameter("target_marker_topic", this->targetMarkerTopic_);
+		this->node_->declare_parameter<double>("target_marker_scale", 0.50);
+		this->node_->get_parameter("target_marker_scale", this->targetMarkerScale_);
+		RCLCPP_INFO(
+			this->node_->get_logger(),
+			"[AutoFlight]: Publish target marker: %s (topic='%s', scale=%.2f).",
+			this->publishTargetMarker_ ? "true" : "false",
+			this->targetMarkerTopic_.c_str(),
+			this->targetMarkerScale_);
+
 		// callback groups
 		this->stateCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->odomCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -47,10 +79,18 @@ namespace AutoFlight{
 		rclcpp::SubscriptionOptions clickOptions;
 		clickOptions.callback_group = this->clickCbGroup_;
 		this->clickSub_ = this->node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-			"/move_base_simple/goal", rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
+			this->goalTopic_, rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
+
+		if (this->subscribeLegacyGoalTopic_ && this->legacyGoalTopic_ != this->goalTopic_){
+			this->clickSubLegacy_ = this->node_->create_subscription<geometry_msgs::msg::PoseStamped>(
+				this->legacyGoalTopic_, rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
+		}
 		
 	    // Publisher
 		this->statePub_ = this->node_->create_publisher<autonomous_flight::msg::Target>("/autonomous_flight/target_state", 1000);
+		if (this->publishTargetMarker_){
+			this->targetMarkerPub_ = this->node_->create_publisher<visualization_msgs::msg::Marker>(this->targetMarkerTopic_, 10);
+		}
 
 
 		// Wait for odometry to be ready
@@ -77,7 +117,40 @@ namespace AutoFlight{
 	}
 
 	void flightBase::publishTarget(){
+		if (!this->hasStateTarget_.load()) {
+			return;
+		}
 		this->statePub_->publish(this->stateTgt_);
+		if (this->publishTargetMarker_ && this->targetMarkerPub_){
+			this->publishTargetMarker(this->stateTgt_);
+		}
+	}
+
+	void flightBase::publishTargetMarker(const autonomous_flight::msg::Target& target){
+		visualization_msgs::msg::Marker marker;
+		marker.header.frame_id = this->mapFrameId_;
+		marker.header.stamp = this->node_->now();
+		marker.ns = "target_state";
+		marker.id = 0;
+		marker.type = visualization_msgs::msg::Marker::SPHERE;
+		marker.action = visualization_msgs::msg::Marker::ADD;
+		marker.pose.position.x = target.position.x;
+		marker.pose.position.y = target.position.y;
+		marker.pose.position.z = target.position.z;
+		marker.pose.orientation.w = 1.0;
+		marker.pose.orientation.x = 0.0;
+		marker.pose.orientation.y = 0.0;
+		marker.pose.orientation.z = 0.0;
+		const double scale = std::max(0.1, this->targetMarkerScale_);
+		marker.scale.x = scale;
+		marker.scale.y = scale;
+		marker.scale.z = scale;
+		marker.color.a = 1.0;
+		marker.color.r = 0.2;
+		marker.color.g = 0.2;
+		marker.color.b = 1.0;
+		marker.lifetime = rclcpp::Duration::from_seconds(0.15);
+		this->targetMarkerPub_->publish(marker);
 	}
 
 	void flightBase::odomCB(const nav_msgs::msg::Odometry::SharedPtr odom){
@@ -92,7 +165,9 @@ namespace AutoFlight{
 
 	void flightBase::clickCB(const geometry_msgs::msg::PoseStamped::SharedPtr cp){
 		this->goal_ = *cp;
-		this->goal_.pose.position.z = 1.0;
+		if (std::abs(this->goal_.pose.position.z) < 1e-3){
+			this->goal_.pose.position.z = this->takeoffHgt_;
+		}
 		if (not this->firstGoal_){
 			this->firstGoal_ = true;
 		}
@@ -100,7 +175,13 @@ namespace AutoFlight{
 		if (not this->goalReceived_){
 			this->goalReceived_ = true;
 		}
-		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Goal received: x=%.2f, y=%.2f, z=%.2f", this->goal_.pose.position.x, this->goal_.pose.position.y, this->goal_.pose.position.z);
+		RCLCPP_INFO(
+			this->node_->get_logger(),
+			"[AutoFlight]: Goal received (frame='%s'): x=%.2f, y=%.2f, z=%.2f",
+			this->goal_.header.frame_id.c_str(),
+			this->goal_.pose.position.x,
+			this->goal_.pose.position.y,
+			this->goal_.pose.position.z);
 	}
 
 	void flightBase::stateUpdateCB(){
@@ -123,6 +204,21 @@ namespace AutoFlight{
 	}
 
 	void flightBase::takeoff(){
+		const double current_z = this->odom_.pose.pose.position.z;
+		if (this->skipTakeoffIfFlying_ && std::abs(current_z) >= this->flyingHeightThreshold_){
+			RCLCPP_WARN(
+				this->node_->get_logger(),
+				"[AutoFlight]: Skip takeoff because vehicle is already flying (z=%.2f m, threshold=%.2f m).",
+				current_z,
+				this->flyingHeightThreshold_);
+			geometry_msgs::msg::PoseStamped hold_ps;
+			hold_ps.header.frame_id = this->mapFrameId_;
+			hold_ps.header.stamp = this->node_->now();
+			hold_ps.pose = this->odom_.pose.pose;
+			this->updateTarget(hold_ps);
+			return;
+		}
+
 		// from cfg yaml read the flight height
 		geometry_msgs::msg::PoseStamped ps;
 		ps.header.frame_id = this->mapFrameId_;
@@ -150,7 +246,6 @@ namespace AutoFlight{
 					break;
 				}
 			}
-			rclcpp::spin_some(this->node_);
 			r.sleep();
 		}
 
@@ -161,7 +256,6 @@ namespace AutoFlight{
 			if ((currTime - startTime).seconds() >= 3){
 				break;
 			}
-			rclcpp::spin_some(this->node_);
 			r.sleep();
 		}
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Takeoff succeed!");
@@ -283,7 +377,6 @@ namespace AutoFlight{
 			else{
 				theta = 0.0;
 			}	
-			rclcpp::spin_some(this->node_);
             r.sleep();
         }
 
@@ -303,7 +396,6 @@ namespace AutoFlight{
                 target.acceleration.y = ay;
                 target.acceleration.z = az;
 				RCLCPP_INFO(this->node_->get_logger(), "Decreasing Radius...");
-				rclcpp::spin_some(this->node_);
                 updateTargetWithState(target);
                 r.sleep();
             }
@@ -336,7 +428,6 @@ namespace AutoFlight{
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Go to target point...");
 		rclcpp::Rate rate (30);
 		while (rclcpp::ok() && std::abs(this->odom_.pose.pose.position.x - startPs.pose.position.x) >= 0.1){
-			rclcpp::spin_some(this->node_);
 			rate.sleep();
 		}
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Reach target point.");
@@ -370,7 +461,6 @@ namespace AutoFlight{
 			target.acceleration.y = ay;
 			target.acceleration.z = az;
 			this->updateTargetWithState(target);
-			rclcpp::spin_some(this->node_);
 			rate.sleep();
 		}
 	}
@@ -434,7 +524,6 @@ namespace AutoFlight{
 			target.yaw = AutoFlight::rpy_from_quaternion(psT.pose.orientation);
 			this->updateTargetWithState(target);
 			// cout << "here" << endl;
-			rclcpp::spin_some(this->node_);
 			r.sleep();
 		}
 	}
@@ -458,6 +547,9 @@ namespace AutoFlight{
 
 	void flightBase::updateTargetWithState(const autonomous_flight::msg::Target& target){
 		this->stateTgt_ = target;
+		this->stateTgt_.header.stamp = this->node_->now();
+		this->stateTgt_.header.frame_id = this->mapFrameId_;
+		this->hasStateTarget_.store(true);
 	}
 	
 	bool flightBase::isReach(const geometry_msgs::msg::PoseStamped& poseTgt, bool useYaw){

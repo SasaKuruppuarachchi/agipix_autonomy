@@ -3,6 +3,14 @@ navigation_node:
     desired_velocity: 2.0 # m/s
     desired_acceleration: 3.0 # m/s^2
 
+    # global planner (RRT) robustness
+    timeout: 1.5
+    ignore_unknown: true
+    pass_goal_check: true
+
+    # keep previous valid trajectory for this many planning failures before stop
+    max_consecutive_plan_failures_before_stop: 3
+
     poly_traj:
       polynomial_degree: 7
       differential_degree: 4
@@ -10,7 +18,7 @@ navigation_node:
       desired_velocity: 2.0 # m/s
       desired_acceleration: 3.0 # m/s^2
       initial_radius: 0.5
-      timeout: 0.1
+      timeout: 0.3
       corridor_res: 5.0
       shrinking_factor: 0.8
       soft_constraint: false
