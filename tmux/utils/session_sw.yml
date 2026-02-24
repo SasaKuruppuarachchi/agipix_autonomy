@@ -35,7 +35,7 @@ end
 name: agipix_console_<%= drone_namespace %>
 root: ./
 startup_window: UI
-pre_window: ls; source /workspaces/upgrade_control/install/setup.bash
+pre_window: ls; source /workspaces/agipix_control/install/setup.bash
 windows:
   - UI:
       layout: tiled
