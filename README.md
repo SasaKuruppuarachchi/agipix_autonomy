@@ -27,27 +27,36 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 ## System architecture (current)
 
 ```text
-Sensors (depth / point cloud / RGB / lidar) + PX4 state topics
+									Sensors 
+						(depth / point cloud / RGB / lidar) 
+								+ PX4 state topics
 										│
 										▼
-			onboard_detector (dynamic obstacle detection + tracking)
+								onboard_detector
+					(dynamic obstacle detection + tracking)
 										│
 										▼
-			map_manager (occupancy/dynamic map + collision/raycast)
+									map_manager 
+					(occupancy/dynamic map + collision/raycast)
 										│
-					┌─────────┴────────────────────────────────────┐
+					┌───────────────────┴──────────────────────────┐
 					▼                                              ▼
-global_planner (RRT/RRT*/DEP)                    trajectory_planner
-(global waypoints / exploration path)             (poly/PWL/B-spline)
-					└─────────────────┬────────────────────────────┘
-														▼
-										time_optimizer (optional)
-														▼
-				autonomous_flight (mission executive/state machine)
-														▼
-px4_control_interface (DDS tracking mode + setpoint writer + executor flow)
-														▼
-													 PX4
+			global_planner (RRT/RRT*/DEP)                    trajectory_planner
+		(global waypoints / exploration path) 	            (poly/PWL/B-spline)
+					└───────────────────┬──────────────────────────┘
+										▼
+							 	 time_optimizer 
+								   (optional)
+								        │
+										▼
+								autonomous_flight 
+						(mission executive/state machine)
+										│
+										▼
+							  px4_control_interface 
+				(DDS tracking mode + setpoint writer + executor flow)
+										▼
+  									   PX4
 ```
 
 ---
