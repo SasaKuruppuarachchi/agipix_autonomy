@@ -6,11 +6,27 @@
     wait_for_topics_ready: false
     takeoff_wait_timeout_sec: 8.0
     require_takeoff_feedback: false
-    desired_velocity: 1.0 # m/s
-    desired_acceleration: 1.0 # m/s^2
+    desired_velocity: 2.0 # m/s
+    desired_acceleration: 3.0 # m/s^2
     desired_angular_velocity: 0.5 # rad/s
     waypoint_stablize_time: 0.0
     initial_scan: false
-    replan_time_for_dynamic_obstacles: 0.3
+    replan_time_for_dynamic_obstacles: 0.0
     free_range: [1.0, 1.0, 1.0]
     reach_goal_distance: 0.1
+    min_waypoint_distance: 0.02
+    replan_on_finish_or_fail: false
+    replan_on_collision_fail: true
+    stabilize_before_rotate: false
+    publish_target_marker: true
+
+mission_tracking_executor_node:
+  ros__parameters:
+    # Keep consistent with navigation target publication behavior.
+    target_topic: /autonomous_flight/target_state
+    target_timeout_s: 2.5
+    use_input_yaw: true
+    skip_takeoff_if_flying: true
+    flying_height_threshold: 0.35
+    debug_mode: false
+    publish_target_rx_marker: true

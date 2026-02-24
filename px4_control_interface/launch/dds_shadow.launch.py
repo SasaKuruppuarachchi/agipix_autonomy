@@ -47,7 +47,14 @@ def _include_px4_mode_node(context):
     start_legacy_stack = LaunchConfiguration("start_legacy_stack").perform(context).lower() == "true"
 
     # executor-native missions should not run in parallel with px4_tracking_mode_node.
-    executor_native_missions = {"takeoff_and_hover", "takeoff_and_track_circle", "navigation"}
+    executor_native_missions = {
+        "takeoff_and_hover",
+        "takeoff_and_track_circle",
+        "navigation",
+        "dynamic_navigation",
+        "dynamic_inspection",
+        "dynamic_exploration",
+    }
     if start_legacy_stack and mission in executor_native_missions:
         return []
 

@@ -18,11 +18,11 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-               DeclareLaunchArgument(
-                   "use_sim_time",
-                   default_value="false",
-                   description="Use simulation clock if true",
-               ),
+            DeclareLaunchArgument(
+                "use_sim_time",
+                default_value="false",
+                description="Use simulation clock if true",
+            ),
             # Node(
             #     package="map_manager",
             #     executable="dynamic_map_node",
@@ -43,6 +43,17 @@ def generate_launch_description():
                 name="dynamic_navigation_node",
                 output="screen",
                 parameters=af_params + [
+                    {"use_sim_time": LaunchConfiguration("use_sim_time")},
+                ],
+            ),
+            Node(
+                package="autonomous_flight",
+                executable="mission_tracking_executor_node",
+                name="mission_tracking_executor_node",
+                output="screen",
+                parameters=af_params + [
+                    {"builtin_profile": "external_target"},
+                    {"target_topic": "/autonomous_flight/target_state"},
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),

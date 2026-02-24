@@ -125,6 +125,7 @@ namespace AutoFlight{
 		bool inspectionConfirm_;
 		bool backwardNoTurn_;
 		double replanTimeForDynamicObstacle_;
+		double collisionReplanCooldownSec_{0.30};
 		bool operatorConfirm_ = false;
 		// ***only used when we specify location***
 
@@ -146,6 +147,8 @@ namespace AutoFlight{
 		trajPlanner::bspline trajectory_; // trajectory data for navigation
 		int countBsplineFailure_ = 0;
 		rclcpp::Time lastDynamicObstacleTime_;
+		double lastCollisionReplanSec_{-1.0};
+		std::mutex navStateMutex_;
 
 	public:
 		dynamicInspection();

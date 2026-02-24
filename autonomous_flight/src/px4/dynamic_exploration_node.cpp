@@ -12,7 +12,7 @@ class DynamicExplorationRunner {
 public:
 	DynamicExplorationRunner(const rclcpp::Node::SharedPtr& node, AutoFlight::dynamicExploration* explorer)
 	: node_(node), explorer_(explorer) {
-		auto cbg = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+		this->startCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->startTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(50),
 			[this]() {
@@ -20,12 +20,13 @@ public:
 				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Start dynamic exploration mission.");
 				this->explorer_->run();
 			},
-			cbg);
+			this->startCbGroup_);
 	}
 
 private:
 	rclcpp::Node::SharedPtr node_;
 	AutoFlight::dynamicExploration* explorer_;
+	rclcpp::CallbackGroup::SharedPtr startCbGroup_;
 	rclcpp::TimerBase::SharedPtr startTimer_;
 };
 } // namespace

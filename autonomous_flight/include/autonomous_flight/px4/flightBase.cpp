@@ -517,13 +517,11 @@ namespace AutoFlight{
 				psT.pose.orientation = quatT;
 				
 			}
-			// this->updateTarget(psT);
 			target.position.x = psT.pose.position.x;
 			target.position.y = psT.pose.position.y;
 			target.position.z = psT.pose.position.z;
 			target.yaw = AutoFlight::rpy_from_quaternion(psT.pose.orientation);
 			this->updateTargetWithState(target);
-			// cout << "here" << endl;
 			r.sleep();
 		}
 	}

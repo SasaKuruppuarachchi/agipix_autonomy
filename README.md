@@ -103,3 +103,10 @@ Please credit both:
 
 1. Original algorithm/software authors (see package-level citations)
 2. Agipix ROS 2 integration and platform engineering work in this repository
+
+## DDS migration update (2026-02-24)
+
+- Dynamic mission runtime now uses executor-native flow (`mission_tracking_executor_node`) with shadow-launch coordination.
+- Dynamic navigation is validated in integrated run.
+- Dynamic exploration now includes service-gated start and configurable replan behavior for finish/fail and collision-failure cases.
+- Main migration log is tracked in [DDS_migration/3_testing.md](DDS_migration/3_testing.md).

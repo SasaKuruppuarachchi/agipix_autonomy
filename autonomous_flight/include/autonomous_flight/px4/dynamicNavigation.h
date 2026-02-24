@@ -48,6 +48,7 @@ namespace AutoFlight{
 		double desiredAcc_;
 		double desiredAngularVel_;
 		double replanTimeForDynamicObstacle_;
+		double collisionReplanCooldownSec_{0.30};
 		std::string trajSavePath_;
 
 		// navigation data
@@ -68,6 +69,8 @@ namespace AutoFlight{
 		bool firstTimeSave_ = false;
 		bool lastDynamicObstacle_ = false;
 		rclcpp::Time lastDynamicObstacleTime_;
+		double lastCollisionReplanSec_{-1.0};
+		std::mutex navStateMutex_;
 		
 
 

@@ -81,6 +81,22 @@ Runtime notes:
 - Active runtime path is integrated: `autonomous_flight` mission references -> `px4_control_interface` in-process middle-level controller -> PX4 setpoints.
 - Standalone `tracking_controller` runtime launch is deprecated for normal mission execution.
 
+### Dynamic exploration controls
+
+Key runtime parameters in [cfg/dynamic_exploration/flight_base.yaml](cfg/dynamic_exploration/flight_base.yaml):
+
+- `replan_on_finish_or_fail`
+- `replan_on_collision_fail`
+- `stabilize_before_rotate`
+- `min_waypoint_distance`
+
+Dynamic exploration start is service-gated:
+
+```bash
+ros2 launch px4_control_interface dds_shadow.launch.py use_sim_time:=true start_legacy_stack:=true mission:=dynamic_exploration
+ros2 service call /dynamic_exploration/start std_srvs/srv/Trigger "{}"
+```
+
 ## Credits
 
 Inspired by the great academic work of Zhefan Xu and collaborators (CERLAB/CMU).

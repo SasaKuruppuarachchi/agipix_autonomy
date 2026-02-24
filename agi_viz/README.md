@@ -16,3 +16,7 @@ ros2 launch agi_viz rviz.launch.py \
   launch_global_planner_navigation:=true \
   launch_trajectory_planner_bspline_interactive:=true
 ```
+
+## Migration note (2026-02)
+
+RViz profiles remain compatible with the current DDS migration updates.

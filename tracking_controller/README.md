@@ -52,6 +52,10 @@ Publishes:
 - `/tracking_controller/target_trajectory_history`
 - `/tracking_controller/vel_and_acc_info`
 
+## Migration note (2026-02)
+
+No interface-breaking changes were introduced in this package during the recent dynamic mission DDS migration work.
+
 ## Credits
 
 Inspired by the great academic work of Zhefan Xu and collaborators (CERLAB/CMU).

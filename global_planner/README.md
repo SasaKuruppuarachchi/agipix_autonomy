@@ -13,6 +13,8 @@ Global planning library for AgiAUTO.
 - RRT* planning
 - DEP exploration planning
 
+DEP is used by `autonomous_flight` dynamic exploration and is now gated by mission-level replan state to reduce unnecessary path churn.
+
 ## ROS 2 usage
 
 ```bash

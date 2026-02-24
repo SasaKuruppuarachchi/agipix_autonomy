@@ -41,6 +41,8 @@ Available `mission` values:
 - `dynamic_exploration`
 - `inspection`
 
+Executor-native missions (`takeoff_and_hover`, `takeoff_and_track_circle`, `navigation`, `dynamic_navigation`, `dynamic_inspection`, `dynamic_exploration`) are launched without parallel `px4_tracking_mode_node` to avoid controller contention.
+
 Run only the PX4 external mode node (no legacy stack include):
 
 ```bash

@@ -50,6 +50,10 @@ namespace AutoFlight{
 		this->node_->get_parameter("replan_time_for_dynamic_obstacles", this->replanTimeForDynamicObstacle_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Dynamic obstacle replan time is set to: %.2fs.", this->replanTimeForDynamicObstacle_);
 
+		this->node_->declare_parameter<double>("collision_replan_cooldown_sec", 0.30);
+		this->node_->get_parameter("collision_replan_cooldown_sec", this->collisionReplanCooldownSec_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Collision replan cooldown is set to: %.2fs.", this->collisionReplanCooldownSec_);
+
     	// trajectory data save path   	
 		this->node_->declare_parameter<std::string>("trajectory_info_save_path", "No");
 		this->node_->get_parameter("trajectory_info_save_path", this->trajSavePath_);
@@ -122,6 +126,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::plannerCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: plannerCB is running.");
 		if (not this->firstGoal_) return;
 
@@ -366,6 +371,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::replanCheckCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: replanCheckCB is running.");
 		/*
 			Replan if
@@ -395,10 +401,28 @@ namespace AutoFlight{
 			return;
 		}
 
+		if (this->replan_){
+			return;
+		}
+
 		if (this->trajectoryReady_){
 			if (this->hasCollision()){ // if trajectory not ready, do not replan
-				this->replan_ = true;
-				cout << "[AutoFlight]: Replan for collision." << endl;
+				const double nowSec = this->node_->now().seconds();
+				const bool cooldownElapsed =
+					(this->lastCollisionReplanSec_ < 0.0) ||
+					((nowSec - this->lastCollisionReplanSec_) >= this->collisionReplanCooldownSec_);
+				if (cooldownElapsed){
+					this->replan_ = true;
+					this->lastCollisionReplanSec_ = nowSec;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Replan for collision.");
+				}
+				else{
+					RCLCPP_WARN_THROTTLE(
+						this->node_->get_logger(),
+						*this->node_->get_clock(),
+						1000,
+						"[AutoFlight]: Collision detected but replan is rate-limited by cooldown.");
+				}
 				return;
 			}
 
@@ -425,6 +449,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::trajExeCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: trajExeCB is running.");
 		if (this->trajectoryReady_){
 			rclcpp::Time currTime = this->node_->now();
@@ -476,6 +501,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::visCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		RCLCPP_INFO_ONCE(this->node_->get_logger(), "[AutoFlight]: visCB is running.");
 		if (this->rrtPathMsg_.poses.size() != 0){
 			this->rrtPathPub_->publish(this->rrtPathMsg_);
@@ -495,10 +521,8 @@ namespace AutoFlight{
 	}
 
 	void dynamicNavigation::run(){
-		// take off the drone
-		this->takeoff();
-
-		// register timer callback
+		// Executor-native path: takeoff/state transitions handled by mode executor.
+		// This node only publishes mission targets for /autonomous_flight/target_state.
 		this->registerCallback();
 	}
 

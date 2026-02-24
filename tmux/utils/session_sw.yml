@@ -46,11 +46,12 @@ windows:
   - CTRL-MISSION:
       layout: tiled
       panes:
-        - mkdir -p /tmp/dds_mission_logs; stdbuf -oL -eL timeout 300s ros2 launch px4_control_interface dds_shadow.launch.py 
+        - ros2 launch px4_control_interface dds_shadow.launch.py 
             use_sim_time:=true 
             start_legacy_stack:=true 
-            mission:=navigation 
-            2>&1 | tee /tmp/dds_mission_logs/03_navigation.log
+            mission:=dynamic_exploration
+
+        - ros2 service call /dynamic_exploration/start std_srvs/srv/Trigger "{}" -sasd
 
   - CTRL-DEBUG:
       layout: tiled
@@ -88,7 +89,10 @@ windows:
   - PERCEP-MAP:
       layout: even-vertical
       panes:
-        - ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_global_planner_navigation:=true
+        #- ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_global_planner_navigation:=true
+        - ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_explore:=true
+
+
         
   - PERCEP-debug:
       layout: even-horizontal

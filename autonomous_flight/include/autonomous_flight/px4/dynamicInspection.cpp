@@ -192,6 +192,10 @@ namespace AutoFlight{
 		this->node_->get_parameter("replan_time_for_dynamic_obstacles", this->replanTimeForDynamicObstacle_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Dynamic obstacle replan time is set to: %.2fs.", this->replanTimeForDynamicObstacle_);
 
+		this->node_->declare_parameter<double>("collision_replan_cooldown_sec", 0.30);
+		this->node_->get_parameter("collision_replan_cooldown_sec", this->collisionReplanCooldownSec_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Collision replan cooldown is set to: %.2fs.", this->collisionReplanCooldownSec_);
+
 		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
 		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Operator confirmation is set to: %s", this->operatorConfirm_ ? "true" : "false");
@@ -310,6 +314,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::plannerCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->flightState_ == FLIGHT_STATE::FORWARD){
 			// navigate to the goal position
 			if (this->replan_){
@@ -845,6 +850,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::trajExeCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->flightState_ == FLIGHT_STATE::FORWARD or (this->flightState_ == FLIGHT_STATE::BACKWARD and this->prevState_ != FLIGHT_STATE::INSPECT) or (this->flightState_ == FLIGHT_STATE::EXPLORE and this->prevState_ == FLIGHT_STATE::EXPLORE)){
 			if (this->trajectoryReady_){
 				rclcpp::Time currTime = this->node_->now();
@@ -1174,6 +1180,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::inspectTimerCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (!this->inspectionActive_ || this->flightState_ != FLIGHT_STATE::INSPECT){
 			return;
 		}
@@ -1314,6 +1321,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::checkWallCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		// use current robot position, check the occcupancy of the predefined wall size bounding box
 
 		// const double maxWallWidth = 10.0; // The maximum width of the wall
@@ -1393,6 +1401,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::collisionCheckCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->td_.currTrajectory.poses.size() == 0) return;
 		nav_msgs::msg::Path currTrajectory = this->td_.currTrajectory;
 
@@ -1408,12 +1417,17 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::replanCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		/*
 			Replan if
 			1. collision detected
 			2. new goal point assigned
 			3. fixed distance
 		*/
+
+		if (this->replan_){
+			return;
+		}
 
 		if (this->trajectoryReady_ and this->flightState_ != FLIGHT_STATE::INSPECT){
 			if (not this->wallDetected_){
@@ -1426,8 +1440,22 @@ namespace AutoFlight{
 			}
 
 			if (this->hasCollision()){ // if trajectory not ready, do not replan
-				this->replan_ = true;
-				cout << "[AutoFlight]: Replan for collision." << endl;
+				const double nowSec = this->node_->now().seconds();
+				const bool cooldownElapsed =
+					(this->lastCollisionReplanSec_ < 0.0) ||
+					((nowSec - this->lastCollisionReplanSec_) >= this->collisionReplanCooldownSec_);
+				if (cooldownElapsed){
+					this->replan_ = true;
+					this->lastCollisionReplanSec_ = nowSec;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Replan for collision.");
+				}
+				else{
+					RCLCPP_WARN_THROTTLE(
+						this->node_->get_logger(),
+						*this->node_->get_clock(),
+						1000,
+						"[AutoFlight]: Collision detected but replan is rate-limited by cooldown.");
+				}
 				return;
 			}
 
@@ -1454,6 +1482,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicInspection::visCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 			this->goalPub_->publish(this->goal_);
 		if (this->rrtPathMsg_.poses.size() != 0){
 				this->rrtPathPub_->publish(this->rrtPathMsg_);

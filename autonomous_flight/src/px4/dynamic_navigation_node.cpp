@@ -12,7 +12,7 @@ class DynamicNavigationRunner {
 public:
 	DynamicNavigationRunner(const rclcpp::Node::SharedPtr& node, AutoFlight::dynamicNavigation* navigator)
 	: node_(node), navigator_(navigator) {
-		auto cbg = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+		this->startCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		this->startTimer_ = this->node_->create_wall_timer(
 			std::chrono::milliseconds(50),
 			[this]() {
@@ -20,12 +20,13 @@ public:
 				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Start dynamic navigation mission.");
 				this->navigator_->run();
 			},
-			cbg);
+			this->startCbGroup_);
 	}
 
 private:
 	rclcpp::Node::SharedPtr node_;
 	AutoFlight::dynamicNavigation* navigator_;
+	rclcpp::CallbackGroup::SharedPtr startCbGroup_;
 	rclcpp::TimerBase::SharedPtr startTimer_;
 };
 } // namespace

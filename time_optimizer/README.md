@@ -23,6 +23,10 @@ Trajectory time allocation/optimization library for AgiAUTO.
 
 Architecture-dependent third-party solver libraries are linked during build (see `CMakeLists.txt`).
 
+## Migration note (2026-02)
+
+No interface-breaking changes were introduced in this package during the recent dynamic mission DDS migration work.
+
 ## Credits
 
 Inspired by the great academic work of Zhefan Xu and collaborators (CERLAB/CMU).

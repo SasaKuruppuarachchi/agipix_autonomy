@@ -11,6 +11,7 @@
 #include <trajectory_planner/piecewiseLinearTraj.h>
 #include <trajectory_planner/bsplineTraj.h>
 #include <map_manager/dynamicMap.h>
+#include <std_srvs/srv/trigger.hpp>
 
 
 namespace AutoFlight{
@@ -23,6 +24,7 @@ namespace AutoFlight{
 		std::shared_ptr<trajPlanner::bsplineTraj> bsplineTraj_;
 
 		rclcpp::TimerBase::SharedPtr explorationTimer_;
+		rclcpp::TimerBase::SharedPtr startExplorationTimer_;
 		rclcpp::TimerBase::SharedPtr plannerTimer_;
 		rclcpp::TimerBase::SharedPtr replanCheckTimer_;
 		rclcpp::TimerBase::SharedPtr trajExeTimer_;
@@ -34,11 +36,13 @@ namespace AutoFlight{
 		rclcpp::CallbackGroup::SharedPtr trajExeCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr visCbGroup_;
 		rclcpp::CallbackGroup::SharedPtr exploreReplanCbGroup_;
+		rclcpp::CallbackGroup::SharedPtr startExplorationCbGroup_;
 
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr polyTrajPub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pwlTrajPub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr bsplineTrajPub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr inputTrajPub_;
+		rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startExplorationSrv_;
 		
 		// parameters
 		double desiredVel_;
@@ -47,9 +51,16 @@ namespace AutoFlight{
 		double wpStablizeTime_;
 		bool initialScan_;
 		double replanTimeForDynamicObstacle_;
+		double collisionReplanCooldownSec_{0.30};
 		Eigen::Vector3d freeRange_;
 		double reachGoalDistance_;
+		double minWaypointDistance_{0.2};
 		bool operatorConfirm_ = false;
+		bool replanOnFinishOrFail_ = true;
+		bool stabilizeBeforeRotate_ = true;
+		bool replanOnCollisionFail_ = true;
+		bool startExplorationRequested_ = false;
+		bool explorationStarted_ = false;
 
 		// exploration data
 		bool explorationReplan_ = true;
@@ -69,6 +80,11 @@ namespace AutoFlight{
 		bool waypointRotatePending_ = false;
 		rclcpp::Time waypointRotateReadyTime_;
 		double waypointRotateYaw_ = 0.0;
+		double lastCollisionReplanSec_{-1.0};
+		std::mutex navStateMutex_;
+
+		void clearWaypointPlan();
+		void requestExplorationReplan(bool enabled);
 	
 	public:
 		explicit dynamicExploration(const rclcpp::Node::SharedPtr& node);

@@ -11,3 +11,14 @@
     desired_acceleration: 1.0 # m/s^2
     desired_angular_velocity: 0.5 # rad/s
     replan_time_for_dynamic_obstacles: 0.3
+
+mission_tracking_executor_node:
+  ros__parameters:
+    # Keep consistent with navigation target publication behavior.
+    target_topic: /autonomous_flight/target_state
+    target_timeout_s: 2.5
+    use_input_yaw: true
+    skip_takeoff_if_flying: true
+    flying_height_threshold: 0.35
+    debug_mode: false
+    publish_target_rx_marker: true

@@ -2,6 +2,13 @@ dynamic_navigation_node:
   ros__parameters:
     desired_velocity: 2.0 # m/s
     desired_acceleration: 3.0 # m/s^2
+    # global planner (RRT) robustness
+    timeout: 1.5
+    ignore_unknown: true
+    pass_goal_check: true
+
+    # keep previous valid trajectory for this many planning failures before stop
+    max_consecutive_plan_failures_before_stop: 3
 
     poly_traj:
       polynomial_degree: 7

@@ -29,6 +29,10 @@ ros2 launch map_manager dynamic_map.launch.py
 - Repo: https://github.com/SasaKuruppuarachchi/agipix_px4_autonomy.git
 - Docs: https://sasakuruppuarachchi.github.io/agipix/
 
+## Migration note (2026-02)
+
+No interface-breaking changes were introduced in this package during the recent dynamic mission DDS migration work.
+
 ## Credits
 
 Original core work and algorithms are from CERLAB/CMU packages by Zhefan Xu and collaborators.

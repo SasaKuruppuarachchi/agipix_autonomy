@@ -5,6 +5,8 @@
 */
 
 #include <autonomous_flight/px4/dynamicExploration.h>
+#include <std_srvs/srv/trigger.hpp>
+#include <rmw/qos_profiles.h>
 #include <limits>
 
 namespace AutoFlight{
@@ -45,6 +47,10 @@ namespace AutoFlight{
 		this->node_->get_parameter("replan_time_for_dynamic_obstacles", this->replanTimeForDynamicObstacle_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Dynamic obstacle replan time is set to: %.2fs.", this->replanTimeForDynamicObstacle_);
 
+		this->node_->declare_parameter<double>("collision_replan_cooldown_sec", 0.30);
+		this->node_->get_parameter("collision_replan_cooldown_sec", this->collisionReplanCooldownSec_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Collision replan cooldown is set to: %.2fs.", this->collisionReplanCooldownSec_);
+
     	// free range 
     	std::vector<double> freeRangeTemp;
 		this->node_->declare_parameter<std::vector<double>>("free_range", std::vector<double>{2.0, 2.0, 1.0});
@@ -58,6 +64,22 @@ namespace AutoFlight{
 		this->node_->declare_parameter<double>("reach_goal_distance", 0.1);
 		this->node_->get_parameter("reach_goal_distance", this->reachGoalDistance_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Reach goal distance is set to: %.2fm.", this->reachGoalDistance_);
+
+		this->node_->declare_parameter<double>("min_waypoint_distance", 0.2);
+		this->node_->get_parameter("min_waypoint_distance", this->minWaypointDistance_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Min waypoint distance is set to: %.2fm.", this->minWaypointDistance_);
+
+		this->node_->declare_parameter<bool>("replan_on_finish_or_fail", true);
+		this->node_->get_parameter("replan_on_finish_or_fail", this->replanOnFinishOrFail_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Replan on finish/fail is set to: %s.", this->replanOnFinishOrFail_ ? "true" : "false");
+
+		this->node_->declare_parameter<bool>("replan_on_collision_fail", true);
+		this->node_->get_parameter("replan_on_collision_fail", this->replanOnCollisionFail_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Replan on collision fail is set to: %s.", this->replanOnCollisionFail_ ? "true" : "false");
+
+		this->node_->declare_parameter<bool>("stabilize_before_rotate", true);
+		this->node_->get_parameter("stabilize_before_rotate", this->stabilizeBeforeRotate_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Stabilize before rotate is set to: %s.", this->stabilizeBeforeRotate_ ? "true" : "false");
 
 		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
 		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
@@ -124,6 +146,20 @@ namespace AutoFlight{
 		this->inputTrajPub_ = this->node_->create_publisher<nav_msgs::msg::Path>("dynamicExploration/input_trajectory", 1000);
 	}
 
+	void dynamicExploration::clearWaypointPlan(){
+		this->newWaypoints_ = false;
+		this->waypoints_.poses.clear();
+		this->waypointIdx_ = 1;
+	}
+
+	void dynamicExploration::requestExplorationReplan(bool enabled){
+		if (!enabled){
+			return;
+		}
+		this->clearWaypointPlan();
+		this->explorationReplan_ = true;
+	}
+
 	void dynamicExploration::explorationCB(){
 		if (this->explorationReplan_){
 			this->expPlanner_->setMap(this->map_);
@@ -141,17 +177,15 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::plannerCB(){
-		// cout << "in planner callback" << endl;
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 
 		if (this->replan_){
 			std::vector<Eigen::Vector3d> obstaclesPos, obstaclesVel, obstaclesSize;
 			this->map_->getDynamicObstacles(obstaclesPos, obstaclesVel, obstaclesSize);
 			nav_msgs::msg::Path inputTraj;
 			std::vector<Eigen::Vector3d> startEndConditions;
-			this->getStartEndConditions(startEndConditions); 
-			// double initTs = this->bsplineTraj_->getInitTs();
+			this->getStartEndConditions(startEndConditions);
 
-			// generate new trajectory
 			nav_msgs::msg::Path simplePath;
 			geometry_msgs::msg::PoseStamped pStart, pGoal;
 			pStart.pose = this->odom_.pose.pose;
@@ -159,83 +193,6 @@ namespace AutoFlight{
 			simplePath.poses = {pStart, pGoal};
 			this->pwlTraj_->updatePath(simplePath, false);
 			this->pwlTraj_->makePlan(inputTraj, this->bsplineTraj_->getControlPointDist());
-			// if (not this->trajectoryReady_){
-			// 	// generate new trajectory
-			// 	nav_msgs::Path simplePath;
-			// 	geometry_msgs::PoseStamped pStart, pGoal;
-			// 	pStart.pose = this->odom_.pose.pose;
-			// 	pGoal = this->goal_;
-			// 	simplePath.poses = {pStart, pGoal};
-			// 	this->pwlTraj_->updatePath(simplePath, false);
-			// 	this->pwlTraj_->makePlan(inputTraj, this->bsplineTraj_->getControlPointDist());
-			// }
-			// else{
-			// 	Eigen::Vector3d bsplineLastPos = this->trajectory_.at(this->trajectory_.getDuration());
-			// 	geometry_msgs::PoseStamped lastPs; lastPs.pose.position.x = bsplineLastPos(0); lastPs.pose.position.y = bsplineLastPos(1); lastPs.pose.position.z = bsplineLastPos(2);
-			// 	Eigen::Vector3d goalPos (this->goal_.pose.position.x, this->goal_.pose.position.y, this->goal_.pose.position.z);
-			// 	// if ((bsplineLastPos - goalPos).norm() >= 0.1){
-			// 	nav_msgs::Path inputPWLTraj;
-			// 	nav_msgs::Path simplePath;
-			// 	geometry_msgs::PoseStamped pStart, pGoal;
-			// 	pStart = lastPs;
-			// 	pGoal = this->goal_;
-			// 	simplePath.poses = {pStart, pGoal};
-			// 	this->pwlTraj_->updatePath(simplePath, false);
-			// 	this->pwlTraj_->makePlan(inputPWLTraj, this->bsplineTraj_->getControlPointDist());
-
-
-			// 	nav_msgs::Path adjustedInputCombinedTraj;
-			// 	bool satisfyDistanceCheck = false;
-			// 	double dtTemp = initTs;
-			// 	double finalTimeTemp;
-			// 	ros::Time startTime = ros::Time::now();
-			// 	ros::Time currTime;
-			// 	while (ros::ok()){
-			// 		currTime = ros::Time::now();
-			// 		if ((currTime - startTime).toSec() >= 0.05){
-			// 			cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
-			// 			break;
-			// 		}							
-			// 		nav_msgs::Path inputRestTraj = this->getCurrentTraj(dtTemp);
-			// 		nav_msgs::Path inputCombinedTraj;
-			// 		inputCombinedTraj.poses = inputRestTraj.poses;
-			// 		for (size_t i=1; i<inputPWLTraj.poses.size(); ++i){
-			// 			inputCombinedTraj.poses.push_back(inputPWLTraj.poses[i]);
-			// 		}
-					
-			// 		satisfyDistanceCheck = this->bsplineTraj_->inputPathCheck(inputCombinedTraj, adjustedInputCombinedTraj, dtTemp, finalTimeTemp);
-			// 		if (satisfyDistanceCheck) break;
-					
-			// 		dtTemp *= 0.8; // magic number 0.8
-			// 	}
-			// 	inputTraj = adjustedInputCombinedTraj;
-			// 	// }
-			// 	// else{
-			// 	// 	nav_msgs::Path adjustedInputRestTraj;
-			// 	// 	bool satisfyDistanceCheck = false;
-			// 	// 	double dtTemp = initTs;
-			// 	// 	double finalTimeTemp;
-			// 	// 	ros::Time startTime = ros::Time::now();
-			// 	// 	ros::Time currTime;
-			// 	// 	while (ros::ok()){
-			// 	// 		currTime = ros::Time::now();
-			// 	// 		if ((currTime - startTime).toSec() >= 0.05){
-			// 	// 			cout << "[AutoFlight]: Exceed path check time. Use the best." << endl;
-			// 	// 			break;
-			// 	// 		}
-			// 	// 		nav_msgs::Path inputRestTraj = this->getCurrentTraj(dtTemp);
-			// 	// 		satisfyDistanceCheck = this->bsplineTraj_->inputPathCheck(inputRestTraj, adjustedInputRestTraj, dtTemp, finalTimeTemp);
-			// 	// 		if (satisfyDistanceCheck) break;
-						
-			// 	// 		dtTemp *= 0.8;
-			// 	// 	}
-			// 	// 	inputTraj = adjustedInputRestTraj;					
-			// 	// }
-
-			// }
-
-			
-
 			this->inputTrajMsg_ = inputTraj;
 			bool updateSuccess = this->bsplineTraj_->updatePath(inputTraj, startEndConditions);
 			if (obstaclesPos.size() != 0 and updateSuccess){
@@ -250,30 +207,24 @@ namespace AutoFlight{
 					this->trajTime_ = 0.0; // reset trajectory time
 					this->trajectory_ = this->bsplineTraj_->getTrajectory();
 
-					// optimize time
-					// ros::Time timeOptStartTime = ros::Time::now();
-					// this->timeOptimizer_->optimize(this->trajectory_, this->desiredVel_, this->desiredAcc_, 0.1);
-					// ros::Time timeOptEndTime = ros::Time::now();
-					// cout << "[AutoFlight]: Time optimizatoin spends: " << (timeOptEndTime - timeOptStartTime).toSec() << "s." << endl;
-
 					this->trajectoryReady_ = true;
 					this->replan_ = false;
 					cout << "\033[1;32m[AutoFlight]: Trajectory generated successfully.\033[0m " << endl;
 				}
 				else{
-					// if the current trajectory is still valid, then just ignore this iteration
-					// if the current trajectory/or new goal point is assigned is not valid, then just stop
 					if (this->hasCollision()){
 						this->trajectoryReady_ = false;
 						this->stop();
 						cout << "[AutoFlight]: Stop!!! Trajectory generation fails." << endl;
 						this->replan_ = false;
+						this->requestExplorationReplan(this->replanOnCollisionFail_);
 					}
 					else if (this->hasDynamicCollision()){
 						this->trajectoryReady_ = false;
 						this->stop();
 						cout << "[AutoFlight]: Stop!!! Trajectory generation fails. Replan for dynamic obstacles." << endl;
 						this->replan_ = true;
+						this->requestExplorationReplan(this->replanOnCollisionFail_);
 					}
 					else{
 						if (this->trajectoryReady_){
@@ -284,6 +235,7 @@ namespace AutoFlight{
 							cout << "[AutoFlight]: Unable to generate a feasible trajectory." << endl;
 							cout << "\033[1;32m[AutoFlight]: Wait for new path to replan.\033[0m" << endl;
 							this->replan_ = false;
+							this->requestExplorationReplan(this->replanOnCollisionFail_);
 						}
 					}
 				}
@@ -300,12 +252,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::replanCheckCB(){
-		/*
-			Replan if
-			1. collision detected
-			2. new goal point assigned
-			3. fixed distance
-		*/
+		std::unique_lock<std::mutex> lock(this->navStateMutex_);
 
 		if (this->waypointRotatePending_){
 			if (this->newWaypoints_){
@@ -317,7 +264,10 @@ namespace AutoFlight{
 			}
 			else {
 				cout << "[AutoFlight]: Rotate and replan..." << endl;
-				this->moveToOrientation(this->waypointRotateYaw_, this->desiredAngularVel_);
+				double rotateYaw = this->waypointRotateYaw_;
+				lock.unlock();
+				this->moveToOrientation(rotateYaw, this->desiredAngularVel_);
+				lock.lock();
 				cout << "[AutoFlight]: Finish rotation." << endl;
 
 				// change current goal
@@ -327,6 +277,9 @@ namespace AutoFlight{
 				if (this->waypointIdx_ + 1 > int(this->waypoints_.poses.size())){
 					cout << "\033[1;32m[AutoFlight]: Finishing entire path. Wait for new path to replan.\033[0m" << endl;
 					this->replan_ = false;
+					if (this->replanOnFinishOrFail_){
+						this->explorationReplan_ = true;
+					}
 				}
 				else{
 					cout << "[AutoFlight]: Start planning for next waypoint." << endl;
@@ -339,19 +292,42 @@ namespace AutoFlight{
 			}
 		}
 
+		if (this->replan_){
+			return;
+		}
+
 		if (this->newWaypoints_){
+			if (this->waypoints_.poses.empty()){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Ignoring new waypoints: insufficient path size (%zu).", this->waypoints_.poses.size());
+				this->newWaypoints_ = false;
+				this->requestExplorationReplan(this->replanOnCollisionFail_);
+				return;
+			}
 			this->replan_ = false;
 			this->trajectoryReady_ = false;
-			double yaw = atan2(this->waypoints_.poses[1].pose.position.y - this->odom_.pose.pose.position.y, this->waypoints_.poses[1].pose.position.x - this->odom_.pose.pose.position.x);
-			// cout << "[AutoFlight]: Go to next waypoint. Press ENTER to continue rotation." << endl;
-			// std::cin.clear();
-			// fflush(stdin);
-			// std::cin.get();
-			this->moveToOrientation(yaw, this->desiredAngularVel_);
-			// cout << "[AutoFlight]: Press ENTER to move forward." << endl;
-			// std::cin.clear();
-			// fflush(stdin);
-			// std::cin.get();		
+			int nextIdx = -1;
+			const auto& currPos = this->odom_.pose.pose.position;
+			for (size_t i = this->waypointIdx_; i < this->waypoints_.poses.size(); ++i){
+				const auto& pose = this->waypoints_.poses[i].pose.position;
+				const double dx = pose.x - currPos.x;
+				const double dy = pose.y - currPos.y;
+				const double dz = pose.z - currPos.z;
+				const double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+				if (dist >= this->minWaypointDistance_){
+					nextIdx = static_cast<int>(i);
+					break;
+				}
+			}
+			if (nextIdx < 0){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: No waypoint beyond min distance %.2f m. Requesting new path.", this->minWaypointDistance_);
+				this->newWaypoints_ = false;
+				this->requestExplorationReplan(this->replanOnCollisionFail_);
+				return;
+			}
+			this->waypointIdx_ = nextIdx;
+			double yaw = atan2(this->waypoints_.poses[static_cast<size_t>(this->waypointIdx_)].pose.position.y - currPos.y,
+				this->waypoints_.poses[static_cast<size_t>(this->waypointIdx_)].pose.position.x - currPos.x);
+			(void)yaw;
 			this->replan_ = true;
 			this->newWaypoints_ = false;
 			if (this->waypointIdx_ < int(this->waypoints_.poses.size())){
@@ -363,24 +339,19 @@ namespace AutoFlight{
 			return;
 		}
 
-		// if (this->isReach(this->goal_, 0.1, false) and this->waypointIdx_ <= int(this->waypoints_.poses.size())){
-		// cout << "outside the if" << endl;
-		// cout << "waypoints size: " << this->waypoints_.poses.size() << endl;
-		// cout << "current waypoint idx: " << this->waypointIdx_ << endl;
 		if (this->waypoints_.poses.size() != 0 and this->isReach(this->goal_, this->reachGoalDistance_, false) and this->waypointIdx_ <= int(this->waypoints_.poses.size())){
-			// cout << "1" << endl;
-			// when reach current goal point, reset replan and trajectory ready
 			this->replan_ = false;
 			this->trajectoryReady_ = false;
-			// cout << "[AutoFlight]: Go to next waypoint. Press ENTER to continue rotation." << endl;
-			// std::cin.clear();
-			// fflush(stdin);
-			// std::cin.get();
-			cout << "[AutoFlight]: Stabilizing before rotate and replan..." << endl;
 			geometry_msgs::msg::Quaternion quat = this->goal_.pose.orientation;
 			double yaw = AutoFlight::rpy_from_quaternion(quat);
 			this->waypointRotateYaw_ = yaw;
-			this->waypointRotateReadyTime_ = this->node_->now() + rclcpp::Duration::from_seconds(std::max(0.0, this->wpStablizeTime_));
+			if (this->stabilizeBeforeRotate_){
+				cout << "[AutoFlight]: Stabilizing before rotate and replan..." << endl;
+				this->waypointRotateReadyTime_ = this->node_->now() + rclcpp::Duration::from_seconds(std::max(0.0, this->wpStablizeTime_));
+			}
+			else{
+				this->waypointRotateReadyTime_ = this->node_->now();
+			}
 			this->waypointRotatePending_ = true;
 			return;		
 		}
@@ -388,6 +359,7 @@ namespace AutoFlight{
 			cout << "\033[[AutoFlight]: Finishing entire path. Wait for new path to replan.\033[0m" << endl;
 			this->replan_ = false;
 			this->trajectoryReady_ = false;
+			this->requestExplorationReplan(this->replanOnFinishOrFail_);
 			return;		
 		}
 
@@ -395,23 +367,11 @@ namespace AutoFlight{
 			if (not this->isGoalValid() and (this->replan_ or this->trajectoryReady_)){
 				this->replan_ = false;
 				this->trajectoryReady_ = false;
+				this->requestExplorationReplan(this->replanOnCollisionFail_);
 				cout << "\033[1;32m[AutoFlight]: Current goal is invalid. Need new path to replan.\033[0m" << endl;
-				// this->explorationReplan_ = true;
 				return;
 			}
 		}
-
-		// if (this->reachExplorationGoal()){
-		// 	this->replan_ = false;
-		// 	this->trajectoryReady_ = false;
-		// 	geometry_msgs::Quaternion quat = this->waypoints_.poses.back().pose.orientation;
-		// 	double yaw = AutoFlight::rpy_from_quaternion(quat);
-		// 	cout << "[AutoFlight]: Reach exploration goal. Rotate and replan..." << endl;
-		// 	this->moveToOrientation(yaw, this->desiredAngularVel_);
-		// 	cout << "[AutoFlight]: Finish rotation. Start to replan." << endl;
-		// 	this->replan_ = true;
-		// 	return;
-		// }
 
 		if (this->trajectoryReady_){
 			if (not this->expPlanner_->isPosValid(this->trajectory_.at(this->trajectory_.getDuration()))){
@@ -419,18 +379,31 @@ namespace AutoFlight{
 				this->replan_ = false;
 				this->stop();
 				cout << "\033[1;32m[AutoFlight]: the goal of current local trajectory is not safe. Need replan.\033[0m" << endl;
+				this->requestExplorationReplan(this->replanOnFinishOrFail_ || this->replanOnCollisionFail_);
 				return;
 			}
 
 			if (this->hasCollision()){ // if trajectory not ready, do not replan
-				this->replan_ = true;
-				cout << "[AutoFlight]: Replan for collision." << endl;
+				const double nowSec = this->node_->now().seconds();
+				const bool cooldownElapsed =
+					(this->lastCollisionReplanSec_ < 0.0) ||
+					((nowSec - this->lastCollisionReplanSec_) >= this->collisionReplanCooldownSec_);
+				if (cooldownElapsed){
+					this->replan_ = true;
+					this->lastCollisionReplanSec_ = nowSec;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Replan for collision.");
+				}
+				else{
+					RCLCPP_WARN_THROTTLE(
+						this->node_->get_logger(),
+						*this->node_->get_clock(),
+						1000,
+						"[AutoFlight]: Collision detected but replan is rate-limited by cooldown.");
+				}
 				return;
 			}
 
-			// replan for dynamic obstacles
 			if (this->computeExecutionDistance() >= 0.3 and this->hasDynamicCollision()){
-			// if (this->hasDynamicObstacle()){
 				this->replan_ = true;
 				cout << "[AutoFlight]: Replan for dynamic obstacles." << endl;
 				return;
@@ -451,6 +424,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::trajExeCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->trajectoryReady_){
 			rclcpp::Time currTime = this->node_->now();
 			double realTime = (currTime - this->trajStartTime_).seconds();
@@ -493,6 +467,7 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::visCB(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 		if (this->polyTrajMsg_.poses.size() != 0){
 			this->polyTrajPub_->publish(this->polyTrajMsg_);
 		}
@@ -515,7 +490,7 @@ namespace AutoFlight{
 		else{
 			cout << "\033[1;32m[AutoFlight]: Please double check all parameters. Continuing automatically (set require_operator_confirmation=true to pause).\033[0m" << endl;
 		}
-		this->takeoff();
+		//this->takeoff();
 
 		if (this->operatorConfirm_){
 			cout << "\033[1;32m[AutoFlight]: Takeoff succeed. Continuing in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
@@ -531,17 +506,59 @@ namespace AutoFlight{
 		// 	cout << "[AutoFlight]: Recording fails." << endl;
 		// }
 
-		this->initExplore();
-
-		if (this->operatorConfirm_){
-			cout << "\033[1;32m[AutoFlight]: Start planning in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
-			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but planning start proceeds non-blocking.");
+		if (!this->startExplorationCbGroup_){
+			this->startExplorationCbGroup_ = this->node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 		}
-		else{
-			cout << "\033[1;32m[AutoFlight]: Start planning.\033[0m" << endl;
+		if (!this->startExplorationSrv_){
+			this->startExplorationSrv_ = this->node_->create_service<std_srvs::srv::Trigger>(
+				"dynamic_exploration/start",
+				[this](
+					const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+					std::shared_ptr<std_srvs::srv::Trigger::Response> response){
+					{
+						std::scoped_lock<std::mutex> lock(this->navStateMutex_);
+						if (this->explorationStarted_){
+							response->success = false;
+							response->message = "exploration already started";
+							return;
+						}
+						this->startExplorationRequested_ = true;
+						response->success = true;
+						response->message = "exploration start requested";
+					}
+				},
+				rmw_qos_profile_services_default,
+				this->startExplorationCbGroup_);
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Waiting for /dynamic_exploration/start service trigger to begin planning.");
 		}
-
-		this->registerCallback();
+		if (!this->startExplorationTimer_){
+			this->startExplorationTimer_ = this->node_->create_wall_timer(
+				std::chrono::milliseconds(50),
+				[this](){
+					bool shouldStart = false;
+					{
+						std::scoped_lock<std::mutex> lock(this->navStateMutex_);
+						if (this->startExplorationRequested_ && !this->explorationStarted_){
+							this->startExplorationRequested_ = false;
+							this->explorationStarted_ = true;
+							shouldStart = true;
+						}
+					}
+					if (!shouldStart){
+						return;
+					}
+					this->initExplore();
+					if (this->operatorConfirm_){
+						cout << "\033[1;32m[AutoFlight]: Start planning in non-blocking mode (CTRL+C to abort).\033[0m" << endl;
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: require_operator_confirmation=true, but planning start proceeds non-blocking.");
+					}
+					else{
+						cout << "\033[1;32m[AutoFlight]: Start planning.\033[0m" << endl;
+					}
+					this->registerCallback();
+				},
+				this->startExplorationCbGroup_);
+		}
 	}
 
 	void dynamicExploration::initExplore(){
@@ -641,6 +658,16 @@ namespace AutoFlight{
 	}
 
 	void dynamicExploration::exploreReplan(){
+		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
+		// if (!this->explorationReplan_){ // @TODO:check
+		// 	return;
+		// }
+		if (this->newWaypoints_ || this->replan_ || this->waypointRotatePending_){
+			return;
+		}
+		if (this->trajectoryReady_){
+			return;
+		}
 		// set start region to be free
 		// Eigen::Vector3d range (2.0, 2.0, 1.0);
 		// Eigen::Vector3d startPos (this->odom_.pose.pose.position.x, this->odom_.pose.pose.position.y, this->odom_.pose.pose.position.z);
@@ -677,8 +704,25 @@ namespace AutoFlight{
 		bool replanSuccess = this->expPlanner_->makePlan();
 		if (replanSuccess){
 			this->waypoints_ = this->expPlanner_->getBestPath();
-			this->newWaypoints_ = true;
-			this->waypointIdx_ = 1;
+			if (this->waypoints_.poses.size() >= 2){
+				const auto& startPose = this->waypoints_.poses.front().pose.position;
+				const auto& nextPose = this->waypoints_.poses[1].pose.position;
+				const double dx = nextPose.x - startPose.x;
+				const double dy = nextPose.y - startPose.y;
+				const double dz = nextPose.z - startPose.z;
+				const double waypointDist = std::sqrt(dx * dx + dy * dy + dz * dz);
+				if (waypointDist >= this->minWaypointDistance_){
+					this->newWaypoints_ = true;
+					this->waypointIdx_ = 1;
+					this->explorationReplan_ = false;
+				}
+				else{
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: DEP returned too-short waypoint segment (%.3f m). Retrying.", waypointDist);
+				}
+			}
+			else{
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: DEP returned insufficient waypoints (%zu). Retrying.", this->waypoints_.poses.size());
+			}
 		}
 		rclcpp::Time endTime = this->node_->now();
 		if (this->operatorConfirm_){
