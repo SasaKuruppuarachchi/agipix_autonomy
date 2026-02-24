@@ -94,6 +94,7 @@ namespace globalPlanner{
 
 		bool makePlan();
 		nav_msgs::msg::Path getBestPath();
+		bool getRoadmapPathToPosition(const Eigen::Vector3d& targetPos, nav_msgs::msg::Path& path);
 		void detectFrontierRegion(std::vector<std::pair<Eigen::Vector3d, double>>& frontierPointPairs);
 		void buildRoadMap();
 		void pruneNodes();

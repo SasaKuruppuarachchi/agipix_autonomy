@@ -43,6 +43,7 @@ namespace AutoFlight{
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr bsplineTrajPub_;
 		rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr inputTrajPub_;
 		rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr startExplorationSrv_;
+		rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr endMissionSrv_;
 		
 		// parameters
 		double desiredVel_;
@@ -61,6 +62,12 @@ namespace AutoFlight{
 		bool replanOnCollisionFail_ = true;
 		bool startExplorationRequested_ = false;
 		bool explorationStarted_ = false;
+		bool endMissionRequested_ = false;
+		bool endMissionActive_ = false;
+		bool landingPhase_ = false;
+		bool missionEnded_ = false;
+		double endMissionLastRetrySec_{-1.0};
+		double endMissionMaxSegmentDistance_{1.5};
 
 		// exploration data
 		bool explorationReplan_ = true;
@@ -84,7 +91,9 @@ namespace AutoFlight{
 		std::mutex navStateMutex_;
 
 		void clearWaypointPlan();
+		nav_msgs::msg::Path buildTwoPointPath(double x, double y, double z) const;
 		void requestExplorationReplan(bool enabled);
+		void endMission();
 	
 	public:
 		explicit dynamicExploration(const rclcpp::Node::SharedPtr& node);

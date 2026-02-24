@@ -8,8 +8,15 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <rmw/qos_profiles.h>
 #include <limits>
+#include <cmath>
 
 namespace AutoFlight{
+	namespace {
+		inline bool isFinitePosePosition(const geometry_msgs::msg::Pose& pose){
+			return std::isfinite(pose.position.x) && std::isfinite(pose.position.y) && std::isfinite(pose.position.z);
+		}
+	}
+
 	dynamicExploration::dynamicExploration(const rclcpp::Node::SharedPtr& node) : flightBase(node){
 		this->initParam();
 		this->initModules();
@@ -84,6 +91,10 @@ namespace AutoFlight{
 		this->node_->declare_parameter<bool>("require_operator_confirmation", false);
 		this->node_->get_parameter("require_operator_confirmation", this->operatorConfirm_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Operator confirmation is set to: %s.", this->operatorConfirm_ ? "true" : "false");
+
+		this->node_->declare_parameter<double>("end_mission_max_segment_distance", 1.5);
+		this->node_->get_parameter("end_mission_max_segment_distance", this->endMissionMaxSegmentDistance_);
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission max segment distance is set to: %.2fm.", this->endMissionMaxSegmentDistance_);
 	}
 
 	void dynamicExploration::initModules(){
@@ -152,12 +163,61 @@ namespace AutoFlight{
 		this->waypointIdx_ = 1;
 	}
 
+	nav_msgs::msg::Path dynamicExploration::buildTwoPointPath(double x, double y, double z) const{
+		nav_msgs::msg::Path path;
+		path.header.frame_id = this->mapFrameId_;
+		path.header.stamp = this->node_->now();
+
+		geometry_msgs::msg::PoseStamped psCurr;
+		psCurr.header = path.header;
+		psCurr.pose = this->odom_.pose.pose;
+		path.poses.push_back(psCurr);
+
+		geometry_msgs::msg::PoseStamped psGoal;
+		psGoal.header = path.header;
+		psGoal.pose = this->odom_.pose.pose;
+		psGoal.pose.position.x = x;
+		psGoal.pose.position.y = y;
+		psGoal.pose.position.z = z;
+		path.poses.push_back(psGoal);
+		return path;
+	}
+
 	void dynamicExploration::requestExplorationReplan(bool enabled){
 		if (!enabled){
 			return;
 		}
 		this->clearWaypointPlan();
 		this->explorationReplan_ = true;
+	}
+
+	void dynamicExploration::endMission(){
+		this->trajectoryReady_ = false;
+		this->replan_ = false;
+		this->waypointRotatePending_ = false;
+		this->explorationReplan_ = false;
+		this->clearWaypointPlan();
+
+		nav_msgs::msg::Path missionPath;
+		this->expPlanner_->setMap(this->map_);
+		const bool depReady = this->expPlanner_->makePlan();
+		const Eigen::Vector3d homeQuery(0.0, 0.0, this->odom_.pose.pose.position.z);
+		const bool hasRoadmapHomePath = depReady && this->expPlanner_->getRoadmapPathToPosition(homeQuery, missionPath);
+
+		if (!hasRoadmapHomePath){
+			missionPath = this->buildTwoPointPath(0.0, 0.0, this->odom_.pose.pose.position.z);
+			RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: DEP roadmap return path unavailable. Falling back to direct home segment.");
+		}
+
+		this->waypoints_ = missionPath;
+		this->waypointIdx_ = 1;
+		this->newWaypoints_ = true;
+		this->endMissionActive_ = true;
+		this->landingPhase_ = false;
+		this->missionEnded_ = false;
+		this->endMissionLastRetrySec_ = -1.0;
+
+		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission requested. Returning to roadmap node closest to home (x=0.0, y=0.0).");
 	}
 
 	void dynamicExploration::explorationCB(){
@@ -180,6 +240,26 @@ namespace AutoFlight{
 		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
 
 		if (this->replan_){
+			if (!isFinitePosePosition(this->odom_.pose.pose) || !isFinitePosePosition(this->goal_.pose)){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Invalid (NaN/Inf) start or goal pose detected. Skipping this replan iteration.");
+				this->replan_ = false;
+				this->trajectoryReady_ = false;
+				if (this->endMissionActive_){
+					this->newWaypoints_ = true;
+				}
+				return;
+			}
+
+			if (!this->isGoalValid()){
+				RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: Current goal is invalid before local planning. Skipping this replan iteration.");
+				this->replan_ = false;
+				this->trajectoryReady_ = false;
+				if (this->endMissionActive_){
+					this->newWaypoints_ = true;
+				}
+				return;
+			}
+
 			std::vector<Eigen::Vector3d> obstaclesPos, obstaclesVel, obstaclesSize;
 			this->map_->getDynamicObstacles(obstaclesPos, obstaclesVel, obstaclesSize);
 			nav_msgs::msg::Path inputTraj;
@@ -253,6 +333,137 @@ namespace AutoFlight{
 
 	void dynamicExploration::replanCheckCB(){
 		std::unique_lock<std::mutex> lock(this->navStateMutex_);
+
+		if (this->endMissionRequested_){
+			this->endMissionRequested_ = false;
+			this->endMission();
+		}
+
+		if (this->endMissionActive_){
+			if (this->newWaypoints_){
+				if (this->waypoints_.poses.size() < 2){
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: End mission path invalid (size=%zu). Holding position.", this->waypoints_.poses.size());
+					this->newWaypoints_ = false;
+					this->replan_ = false;
+					this->trajectoryReady_ = false;
+					this->stop();
+					return;
+				}
+
+				size_t startIdx = static_cast<size_t>(std::max(1, this->waypointIdx_));
+				startIdx = std::min(startIdx, this->waypoints_.poses.size() - 1);
+
+				const auto& currPos = this->odom_.pose.pose.position;
+				int chosenIdx = -1;
+				double bestDist = std::numeric_limits<double>::infinity();
+				for (size_t i = startIdx; i < this->waypoints_.poses.size(); ++i){
+					const auto& ps = this->waypoints_.poses[i];
+					if (!isFinitePosePosition(ps.pose)){
+						continue;
+					}
+					Eigen::Vector3d pGoal(ps.pose.position.x, ps.pose.position.y, ps.pose.position.z);
+					if (!this->expPlanner_->isPosValid(pGoal)){
+						continue;
+					}
+					const auto& pose = ps.pose.position;
+					const double dx = pose.x - currPos.x;
+					const double dy = pose.y - currPos.y;
+					const double dz = pose.z - currPos.z;
+					const double dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+					if (dist < bestDist){
+						bestDist = dist;
+						chosenIdx = static_cast<int>(i);
+					}
+					if (dist <= this->endMissionMaxSegmentDistance_){
+						chosenIdx = static_cast<int>(i);
+					}
+				}
+
+				if (chosenIdx < 0){
+					nav_msgs::msg::Path refreshedPath;
+					this->expPlanner_->setMap(this->map_);
+					const bool depReady = this->expPlanner_->makePlan();
+					const Eigen::Vector3d homeQuery(0.0, 0.0, this->odom_.pose.pose.position.z);
+					const bool refreshed = depReady && this->expPlanner_->getRoadmapPathToPosition(homeQuery, refreshedPath);
+					if (refreshed && refreshedPath.poses.size() >= 2){
+						this->waypoints_ = refreshedPath;
+						this->waypointIdx_ = 1;
+						this->newWaypoints_ = true;
+						this->replan_ = false;
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: End mission roadmap refreshed. Retrying closer waypoint selection.");
+						return;
+					}
+
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: No valid roadmap waypoint candidate for end mission. Holding and waiting for next retry.");
+					this->newWaypoints_ = false;
+					this->replan_ = false;
+					this->trajectoryReady_ = false;
+					this->stop();
+					return;
+				}
+
+				this->waypointIdx_ = chosenIdx;
+				this->goal_ = this->waypoints_.poses[static_cast<size_t>(this->waypointIdx_)];
+				this->newWaypoints_ = false;
+				this->replan_ = true;
+				++this->waypointIdx_;
+				RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission: planning to roadmap waypoint idx=%d (segment<=%.2fm target).", chosenIdx, this->endMissionMaxSegmentDistance_);
+				return;
+			}
+
+			if (this->trajectoryReady_){
+				const bool reached_segment_goal = this->isReach(this->goal_, this->reachGoalDistance_, false);
+				const double exec_dt = (this->node_->now() - this->trajStartTime_).seconds();
+				const double traj_dt = this->trajectory_.getDuration();
+				const bool segment_time_done = (traj_dt <= 1e-3) || (exec_dt >= traj_dt + 0.2);
+				if (reached_segment_goal || segment_time_done){
+					this->trajectoryReady_ = false;
+					this->replan_ = false;
+					this->stop();
+					RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission segment complete. Advancing mission phase.");
+				}
+				else{
+					return;
+				}
+			}
+
+			if (this->replan_){
+				return;
+			}
+
+			const auto scheduleEndMissionRetry = [this](const char* phase_msg){
+				const double now_sec = this->node_->now().seconds();
+				const bool allow_retry =
+					(this->endMissionLastRetrySec_ < 0.0) ||
+					((now_sec - this->endMissionLastRetrySec_) >= 0.5);
+				if (allow_retry){
+					this->replan_ = false;
+					this->newWaypoints_ = true;
+					this->endMissionLastRetrySec_ = now_sec;
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: End mission %s plan failed previously. Selecting a closer roadmap waypoint and retrying.", phase_msg);
+				}
+			};
+
+			if (this->isReach(this->goal_, this->reachGoalDistance_, false)){
+				if (this->waypointIdx_ < static_cast<int>(this->waypoints_.poses.size())){
+					this->newWaypoints_ = true;
+					this->endMissionLastRetrySec_ = -1.0;
+					RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission: waypoint reached. Advancing to next roadmap waypoint.");
+				}
+				else{
+					this->stop();
+					this->endMissionActive_ = false;
+					this->missionEnded_ = true;
+					this->landingPhase_ = false;
+					this->clearWaypointPlan();
+					RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: End mission finished at roadmap node closest to home.");
+				}
+			}
+			else{
+				scheduleEndMissionRetry("return-home");
+			}
+			return;
+		}
 
 		if (this->waypointRotatePending_){
 			if (this->newWaypoints_){
@@ -531,6 +742,31 @@ namespace AutoFlight{
 				this->startExplorationCbGroup_);
 			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Waiting for /dynamic_exploration/start service trigger to begin planning.");
 		}
+		if (!this->endMissionSrv_){
+			this->endMissionSrv_ = this->node_->create_service<std_srvs::srv::Trigger>(
+				"dynamic_exploration/end_mission",
+				[this](
+					const std::shared_ptr<std_srvs::srv::Trigger::Request> /*request*/,
+					std::shared_ptr<std_srvs::srv::Trigger::Response> response){
+					std::scoped_lock<std::mutex> lock(this->navStateMutex_);
+					if (this->missionEnded_){
+						response->success = false;
+						response->message = "mission already ended";
+						return;
+					}
+					if (this->endMissionActive_ || this->endMissionRequested_){
+						response->success = false;
+						response->message = "end mission already in progress";
+						return;
+					}
+					this->endMissionRequested_ = true;
+					response->success = true;
+					response->message = "end mission requested";
+				},
+				rmw_qos_profile_services_default,
+				this->startExplorationCbGroup_);
+			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Service ready: /dynamic_exploration/end_mission");
+		}
 		if (!this->startExplorationTimer_){
 			this->startExplorationTimer_ = this->node_->create_wall_timer(
 				std::chrono::milliseconds(50),
@@ -659,6 +895,9 @@ namespace AutoFlight{
 
 	void dynamicExploration::exploreReplan(){
 		std::scoped_lock<std::mutex> lock(this->navStateMutex_);
+		if (this->endMissionActive_ || this->missionEnded_){
+			return;
+		}
 		// if (!this->explorationReplan_){ // @TODO:check
 		// 	return;
 		// }

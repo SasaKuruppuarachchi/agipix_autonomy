@@ -6,7 +6,13 @@ Mission-level autonomy package for AgiAUTO.
 
 - ROS 1 → ROS 2 port completed
 - **Build tested** in this repository
-- Runtime validation is still in progress
+- Runtime validation passed for current mission set:
+	- takeoff and hover
+	- takeoff and track circle
+	- navigation
+	- dynamic navigation
+	- dynamic exploration
+	- dynamic inspection
 
 ## Modes
 
@@ -89,6 +95,7 @@ Key runtime parameters in [cfg/dynamic_exploration/flight_base.yaml](cfg/dynamic
 - `replan_on_collision_fail`
 - `stabilize_before_rotate`
 - `min_waypoint_distance`
+- `end_mission_max_segment_distance`
 
 Dynamic exploration start is service-gated:
 
@@ -96,6 +103,19 @@ Dynamic exploration start is service-gated:
 ros2 launch px4_control_interface dds_shadow.launch.py use_sim_time:=true start_legacy_stack:=true mission:=dynamic_exploration
 ros2 service call /dynamic_exploration/start std_srvs/srv/Trigger "{}"
 ```
+
+Dynamic exploration end-mission is service-gated:
+
+```bash
+ros2 service call /dynamic_exploration/end_mission std_srvs/srv/Trigger "{}"
+```
+
+End-mission behavior (validated):
+
+- Builds return path using DEP roadmap and routes to the roadmap node closest (XY) to `(0,0)`.
+- Executes return with local trajectory replanning guards and retry handling.
+- After home-region arrival, issues a final hold/end segment at current altitude (does not force `z=0`).
+- Mission state is marked ended after end-mission segment completion.
 
 ## Credits
 

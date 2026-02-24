@@ -15,6 +15,7 @@
     free_range: [1.0, 1.0, 1.0]
     reach_goal_distance: 0.1
     min_waypoint_distance: 0.02
+    end_mission_max_segment_distance: 6.0
     replan_on_finish_or_fail: false
     replan_on_collision_fail: true
     stabilize_before_rotate: false

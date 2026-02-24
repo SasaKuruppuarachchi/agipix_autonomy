@@ -243,6 +243,70 @@ namespace globalPlanner{
 		return bestPath;
 	}
 
+	bool DEP::getRoadmapPathToPosition(const Eigen::Vector3d& targetPos, nav_msgs::msg::Path& path){
+		path.poses.clear();
+		if (!this->odomReceived_ || !this->map_ || !this->roadmap_ || this->roadmap_->getSize() <= 1){
+			return false;
+		}
+
+		const Eigen::Vector3d startPos = this->position_;
+		auto startQuery = std::make_shared<PRM::Node>(startPos);
+		auto startNode = this->roadmap_->nearestNeighbor(startQuery);
+		if (!startNode){
+			return false;
+		}
+
+		std::shared_ptr<PRM::Node> goalNode = nullptr;
+		double min_xy_dist = std::numeric_limits<double>::infinity();
+		for (const auto& n : this->prmNodeVec_){
+			if (!n){
+				continue;
+			}
+			const double dx = n->pos(0) - targetPos(0);
+			const double dy = n->pos(1) - targetPos(1);
+			const double dxy = std::sqrt(dx * dx + dy * dy);
+			if (dxy < min_xy_dist){
+				min_xy_dist = dxy;
+				goalNode = n;
+			}
+		}
+
+		if (!goalNode){
+			// fallback to nearest-neighbor query if prmNodeVec_ is empty
+			auto goalQuery = std::make_shared<PRM::Node>(targetPos);
+			goalNode = this->roadmap_->nearestNeighbor(goalQuery);
+		}
+
+		if (!goalNode || goalNode == startNode){
+			return false;
+		}
+
+		std::vector<std::shared_ptr<PRM::Node>> roadmapPath = PRM::AStar(this->roadmap_, startNode, goalNode, this->map_);
+		if (roadmapPath.size() < 2){
+			return false;
+		}
+
+		path.header.frame_id = this->odom_.header.frame_id;
+		path.header.stamp = this->node_->now();
+		for (size_t i = 0; i < roadmapPath.size(); ++i){
+			geometry_msgs::msg::PoseStamped p;
+			p.header = path.header;
+			p.pose.position.x = roadmapPath[i]->pos(0);
+			p.pose.position.y = roadmapPath[i]->pos(1);
+			p.pose.position.z = roadmapPath[i]->pos(2);
+			if (i + 1 < roadmapPath.size()){
+				Eigen::Vector3d diff = roadmapPath[i + 1]->pos - roadmapPath[i]->pos;
+				double angle = std::atan2(diff(1), diff(0));
+				p.pose.orientation = globalPlanner::quaternion_from_rpy(0, 0, angle);
+			}
+			else{
+				p.pose.orientation = this->odom_.pose.pose.orientation;
+			}
+			path.poses.push_back(p);
+		}
+		return true;
+	}
+
 	bool DEP::sensorRangeCondition(const shared_ptr<PRM::Node>& n1, const shared_ptr<PRM::Node>& n2){
 		Eigen::Vector3d direction = n2->pos - n1->pos;
 		Eigen::Vector3d projection;
