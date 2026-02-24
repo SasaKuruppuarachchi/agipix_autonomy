@@ -10,20 +10,6 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 
 ---
 
-## Current status
-
-- ROS 1 → ROS 2 porting completed for the autonomy stack in this repository.
-- Runtime stack is **PX4 DDS-native** (MAVROS backend removed from active control path).
-- Mission validation status:
-	- ✅ takeoff and hover
-	- ✅ takeoff and track circle
-	- ✅ navigation
-	- ✅ dynamic navigation
-	- ✅ dynamic exploration
-	- ✅ dynamic inspection
-
----
-
 ## System architecture (current)
 
 ```text
@@ -133,6 +119,20 @@ colcon build # builds the autonomy stack
 - [PLACEHOLDER] Dynamic navigation demo video
 - [PLACEHOLDER] Dynamic exploration demo video
 - [PLACEHOLDER] Dynamic inspection demo video
+
+---
+
+## Current status
+
+- ROS 1 → ROS 2 porting completed for the autonomy stack in this repository.
+- Runtime stack is **PX4 DDS-native** (MAVROS backend removed from active control path).
+- Mission validation status:
+	- ✅ takeoff and hover
+	- ✅ takeoff and track circle
+	- ✅ navigation
+	- ✅ dynamic navigation
+	- ✅ dynamic exploration
+	- ✅ dynamic inspection
 
 ---
 
