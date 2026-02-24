@@ -106,14 +106,12 @@ colcon build # builds the autonomy stack
 
 ## Demo media (placeholders)
 
-### Images
+```bash
+ros2 launch px4_control_interface dds_shadow.launch.py use_sim_time:=true start_legacy_stack:=true mission:=<mission_name>
+```
 
-- [PLACEHOLDER] Mission 1 — Takeoff + hover screenshot
-- [PLACEHOLDER] Mission 3 — Navigation RViz screenshot
-- [PLACEHOLDER] Mission 5 — Dynamic exploration RViz screenshot
-- [PLACEHOLDER] Mission 6 — Dynamic inspection RViz screenshot
-
-### Videos
+Available missions: 
+`takeoff_and_hover`, `takeoff_and_track_circle`, `navigation`, `rl_navigation`, `dynamic_navigation`, `dynamic_inspection`, `dynamic_exploration`, `inspection`
 
 - [PLACEHOLDER] Takeoff + hover demo video
 - [PLACEHOLDER] Dynamic navigation demo video
