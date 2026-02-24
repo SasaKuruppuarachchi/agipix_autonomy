@@ -89,6 +89,7 @@ add_library(${AUTONOMOUS_FLIGHT_LIB}
   include/${PROJECT_NAME}/px4/dynamicNavigation.cpp
   include/${PROJECT_NAME}/px4/dynamicInspection.cpp
   include/${PROJECT_NAME}/px4/dynamicExploration.cpp
+  include/${PROJECT_NAME}/px4/rlNavigation.cpp
 )
 
 ament_target_dependencies(${AUTONOMOUS_FLIGHT_LIB}
@@ -138,6 +139,7 @@ add_executable(navigation_node src/px4/navigation_node.cpp)
 add_executable(dynamic_navigation_node src/px4/dynamic_navigation_node.cpp)
 add_executable(dynamic_inspection_node src/px4/dynamic_inspection_node.cpp)
 add_executable(dynamic_exploration_node src/px4/dynamic_exploration_node.cpp)
+add_executable(rl_navigation_node src/px4/rl_navigation_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -175,6 +177,7 @@ target_link_libraries(navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE
 target_link_libraries(dynamic_navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(dynamic_inspection_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 target_link_libraries(dynamic_exploration_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
+target_link_libraries(rl_navigation_node ${AUTONOMOUS_FLIGHT_LIB} ${AUTONOMOUS_NODE_EXTRA_LIBS})
 
 ament_target_dependencies(takeoff_and_hover_node rclcpp)
 ament_target_dependencies(takeoff_and_hover_executor_node rclcpp px4_ros2_cpp visualization_msgs)
@@ -186,6 +189,7 @@ ament_target_dependencies(navigation_node rclcpp)
 ament_target_dependencies(dynamic_navigation_node rclcpp)
 ament_target_dependencies(dynamic_inspection_node rclcpp)
 ament_target_dependencies(dynamic_exploration_node rclcpp)
+ament_target_dependencies(rl_navigation_node rclcpp)
 target_link_libraries(takeoff_and_hover_node "${cpp_typesupport_target}")
 target_link_libraries(takeoff_and_hover_executor_node "${cpp_typesupport_target}")
 target_link_libraries(takeoff_and_track_circle_node "${cpp_typesupport_target}")
@@ -196,6 +200,7 @@ target_link_libraries(navigation_node "${cpp_typesupport_target}")
 target_link_libraries(dynamic_navigation_node "${cpp_typesupport_target}")
 target_link_libraries(dynamic_inspection_node "${cpp_typesupport_target}")
 target_link_libraries(dynamic_exploration_node "${cpp_typesupport_target}")
+target_link_libraries(rl_navigation_node "${cpp_typesupport_target}")
 
 
 install(TARGETS ${AUTONOMOUS_FLIGHT_LIB}
@@ -215,6 +220,7 @@ install(TARGETS
   dynamic_navigation_node
   dynamic_inspection_node
   dynamic_exploration_node
+  rl_navigation_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

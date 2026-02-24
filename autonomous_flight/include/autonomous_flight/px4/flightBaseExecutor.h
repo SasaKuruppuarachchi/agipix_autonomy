@@ -364,20 +364,40 @@ private:
 
     const bool ignore_acc_vel = target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC_VEL;
     const bool ignore_acc = target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC;
+    const bool velocity_priority = target.type_mask == autonomous_flight::msg::Target::IGNORE_POS_ACC;
 
-    sp.withPosition(pos_ned);
-    if (!ignore_acc_vel) {
-      sp.withVelocity(vel_ned);
-    }
-    if (!ignore_acc_vel && !ignore_acc) {
-      sp.withAcceleration(acc_ned);
+    if (velocity_priority) {
+      sp.withHorizontalVelocity(Eigen::Vector2f(vel_ned.x(), vel_ned.y()));
+      sp.withPositionZ(pos_ned.z());
+      if (enableHeightControl(target)) {
+        sp.withVelocityZ(vel_ned.z());
+      } else {
+        sp.withVelocityZ(0.0f);
+      }
+    } else {
+      sp.withPosition(pos_ned);
+      if (!ignore_acc_vel) {
+        sp.withVelocity(vel_ned);
+      }
+      if (!ignore_acc_vel && !ignore_acc) {
+        sp.withAcceleration(acc_ned);
+      }
     }
     if (_use_input_yaw) {
       sp.withYaw(enuYawToNed(target.yaw));
     }
 
-    _hold_position_ned = pos_ned;
+    if (!velocity_priority) {
+      _hold_position_ned = pos_ned;
+    } else {
+      _hold_position_ned.z() = pos_ned.z();
+    }
     _hold_yaw_ned = _use_input_yaw ? enuYawToNed(target.yaw) : _hold_yaw_ned;
+  }
+
+  bool enableHeightControl(const autonomous_flight::msg::Target & target) const
+  {
+    return std::abs(target.velocity.z) > 1e-3;
   }
 
   void refreshHoldFromLocalPosition()

@@ -1,0 +1,41 @@
+rl_navigation_node:
+  ros__parameters:
+    takeoff_height: 1.0
+    frame_id: drone0/map
+    odom_topic: /drone0/sensor_measurements/odom
+    wait_for_topics_ready: false
+    takeoff_wait_timeout_sec: 8.0
+    require_takeoff_feedback: false
+
+    # RL-navigation behavior
+    rl_nav.control_dt: 0.05
+    rl_nav.vel_limit: 2.0
+    rl_nav.max_vertical_velocity: 0.5
+    rl_nav.goal_tolerance: 0.5
+    rl_nav.goal_slowdown_radius: 3.0
+    rl_nav.use_yaw_control: true
+    rl_nav.height_control: false
+
+    # Local obstacle reaction
+    rl_nav.raycast_beams: 36
+    rl_nav.raycast_range: 4.0
+    rl_nav.obstacle_influence_radius: 2.0
+    rl_nav.static_repulsion_gain: 0.35
+    rl_nav.dynamic_repulsion_gain: 0.75
+
+    # ORCA-like safety filter
+    rl_nav.use_safe_action: true
+    rl_nav.safe_action_time_horizon: 1.0
+    rl_nav.safe_action_time_step: 0.05
+    rl_nav.safe_action_safety_distance: 0.15
+    rl_nav.robot_radius: 0.30
+
+mission_tracking_executor_node:
+  ros__parameters:
+    target_topic: /autonomous_flight/target_state
+    target_timeout_s: 2.5
+    use_input_yaw: true
+    skip_takeoff_if_flying: true
+    flying_height_threshold: 0.35
+    debug_mode: false
+    publish_target_rx_marker: true

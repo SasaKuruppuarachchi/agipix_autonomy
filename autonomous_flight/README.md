@@ -10,6 +10,7 @@ Mission-level autonomy package for AgiAUTO.
 	- takeoff and hover
 	- takeoff and track circle
 	- navigation
+	- rl navigation
 	- dynamic navigation
 	- dynamic exploration
 	- dynamic inspection
@@ -20,6 +21,7 @@ Mission-level autonomy package for AgiAUTO.
 - Takeoff + circle tracking
 - Static navigation
 - Dynamic navigation
+- RL navigation
 - Dynamic inspection
 - Dynamic exploration
 - (Octomap) inspection mode
@@ -37,6 +39,9 @@ ros2 launch autonomous_flight takeoff_and_track_circle.launch.py
 
 # static navigation
 ros2 launch autonomous_flight navigation.launch.py
+
+# rl navigation
+ros2 launch autonomous_flight rl_navigation.launch.py
 
 # dynamic navigation
 ros2 launch autonomous_flight dynamic_navigation.launch.py
@@ -65,6 +70,7 @@ Configuration files are under `cfg/` by mode, for example:
 
 - `cfg/navigation/*`
 - `cfg/dynamic_navigation/*`
+- `cfg/rl_navigation/*`
 - `cfg/dynamic_inspection/*`
 - `cfg/dynamic_exploration/*`
 

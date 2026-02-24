@@ -49,7 +49,7 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 
 ## Package roles
 
-- `autonomous_flight`: mission orchestration (`takeoff`, `navigation`, `dynamic_navigation`, `inspection`, `dynamic_inspection`, `dynamic_exploration`)
+- `autonomous_flight`: mission orchestration (`takeoff`, `navigation`, `rl_navigation`, `dynamic_navigation`, `inspection`, `dynamic_inspection`, `dynamic_exploration`)
 - `px4_control_interface`: DDS-native PX4 mode/executor runtime and target tracking bridge
 - `map_manager`: occupancy and dynamic map representations, map services
 - `onboard_detector`: dynamic obstacle perception, data association, tracking
@@ -130,6 +130,7 @@ colcon build # builds the autonomy stack
 	- ✅ takeoff and hover
 	- ✅ takeoff and track circle
 	- ✅ navigation
+	- ✅ rl navigation
 	- ✅ dynamic navigation
 	- ✅ dynamic exploration
 	- ✅ dynamic inspection

@@ -1,0 +1,69 @@
+rl_navigation_node:
+  ros__parameters:
+    detector:
+      localization_mode: 0
+      depth_image_topic: /drone1/RealSense_Camera/depth
+      color_image_topic: /drone1/RealSense_Camera/color/image_raw
+      lidar_pointcloud_topic: /point_cloud
+      pose_topic: /drone0/self_localization/pose
+      odom_topic: /drone0/sensor_measurements/odom
+      frame_id: drone0/map
+
+      depth_intrinsics: [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5]
+      color_intrinsics: [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5]
+
+      depth_scale_factor: 1000.0
+      depth_min_value: 0.5
+      depth_max_value: 20.0
+      depth_filter_margin: 10
+      depth_skip_pixel: 3
+      image_cols: 1920
+      image_rows: 1200
+      raycast_max_length: 10.0
+
+      body_to_camera_depth: [0.0, 0.0, 1.0, 0.13,
+                             -1.0, 0.0, 0.0, 0.0,
+                             0.0, -1.0, 0.0, -0.022,
+                             0.0, 0.0, 0.0, 1.0]
+      body_to_camera_color: [0.0, 0.0, 1.0, 0.13,
+                             -1.0, 0.0, 0.0, 0.0,
+                             0.0, -1.0, 0.0, -0.022,
+                             0.0, 0.0, 0.0, 1.0]
+      body_to_lidar: [0.7071068, 0.0000000, 0.7071068, 0.0795,
+                      0.0000000, 1.0000000, 0.0000000, 0.0,
+                      -0.7071068, 0.0000000, 0.7071068, 0.0323,
+                      0.0, 0.0, 0.0, 1.0]
+
+      time_step: 0.033
+      ground_height: 0.2
+      roof_height: 5.0
+
+      voxel_occupied_thresh: 5
+      dbscan_min_points_cluster: 20
+      dbscan_search_range_epsilon: 0.05
+
+      lidar_DBSCAN_min_points: 10
+      lidar_DBSCAN_epsilon: 0.05
+      downsample_threshold: 3500
+      gaussian_downsample_rate: 6
+
+      filtering_BBox_IOU_threshold: 0.2
+      max_match_range: 0.5
+      max_size_diff_range: 0.5
+      feature_weight: [3.0, 3.0, 0.1, 0.5, 0.5, 0.05, 0.0, 0.0, 0.0]
+      history_size: 100
+      fix_size_history_threshold: 10
+      fix_size_dimension_threshold: 0.4
+      kalman_filter_param: [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6]
+      kalman_filter_averaging_frames: 10
+
+      frame_skip: 5
+      dynamic_velocity_threshold: 0.2
+      dynamic_voting_threshold: 0.8
+      frames_force_dynamic: 10
+      frames_force_dynamic_check_range: 30
+      dynamic_consistency_threshold: 15
+
+      target_constrain_size: true
+      target_object_size: [0.5, 0.5, 1.5]
+      max_object_size: [3.0, 3.0, 2.0]

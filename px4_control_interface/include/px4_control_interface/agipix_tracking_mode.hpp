@@ -126,23 +126,32 @@ public:
 
     const bool ignore_acc_vel = controlled_target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC_VEL;
     const bool ignore_acc = controlled_target.type_mask == autonomous_flight::msg::Target::IGNORE_ACC;
+    const bool velocity_priority = controlled_target.type_mask == autonomous_flight::msg::Target::IGNORE_POS_ACC;
 
     px4_ros2::TrajectorySetpoint sp;
-    sp.withPosition(Eigen::Vector3f{
-      static_cast<float>(controlled_target.position.x),
-      static_cast<float>(controlled_target.position.y),
-      static_cast<float>(controlled_target.position.z)});
-    if (!ignore_acc_vel) {
-      sp.withVelocity(Eigen::Vector3f{
+    if (velocity_priority) {
+      sp.withHorizontalVelocity(Eigen::Vector2f{
         static_cast<float>(controlled_target.velocity.x),
-        static_cast<float>(controlled_target.velocity.y),
-        static_cast<float>(controlled_target.velocity.z)});
-    }
-    if (!ignore_acc_vel && !ignore_acc) {
-      sp.withAcceleration(Eigen::Vector3f{
-        static_cast<float>(controlled_target.acceleration.x),
-        static_cast<float>(controlled_target.acceleration.y),
-        static_cast<float>(controlled_target.acceleration.z)});
+        static_cast<float>(controlled_target.velocity.y)});
+      sp.withPositionZ(static_cast<float>(controlled_target.position.z));
+      sp.withVelocityZ(static_cast<float>(controlled_target.velocity.z));
+    } else {
+      sp.withPosition(Eigen::Vector3f{
+        static_cast<float>(controlled_target.position.x),
+        static_cast<float>(controlled_target.position.y),
+        static_cast<float>(controlled_target.position.z)});
+      if (!ignore_acc_vel) {
+        sp.withVelocity(Eigen::Vector3f{
+          static_cast<float>(controlled_target.velocity.x),
+          static_cast<float>(controlled_target.velocity.y),
+          static_cast<float>(controlled_target.velocity.z)});
+      }
+      if (!ignore_acc_vel && !ignore_acc) {
+        sp.withAcceleration(Eigen::Vector3f{
+          static_cast<float>(controlled_target.acceleration.x),
+          static_cast<float>(controlled_target.acceleration.y),
+          static_cast<float>(controlled_target.acceleration.z)});
+      }
     }
     if (_use_input_yaw) {
       sp.withYaw(controlled_target.yaw);

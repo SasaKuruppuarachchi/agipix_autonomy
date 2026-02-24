@@ -14,6 +14,7 @@ def _include_legacy_stack(context):
         "takeoff_and_hover": "takeoff_and_hover.launch.py",
         "takeoff_and_track_circle": "takeoff_and_track_circle.launch.py",
         "navigation": "navigation.launch.py",
+        "rl_navigation": "rl_navigation.launch.py",
         "dynamic_navigation": "dynamic_navigation.launch.py",
         "dynamic_inspection": "dynamic_inspection.launch.py",
         "dynamic_exploration": "dynamic_exploration.launch.py",
@@ -51,6 +52,7 @@ def _include_px4_mode_node(context):
         "takeoff_and_hover",
         "takeoff_and_track_circle",
         "navigation",
+        "rl_navigation",
         "dynamic_navigation",
         "dynamic_inspection",
         "dynamic_exploration",
@@ -86,7 +88,7 @@ def generate_launch_description():
                 description=(
                     "Mission stack to include in integrated run. "
                     "One of: takeoff_and_hover, takeoff_and_track_circle, navigation, "
-                    "dynamic_navigation, dynamic_inspection, dynamic_exploration, inspection"
+                    "rl_navigation, dynamic_navigation, dynamic_inspection, dynamic_exploration, inspection"
                 ),
             ),
             DeclareLaunchArgument(

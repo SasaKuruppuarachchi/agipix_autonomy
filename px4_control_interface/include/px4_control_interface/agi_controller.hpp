@@ -117,6 +117,7 @@ public:
     }
 
     const float safe_dt = dt_s > 1e-4f ? dt_s : 0.01f;
+    const bool velocity_priority = ref.type_mask == autonomous_flight::msg::Target::IGNORE_POS_ACC;
 
     Eigen::Vector3f velocity_ref = ref.velocity_ned;
     Eigen::Vector3f acceleration_ff = ref.acceleration_ned;
@@ -126,9 +127,16 @@ public:
       acceleration_ff.setZero();
     } else if (ref.type_mask == autonomous_flight::msg::Target::IGNORE_ACC) {
       acceleration_ff.setZero();
+    } else if (velocity_priority) {
+      acceleration_ff.setZero();
     }
 
-    const Eigen::Vector3f pos_error = ref.position_ned - state.position_ned;
+    Eigen::Vector3f pos_error;
+    if (velocity_priority) {
+      pos_error.setZero();
+    } else {
+      pos_error = ref.position_ned - state.position_ned;
+    }
     const Eigen::Vector3f vel_error = velocity_ref - state.velocity_ned;
 
     _pos_error_integral += pos_error * safe_dt;
@@ -142,7 +150,7 @@ public:
       _ki_pos.cwiseProduct(_pos_error_integral);
 
     autonomous_flight::msg::Target out;
-    out.type_mask = 0U;  // emit full controlled state for the low-level setpoint writer
+    out.type_mask = velocity_priority ? autonomous_flight::msg::Target::IGNORE_POS_ACC : 0U;
     out.position.x = ref.position_ned.x();
     out.position.y = ref.position_ned.y();
     out.position.z = ref.position_ned.z();
