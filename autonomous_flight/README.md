@@ -85,7 +85,7 @@ Message interfaces:
 Runtime notes:
 
 - Active runtime path is integrated: `autonomous_flight` mission references -> `px4_control_interface` in-process middle-level controller -> PX4 setpoints.
-- Standalone `tracking_controller` runtime launch is deprecated for normal mission execution.
+- Standalone legacy controller runtime launch is deprecated for normal mission execution.
 
 ### Dynamic exploration controls
 

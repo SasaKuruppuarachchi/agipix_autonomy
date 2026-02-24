@@ -57,4 +57,4 @@ ros2 launch px4_control_interface dds_shadow.launch.py \
 	target_topic:=/autonomous_flight/target_state
 ```
 
-> Legacy standalone `tracking_controller` runtime path is deprecated in this package flow.
+> Legacy standalone controller runtime path is deprecated in this package flow.

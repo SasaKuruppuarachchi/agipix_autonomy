@@ -4,7 +4,7 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 
 <p align="center"><img src=".media/images/banner.png" alt="AgiAUTO banner"></p>
 
-- Repository: https://github.com/SasaKuruppuarachchi/agipix_px4_autonomy.git
+- HW and SIM Platform Repository: https://github.com/SasaKuruppuarachchi/agipix.git
 - Platform docs: https://sasakuruppuarachchi.github.io/agipix/
 - Publication (ICUAS 2026 submission): *"Agipix: A Comprehensive Aerial Robotics Platform Bridging Simulation and Reality"*
 
@@ -58,7 +58,7 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 - `time_optimizer`: trajectory time allocation optimization utilities
 - `agi_viz`: centralized RViz profiles for autonomy stack visualization
 
-> Note: `tracking_controller` remains in the repository for reference/legacy context, but is not part of the active DDS runtime control path.
+> Note: the standalone legacy middle-level controller package is no longer part of the active DDS runtime control path.
 
 ---
 
