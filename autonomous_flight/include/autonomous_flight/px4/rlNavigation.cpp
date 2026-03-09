@@ -115,6 +115,12 @@ void rlNavigation::initParam()
   node_->declare_parameter<bool>("rl_nav.use_safe_action", true);
   node_->get_parameter("rl_nav.use_safe_action", useSafeAction_);
 
+  node_->declare_parameter<bool>("rl_nav.bypass_to_vel_ctrl", false);
+  node_->get_parameter("rl_nav.bypass_to_vel_ctrl", bypassToVelCtrl_);
+
+  node_->declare_parameter<std::string>("rl_nav.climb_velocity_topic", "/climb_velocity_cmd");
+  node_->get_parameter("rl_nav.climb_velocity_topic", climbVelTopic_);
+
   node_->declare_parameter<double>("rl_nav.safe_action_time_horizon", 1.0);
   node_->get_parameter("rl_nav.safe_action_time_horizon", safeTimeHorizon_);
 
@@ -157,10 +163,28 @@ void rlNavigation::registerCallback()
     std::bind(&rlNavigation::controlCB, this),
     controlCbGroup_);
 
+  rclcpp::QoS qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+  qos_profile.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  qos_profile.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+  qos_profile.history(RMW_QOS_POLICY_HISTORY_KEEP_LAST);
+  qos_profile.keep_last(1);
+
+  climbVelSub_ = node_->create_subscription<geometry_msgs::msg::Twist>(
+    climbVelTopic_,
+    qos_profile,
+    std::bind(&rlNavigation::climbVelCB, this, std::placeholders::_1));
+
   visTimer_ = node_->create_wall_timer(
     std::chrono::milliseconds(100),
     std::bind(&rlNavigation::visCB, this),
     visCbGroup_);
+}
+
+void rlNavigation::climbVelCB(const geometry_msgs::msg::Twist::SharedPtr msg)
+{
+  
+  std::scoped_lock<std::mutex> lock(manualTargetMutex_);
+  this->manual_target_ = *msg;
 }
 
 bool rlNavigation::collectStaticRayHits(std::vector<Eigen::Vector3d> & hits) const
@@ -331,51 +355,134 @@ void rlNavigation::controlCB()
     return;
   }
 
-  const Eigen::Vector3d goal(goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z);
-  Eigen::Vector3d local_goal = goal;
-  if (!enableHeightControl_) {
-    local_goal(2) = currPos_(2);
+  const bool prev_bypass = bypassToVelCtrl_;
+  node_->get_parameter("rl_nav.bypass_to_vel_ctrl", bypassToVelCtrl_);
+  if (prev_bypass != bypassToVelCtrl_) {
+    RCLCPP_INFO(
+      node_->get_logger(),
+      "[AutoFlight][rl_navigation]: rl_nav.bypass_to_vel_ctrl changed to %s",
+      bypassToVelCtrl_ ? "true" : "false");
   }
 
-  const double dist = (local_goal - currPos_).norm();
-  if (dist <= goalTolerance_) {
-    if (!missionCompleted_) {
-      missionCompleted_ = true;
-      RCLCPP_INFO(node_->get_logger(), "[AutoFlight][rl_navigation]: Goal reached. Holding position.");
+  Eigen::Vector3d cmd_vel;
+  currYaw_ = AutoFlight::rpy_from_quaternion(odom_.pose.pose.orientation);
+  double yaw = currYaw_;
+
+  if (bypassToVelCtrl_) {
+    // Manual velocity control mode
+    geometry_msgs::msg::Twist manual_target;
+    {
+      std::scoped_lock<std::mutex> manual_lock(manualTargetMutex_);
+      manual_target = this->manual_target_;
     }
 
-    autonomous_flight::msg::Target hold;
-    hold.type_mask = autonomous_flight::msg::Target::IGNORE_ACC_VEL;
-    hold.position.x = currPos_(0);
-    hold.position.y = currPos_(1);
-    hold.position.z = currPos_(2);
-    hold.velocity.x = 0.0;
-    hold.velocity.y = 0.0;
-    hold.velocity.z = 0.0;
-    hold.acceleration.x = 0.0;
-    hold.acceleration.y = 0.0;
-    hold.acceleration.z = 0.0;
-    hold.yaw = AutoFlight::rpy_from_quaternion(odom_.pose.pose.orientation);
-    updateTargetWithState(hold);
-    return;
+    // Convert commanded XY velocity into local frame using current yaw.
+    const double cy = std::cos(currYaw_);
+    const double sy = std::sin(currYaw_);
+    cmd_vel.x() = cy * manual_target.linear.x + sy * manual_target.linear.y;
+    cmd_vel.y() = -sy * manual_target.linear.x + cy * manual_target.linear.y;
+    cmd_vel.z() = manual_target.linear.z;
+    yaw = currYaw_ + manual_target.angular.z * std::max(0.01, controlDt_) * 10;
+    //RCLCPP_INFO(node_->get_logger(), "yaw calculation: currYaw=%.2f, angular.z=%.2f, new yaw=%.2f", currYaw_, manual_target.angular.z, yaw);
+  } else {
+    // RL control mode
+
+    const Eigen::Vector3d goal(goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z);
+    Eigen::Vector3d local_goal = goal;
+    if (!enableHeightControl_) {
+      local_goal(2) = currPos_(2);
+    }
+
+    const double dist = (local_goal - currPos_).norm();
+    if (dist <= goalTolerance_) {
+      if (!missionCompleted_) {
+        missionCompleted_ = true;
+        RCLCPP_INFO(node_->get_logger(), "[AutoFlight][rl_navigation]: Goal reached. Holding position.");
+      }
+
+      autonomous_flight::msg::Target hold;
+      hold.type_mask = autonomous_flight::msg::Target::IGNORE_ACC_VEL;
+      hold.position.x = currPos_(0);
+      hold.position.y = currPos_(1);
+      hold.position.z = currPos_(2);
+      hold.velocity.x = 0.0;
+      hold.velocity.y = 0.0;
+      hold.velocity.z = 0.0;
+      hold.acceleration.x = 0.0;
+      hold.acceleration.y = 0.0;
+      hold.acceleration.z = 0.0;
+      hold.yaw = AutoFlight::rpy_from_quaternion(odom_.pose.pose.orientation);
+      updateTargetWithState(hold);
+      return;
+    }
+
+    missionCompleted_ = false;
+
+    cmd_vel = computeRawVelocityCommand();
+
+    std::vector<Eigen::Vector3d> static_hits;
+    collectStaticRayHits(static_hits);
+    std::vector<Eigen::Vector3d> obs_pos;
+    std::vector<Eigen::Vector3d> obs_vel;
+    std::vector<Eigen::Vector3d> obs_size;
+    map_->getDynamicObstacles(obs_pos, obs_vel, obs_size);
+
+    if (useSafeAction_) {
+      cmd_vel = applySafeAction(cmd_vel, obs_pos, obs_vel, obs_size, static_hits);
+    }
+
+    yaw = std::atan2(cmd_vel.y(), cmd_vel.x());
   }
 
-  missionCompleted_ = false;
-
-  Eigen::Vector3d cmd_vel = computeRawVelocityCommand();
-
-  std::vector<Eigen::Vector3d> static_hits;
-  collectStaticRayHits(static_hits);
-  std::vector<Eigen::Vector3d> obs_pos;
-  std::vector<Eigen::Vector3d> obs_vel;
-  std::vector<Eigen::Vector3d> obs_size;
-  map_->getDynamicObstacles(obs_pos, obs_vel, obs_size);
-
-  if (useSafeAction_) {
-    cmd_vel = applySafeAction(cmd_vel, obs_pos, obs_vel, obs_size, static_hits);
+  const double xy_speed = std::hypot(cmd_vel.x(), cmd_vel.y());
+  if (xy_speed > velLimit_) {
+    const double scale = velLimit_ / std::max(1e-6, xy_speed);
+    cmd_vel.x() *= scale;
+    cmd_vel.y() *= scale;
   }
+  if (!bypassToVelCtrl_ && !enableHeightControl_) {
+    cmd_vel.z() = 0.0;
+  }
+  cmd_vel.z() = std::clamp(cmd_vel.z(), -maxVerticalVel_, maxVerticalVel_);
 
-  const double yaw = std::atan2(cmd_vel.y(), cmd_vel.x());
+  if (rlVisPub_) {
+    // Express velocity command in base_link so the arrow starts at the drone body origin.
+    const double cmd_x_body = bypassToVelCtrl_ ? cmd_vel.x() : (std::cos(currYaw_) * cmd_vel.x() + std::sin(currYaw_) * cmd_vel.y());
+    const double cmd_y_body = bypassToVelCtrl_ ? cmd_vel.y() : (-std::sin(currYaw_) * cmd_vel.x() + std::cos(currYaw_) * cmd_vel.y());
+
+    visualization_msgs::msg::MarkerArray cmd_msg;
+    visualization_msgs::msg::Marker cmd_arrow;
+    cmd_arrow.header.frame_id = "drone0/base_link";
+    cmd_arrow.header.stamp = node_->now();
+    cmd_arrow.ns = "rl_navigation_cmd_vel";
+    cmd_arrow.id = 100;
+    cmd_arrow.type = visualization_msgs::msg::Marker::ARROW;
+    cmd_arrow.action = visualization_msgs::msg::Marker::ADD;
+    cmd_arrow.pose.orientation.w = 1.0;
+    cmd_arrow.scale.x = 0.05;
+    cmd_arrow.scale.y = 0.10;
+    cmd_arrow.scale.z = 0.15;
+    cmd_arrow.color.a = 0.95;
+    cmd_arrow.color.r = 0.15;
+    cmd_arrow.color.g = 0.95;
+    cmd_arrow.color.b = 0.25;
+    cmd_arrow.lifetime = rclcpp::Duration::from_seconds(std::max(0.05, 2.0 * controlDt_));
+
+    geometry_msgs::msg::Point p0;
+    p0.x = 0.0;
+    p0.y = 0.0;
+    p0.z = 0.0;
+
+    geometry_msgs::msg::Point p1;
+    p1.x = cmd_x_body;
+    p1.y = cmd_y_body;
+    p1.z = cmd_vel.z();
+
+    cmd_arrow.points.push_back(p0);
+    cmd_arrow.points.push_back(p1);
+    cmd_msg.markers.push_back(cmd_arrow);
+    rlVisPub_->publish(cmd_msg);
+  }
 
   autonomous_flight::msg::Target target;
   target.type_mask = autonomous_flight::msg::Target::IGNORE_POS_ACC;

@@ -20,6 +20,7 @@
 #include <px4_ros2/vehicle_state/vehicle_status.hpp>
 
 #include <autonomous_flight/msg/target.hpp>
+#include <autonomous_flight/px4/target_qos.h>
 
 namespace AutoFlight
 {
@@ -235,29 +236,10 @@ private:
 
   rclcpp::QoS buildTargetQos() const
   {
-    rclcpp::QoS qos{rclcpp::KeepLast(_target_qos_depth)};
-
-    std::string reliability = _target_qos_reliability;
-    std::transform(
-      reliability.begin(), reliability.end(), reliability.begin(),
-      [](unsigned char c) {return static_cast<char>(std::tolower(c));});
-    if (reliability == "reliable") {
-      qos.reliable();
-    } else {
-      qos.best_effort();
-    }
-
-    std::string durability = _target_qos_durability;
-    std::transform(
-      durability.begin(), durability.end(), durability.begin(),
-      [](unsigned char c) {return static_cast<char>(std::tolower(c));});
-    if (durability == "transient_local") {
-      qos.transient_local();
-    } else {
-      qos.durability_volatile();
-    }
-
-    return qos;
+    return AutoFlight::buildTargetQos(
+      _target_qos_depth,
+      _target_qos_reliability,
+      _target_qos_durability);
   }
 
   void publishTargetRxMarker(const autonomous_flight::msg::Target & target)

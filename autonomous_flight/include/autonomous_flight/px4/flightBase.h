@@ -68,6 +68,9 @@ namespace AutoFlight{
 		bool publishTargetMarker_ = false;
 		std::string targetMarkerTopic_ = "/autonomous_flight/target_state_marker";
 		double targetMarkerScale_ = 0.20;
+		int targetQosDepth_ = 1;
+		std::string targetQosReliability_ = "best_effort";
+		std::string targetQosDurability_ = "volatile";
 
 		// status
 		bool odomReceived_ = false;

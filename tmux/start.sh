@@ -23,13 +23,14 @@ usage() {
     echo "      -s: simulated, choices: [true | false]"
     echo "      -g: use GPS, choices: [true | false]"
     echo "      -e: estimator_type, choices: [raw_odometry, mocap_pose]"
+    echo "      -m: control mode, choices: [mission | climb]"
     echo "      -r: record rosbag"
     echo "      -t: launch keyboard teleoperation"
     echo "      -n: drone namespace, default is drone0"
 }
 
 # Arg parser
-while getopts ":sge:rtn:" opt; do
+while getopts ":sge:rtn:m:" opt; do
   case ${opt} in
     s )
       simulated="true"
@@ -48,6 +49,9 @@ while getopts ":sge:rtn:" opt; do
       ;;
     n )
       drone_namespace="${OPTARG}"
+      ;;
+    m )
+      control_mode="${OPTARG}"
       ;;
     \? )
       echo "Invalid option: -$OPTARG" >&2
@@ -81,13 +85,24 @@ shift $((OPTIND -1))
 simulated=${simulated:="false"}
 gps=${gps:="false"}
 estimator_plugin=${estimator_plugin:="raw_odometry"}
+control_mode=${control_mode:="mission"}
 record_rosbag=${record_rosbag:="false"}
 launch_keyboard_teleop=${launch_keyboard_teleop:="false"}
 drone_namespace=${drone_namespace:="drone"}
 
+# Accept both "-m climb" and "-m=climb" forms.
+control_mode=${control_mode#=}
+
+if [[ ${control_mode} != "mission" && ${control_mode} != "climb" ]]; then
+  echo "Invalid value for -m: ${control_mode}. Allowed values: mission, climb" >&2
+  usage
+  exit 1
+fi
+
 if [[ ${simulated} == "true" ]]; then
   simulation_config="sim_config/world.json"
-  echo simulation_config
+  echo "simulation_config=${simulation_config}"
+  echo "control_mode=${control_mode}"
 fi
 
 # Generate the list of drone namespaces
@@ -105,7 +120,7 @@ do
     base_launch="false"
   fi 
 
-  tmuxinator start -n ${ns} -p ${session_file} drone_namespace=${ns} gps=${gps} simulation=${simulated} estimator_plugin=${estimator_plugin} &
+  tmuxinator start -n ${ns} -p ${session_file} drone_namespace=${ns} gps=${gps} simulation=${simulated} estimator_plugin=${estimator_plugin} control_mode=${control_mode} &
   wait
 done
 

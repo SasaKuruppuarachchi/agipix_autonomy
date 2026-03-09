@@ -6,6 +6,7 @@
 
 #include <map_manager/dynamicMap.h>
 
+#include <geometry_msgs/msg/twist.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 namespace AutoFlight {
@@ -21,6 +22,7 @@ private:
   rclcpp::CallbackGroup::SharedPtr visCbGroup_;
 
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr rlVisPub_;
+  rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr climbVelSub_;
 
   double controlDt_{0.05};
   double velLimit_{1.0};
@@ -37,6 +39,8 @@ private:
   double dynamicRepulsionGain_{0.75};
 
   bool useSafeAction_{true};
+  bool bypassToVelCtrl_{false};
+  std::string climbVelTopic_{"/climb_velocity_cmd"};
   double safeTimeHorizon_{1.0};
   double safeTimeStep_{0.05};
   double safeDistance_{0.25};
@@ -45,6 +49,8 @@ private:
   bool missionCompleted_{false};
   rclcpp::Time lastControlTime_{0, 0, RCL_ROS_TIME};
   std::mutex stateMutex_;
+  std::mutex manualTargetMutex_;
+  geometry_msgs::msg::Twist manual_target_;
 
   void initParam();
   void initModules();
@@ -53,6 +59,7 @@ private:
 
   void controlCB();
   void visCB();
+  void climbVelCB(const geometry_msgs::msg::Twist::SharedPtr msg);
 
   Eigen::Vector3d computeRawVelocityCommand();
   Eigen::Vector3d applySafeAction(

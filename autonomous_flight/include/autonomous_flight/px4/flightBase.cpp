@@ -4,6 +4,7 @@
 	real world flight implementation
 */
 #include <autonomous_flight/px4/flightBase.h>
+#include <autonomous_flight/px4/target_qos.h>
 
 namespace AutoFlight{
 	flightBase::flightBase(const rclcpp::Node::SharedPtr& node) : node_(node){
@@ -79,15 +80,28 @@ namespace AutoFlight{
 		rclcpp::SubscriptionOptions clickOptions;
 		clickOptions.callback_group = this->clickCbGroup_;
 		this->clickSub_ = this->node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-			this->goalTopic_, rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
+			this->goalTopic_, AutoFlight::buildTargetQos(1, "best_effort", "volatile"), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
 
 		if (this->subscribeLegacyGoalTopic_ && this->legacyGoalTopic_ != this->goalTopic_){
 			this->clickSubLegacy_ = this->node_->create_subscription<geometry_msgs::msg::PoseStamped>(
-				this->legacyGoalTopic_, rclcpp::QoS(1000), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
+				this->legacyGoalTopic_, AutoFlight::buildTargetQos(1, "best_effort", "volatile"), std::bind(&flightBase::clickCB, this, std::placeholders::_1), clickOptions);
 		}
 		
+		this->node_->declare_parameter<int>("target_qos_depth", 1);
+		this->node_->get_parameter("target_qos_depth", this->targetQosDepth_);
+		this->node_->declare_parameter<std::string>("target_qos_reliability", "best_effort");
+		this->node_->get_parameter("target_qos_reliability", this->targetQosReliability_);
+		this->node_->declare_parameter<std::string>("target_qos_durability", "volatile");
+		this->node_->get_parameter("target_qos_durability", this->targetQosDurability_);
+
 	    // Publisher
-		this->statePub_ = this->node_->create_publisher<autonomous_flight::msg::Target>("/autonomous_flight/target_state", 1000);
+		rclcpp::QoS targetQos = AutoFlight::buildTargetQos(
+			this->targetQosDepth_,
+			this->targetQosReliability_,
+			this->targetQosDurability_);
+		this->statePub_ = this->node_->create_publisher<autonomous_flight::msg::Target>(
+			"/autonomous_flight/target_state",
+			targetQos);
 		if (this->publishTargetMarker_){
 			this->targetMarkerPub_ = this->node_->create_publisher<visualization_msgs::msg::Marker>(this->targetMarkerTopic_, 10);
 		}

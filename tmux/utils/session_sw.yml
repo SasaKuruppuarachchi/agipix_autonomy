@@ -3,6 +3,7 @@
 drone_namespace     = @settings["drone_namespace"]
 simulation          = @settings["simulation"] == "true"
 estimator_plugin    = @settings["estimator_plugin"]
+control_mode        = @settings["control_mode"] || "mission"
 
 # Other parameters
 behavior_type               = "position" # "trajectory"
@@ -43,6 +44,7 @@ windows:
         - ros2 run agi_alphanumeric_viewer agi_alphanumeric_viewer_node --ros-args -r  __ns:=/<%= drone_namespace %> -p use_sim_time:=<%= simulation %>
         - agi-logger record
 
+<% if control_mode == "mission" %>
   - CTRL-MISSION:
       layout: tiled
       panes:
@@ -52,6 +54,19 @@ windows:
             mission:=dynamic_exploration
 
         - ros2 service call /dynamic_exploration/start std_srvs/srv/Trigger "{}" -sasd
+<% elsif control_mode == "climb" %>
+  - CTRL-CLIMB:
+      layout: tiled
+      panes:
+        - ros2 launch px4_control_interface dds_shadow.launch.py 
+            use_sim_time:=true 
+            start_legacy_stack:=true 
+            mission:=rl_navigation
+
+        - cd /workspaces/ui && source install/setup.bash && ros2 launch climb_robot teleop_joy.launch.py
+        - 'cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}"'
+        - cd /workspaces/ui && source install/setup.bash && ros2 ros2 topic echo /climb_control/status
+<% end %>
 
   - CTRL-DEBUG:
       layout: tiled
