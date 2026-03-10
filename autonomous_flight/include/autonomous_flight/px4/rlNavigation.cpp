@@ -133,6 +133,12 @@ void rlNavigation::initParam()
   node_->declare_parameter<double>("rl_nav.robot_radius", 0.30);
   node_->get_parameter("rl_nav.robot_radius", robotRadius_);
 
+  node_->declare_parameter<double>("rl_nav.height_lower_bound", 0.5);
+  node_->get_parameter("rl_nav.height_lower_bound", heightLowerBound_);
+
+  node_->declare_parameter<double>("rl_nav.height_upper_bound", 3.0);
+  node_->get_parameter("rl_nav.height_upper_bound", heightUpperBound_);
+
   RCLCPP_INFO(
     node_->get_logger(),
     "[AutoFlight][rl_navigation]: dt=%.3f vel_limit=%.2f goal_tol=%.2f safe_action=%s",
@@ -364,6 +370,8 @@ void rlNavigation::controlCB()
       bypassToVelCtrl_ ? "true" : "false");
   }
 
+  node_->get_parameter("rl_nav.vel_limit", velLimit_);
+
   Eigen::Vector3d cmd_vel;
   currYaw_ = AutoFlight::rpy_from_quaternion(odom_.pose.pose.orientation);
   double yaw = currYaw_;
@@ -377,8 +385,8 @@ void rlNavigation::controlCB()
     }
 
     // Convert commanded XY velocity into local frame using current yaw.
-    const double cy = std::cos(currYaw_);
-    const double sy = std::sin(currYaw_);
+    const double cy = std::cos(-currYaw_);
+    const double sy = std::sin(-currYaw_);
     cmd_vel.x() = cy * manual_target.linear.x + sy * manual_target.linear.y;
     cmd_vel.y() = -sy * manual_target.linear.x + cy * manual_target.linear.y;
     cmd_vel.z() = manual_target.linear.z;
@@ -391,6 +399,8 @@ void rlNavigation::controlCB()
     Eigen::Vector3d local_goal = goal;
     if (!enableHeightControl_) {
       local_goal(2) = currPos_(2);
+    }else {
+      local_goal(2) = std::clamp(local_goal(2), heightLowerBound_, heightUpperBound_);
     }
 
     const double dist = (local_goal - currPos_).norm();
@@ -447,8 +457,8 @@ void rlNavigation::controlCB()
 
   if (rlVisPub_) {
     // Express velocity command in base_link so the arrow starts at the drone body origin.
-    const double cmd_x_body = bypassToVelCtrl_ ? cmd_vel.x() : (std::cos(currYaw_) * cmd_vel.x() + std::sin(currYaw_) * cmd_vel.y());
-    const double cmd_y_body = bypassToVelCtrl_ ? cmd_vel.y() : (-std::sin(currYaw_) * cmd_vel.x() + std::cos(currYaw_) * cmd_vel.y());
+    const double cmd_x_body = true ? cmd_vel.x() : (std::cos(-currYaw_) * cmd_vel.x() + std::sin(-currYaw_) * cmd_vel.y());
+    const double cmd_y_body = true ? cmd_vel.y() : (-std::sin(-currYaw_) * cmd_vel.x() + std::cos(-currYaw_) * cmd_vel.y());
 
     visualization_msgs::msg::MarkerArray cmd_msg;
     visualization_msgs::msg::Marker cmd_arrow;

@@ -1,0 +1,515 @@
+{
+  "configById": {
+    "3D!18i6zy7": {
+      "layers": {
+        "845139cb-26bc-40b3-8161-8ab60af4baf5": {
+          "visible": true,
+          "frameLocked": true,
+          "label": "Grid",
+          "instanceId": "845139cb-26bc-40b3-8161-8ab60af4baf5",
+          "layerId": "foxglove.Grid",
+          "size": 10,
+          "divisions": 10,
+          "lineWidth": 1,
+          "color": "#248eff",
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "order": 1
+        }
+      },
+      "cameraState": {
+        "perspective": true,
+        "distance": 45.44146361606185,
+        "phi": 0.00005736189926945049,
+        "thetaOffset": -93.66059380783811,
+        "targetOffset": [
+          0.09420591467010085,
+          13.412176090792993,
+          -2.1795637540285355e-17
+        ],
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-position",
+      "followTf": "drone0/base_link",
+      "scene": {
+        "transforms": {
+          "labelSize": 0.04,
+          "lineWidth": 2,
+          "axisSize": 0.16000000000000003
+        }
+      },
+      "transforms": {
+        "frame:earth": {
+          "visible": true
+        },
+        "frame:drone0/map": {
+          "visible": true
+        },
+        "frame:drone0/odom": {
+          "visible": false
+        },
+        "frame:new_frame": {
+          "visible": false
+        },
+        "frame:livox_frame": {
+          "visible": false
+        },
+        "frame:body": {
+          "visible": false
+        },
+        "frame:camera_init": {
+          "visible": false
+        },
+        "frame:camera_frame": {
+          "visible": false
+        },
+        "frame:px4_frame": {
+          "visible": false
+        },
+        "frame:base_link": {
+          "visible": false
+        },
+        "frame:base_link1": {
+          "visible": true
+        },
+        "frame:odom_base": {
+          "visible": true
+        },
+        "frame:drone0/base_link": {
+          "visible": false
+        },
+        "frame:odom_base1": {
+          "visible": false
+        },
+        "frame:odom_base_link": {
+          "visible": false
+        },
+        "frame:lidar_base": {
+          "visible": false
+        },
+        "frame:odom": {
+          "visible": true
+        },
+        "frame:lidar": {
+          "visible": false
+        },
+        "frame:imu": {
+          "visible": false
+        },
+        "frame:camera": {
+          "visible": false
+        },
+        "frame:drone0/lidar_link": {
+          "visible": false
+        },
+        "frame:Camera": {
+          "visible": false
+        },
+        "frame:RealSense_Camera": {
+          "visible": false
+        }
+      },
+      "topics": {
+        "/Laser_map": {
+          "visible": false,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/image": {
+          "visible": false
+        },
+        "/path": {
+          "visible": false,
+          "gradient": [
+            "#f0ff00ff",
+            "#0bfc00ff"
+          ],
+          "lineWidth": 0.02
+        },
+        "/cloud_registered": {
+          "visible": false,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/cloud_effected": {
+          "visible": false
+        },
+        "/cloud_registered_body": {
+          "visible": false
+        },
+        "/drone0/path_base": {
+          "visible": true,
+          "lineWidth": 0.02,
+          "gradient": [
+            "#ff0000ff",
+            "#ff8c00ff"
+          ]
+        },
+        "/px4_visualizer/setpoint_path": {
+          "visible": false
+        },
+        "/odometry/filtered_path": {
+          "visible": false,
+          "lineWidth": 0.02,
+          "gradient": [
+            "#34ff00ff",
+            "#e0ff0080"
+          ]
+        },
+        "/drone0/path_filtered": {
+          "visible": true,
+          "lineWidth": 0.02,
+          "gradient": [
+            "#00f124ff",
+            "#e6f500ff"
+          ]
+        },
+        "/drone0/camera/camera_info": {
+          "visible": true
+        },
+        "/drone0/camera/image": {
+          "visible": false,
+          "frameLocked": true,
+          "cameraInfoTopic": "/drone0/camera/camera_info",
+          "distance": 1,
+          "planarProjectionFactor": 0,
+          "color": "#ffffff"
+        },
+        "/Odometry_path": {
+          "visible": false,
+          "lineWidth": 0.02,
+          "gradient": [
+            "#ff00eeff",
+            "#ff0000ff"
+          ]
+        },
+        "/livox/lidar": {
+          "visible": false,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/map": {
+          "visible": false,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/dlio/odom_node/pointcloud/deskewed": {
+          "visible": true,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/dlio/odom_node/pointcloud/keyframe": {
+          "visible": true,
+          "colorField": "intensity",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/dlio/odom_node/path": {
+          "visible": true,
+          "lineWidth": 0.0411,
+          "gradient": [
+            "#fffe40ff",
+            "#13ff3eff"
+          ]
+        },
+        "/dlio/odom_node/pose": {
+          "visible": true
+        },
+        "/drone0/actuator_command/pose": {
+          "visible": false
+        },
+        "/drone0/camera/image/compressed": {
+          "visible": false
+        },
+        "/direction_vector_marker": {
+          "visible": false
+        },
+        "/px4_visualizer/vehicle_velocity": {
+          "visible": false
+        },
+        "/point_cloud": {
+          "visible": false,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/drone0/self_localization/path": {
+          "visible": true,
+          "lineWidth": 0.02,
+          "gradient": [
+            "#ff6b6bff",
+            "#ff9f6bff"
+          ]
+        },
+        "/dlio/odom_node/keyframes": {
+          "visible": false
+        },
+        "/drone0/self_localization/pose": {
+          "visible": true,
+          "axisScale": 1
+        },
+        "/drone1/RealSense_Camera/color/image_raw": {
+          "visible": false
+        },
+        "/navigation_runner/goal": {
+          "visible": true
+        },
+        "/occupancy_map/inflated_voxel_map": {
+          "visible": true,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/poly_traj/tajectory": {
+          "visible": false
+        },
+        "/bspline_traj/astar_path": {
+          "visible": false
+        },
+        "/dynamic_map/inflated_voxel_map": {
+          "visible": true,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo",
+          "pointShape": "square",
+          "pointSize": 1.99,
+          "explicitAlpha": 0.473
+        },
+        "/dynamic_map/raycast": {
+          "visible": false
+        },
+        "/onboard_detector/dbscan_bboxes": {
+          "visible": false
+        },
+        "/onboard_detector/bird_eye_view": {
+          "visible": false
+        },
+        "/onboard_detector/dynamic_bboxes": {
+          "visible": true
+        },
+        "/dynamicExploration/poly_traj": {
+          "visible": false
+        },
+        "/dynamicExploration/pwl_trajectory": {
+          "visible": true
+        },
+        "/dynamicExploration/input_trajectory": {
+          "visible": false
+        },
+        "/dynamicExploration/bspline_trajectory": {
+          "visible": false
+        },
+        "/dep/best_paths": {
+          "visible": true
+        },
+        "/dep/candidate_paths": {
+          "visible": false
+        },
+        "/dep/frontier_regions": {
+          "visible": true
+        },
+        "/dep/roadmap": {
+          "visible": false
+        },
+        "/dynamic_map/occupancy_map_2D": {
+          "visible": true
+        },
+        "/bspline_traj/control_points": {
+          "visible": true
+        },
+        "/bspline_traj/guide_points_and_directions": {
+          "visible": false
+        },
+        "/bspline_traj/input_trajectory_point": {
+          "visible": false
+        },
+        "/autonomous_flight/target_state_rx_marker": {
+          "visible": false
+        },
+        "/initialpose": {
+          "visible": true
+        },
+        "/bspline_traj/trajectory": {
+          "visible": false
+        },
+        "/rl_navigation/visualization": {
+          "visible": false
+        },
+        "/goal_pose": {
+          "visible": true
+        },
+        "/robot_description": {
+          "visible": true
+        },
+        "/onboard_detector/velocity_visualizaton": {
+          "visible": false
+        },
+        "/onboard_detector/tracked_bboxes": {
+          "visible": false
+        },
+        "/onboard_detector/lidar_clusters": {
+          "visible": false,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/onboard_detector/detected_u_depth_map": {
+          "visible": false
+        },
+        "/move_base_simple/goal": {
+          "visible": false
+        },
+        "/goal_marker_array": {
+          "visible": true
+        },
+        "/goal_marker": {
+          "visible": true
+        }
+      },
+      "publish": {
+        "type": "pose",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {},
+      "fixedFrame": "drone0/map",
+      "enuFrameId": "drone0/map"
+    },
+    "Publish!n09uba": {
+      "buttonText": "Motion bounds",
+      "buttonTooltip": "",
+      "advancedView": true,
+      "value": "{\n  \"header\": {\n    \"stamp\": {\n      \"sec\": 0,\n      \"nanosec\": 0\n    },\n    \"frame_id\": \"\"\n  },\n  \"climb_mode\": 2,\n  \"max_linear_velocity\": 2.6,\n  \"max_angular_velocity\": 0.6,\n  \"max_linear_acceleration\": 0.3,\n  \"max_angular_acceleration\": 0.4,\n  \"scale_linear_ctrl\": 0.9,\n  \"scale_angular_ctrl\": 0.6,\n  \"min_gap_to_obstacle\": 0.4\n}",
+      "topicName": "/climb_motion_bound_cmd",
+      "datatype": "climb_msgs/msg/MotionBounds"
+    },
+    "Image!3mnp456": {
+      "cameraState": {
+        "distance": 20,
+        "perspective": true,
+        "phi": 60,
+        "target": [
+          0,
+          0,
+          0
+        ],
+        "targetOffset": [
+          0,
+          0,
+          0
+        ],
+        "targetOrientation": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "thetaOffset": 45,
+        "fovy": 45,
+        "near": 0.5,
+        "far": 5000
+      },
+      "followMode": "follow-pose",
+      "scene": {},
+      "transforms": {},
+      "topics": {
+        "/path": {
+          "visible": false
+        }
+      },
+      "layers": {},
+      "publish": {
+        "type": "point",
+        "poseTopic": "/move_base_simple/goal",
+        "pointTopic": "/clicked_point",
+        "poseEstimateTopic": "/initialpose",
+        "poseEstimateXDeviation": 0.5,
+        "poseEstimateYDeviation": 0.5,
+        "poseEstimateThetaDeviation": 0.26179939
+      },
+      "imageMode": {
+        "imageTopic": "/drone1/RealSense_Camera/color/image_raw",
+        "synchronize": false,
+        "rectifyImage": true,
+        "colorMode": "gradient",
+        "gradient": [
+          "#000000",
+          "#ffffffff"
+        ],
+        "minValue": 0,
+        "maxValue": 1,
+        "rotation": 0
+      }
+    },
+    "RawMessages!9weisd": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/fmu/out/vehicle_control_mode",
+      "fontSize": 12
+    },
+    "RawMessages!2z4ux4s": {
+      "diffEnabled": false,
+      "diffMethod": "custom",
+      "diffTopicPath": "",
+      "showFullMessageForDiff": false,
+      "topicPath": "/fmu/out/vehicle_status_v1",
+      "fontSize": 12
+    }
+  },
+  "globalVariables": {},
+  "userNodes": {},
+  "playbackConfig": {
+    "speed": 1
+  },
+  "layout": {
+    "first": "3D!18i6zy7",
+    "second": {
+      "first": "Publish!n09uba",
+      "second": {
+        "first": "Image!3mnp456",
+        "second": {
+          "first": "RawMessages!9weisd",
+          "second": "RawMessages!2z4ux4s",
+          "direction": "row"
+        },
+        "direction": "column",
+        "splitPercentage": 44.71675752547998
+      },
+      "direction": "column"
+    },
+    "direction": "row",
+    "splitPercentage": 77.90814616158231
+  }
+}

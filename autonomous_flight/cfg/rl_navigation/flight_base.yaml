@@ -14,7 +14,9 @@ rl_navigation_node:
     rl_nav.goal_tolerance: 0.5
     rl_nav.goal_slowdown_radius: 3.0
     rl_nav.use_yaw_control: true
-    rl_nav.height_control: false
+    rl_nav.height_control: true
+    rl_nav.height_lower_bound: 0.5
+    rl_nav.height_upper_bound: 3.0
 
     # Local obstacle reaction
     rl_nav.raycast_beams: 36

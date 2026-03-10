@@ -57,6 +57,7 @@ def generate_launch_description():
         ('static', 'rviz_static', 'static.rviz'),
         ('dynamic', 'rviz_dynamic', 'dynamic.rviz'),
         ('explore', 'rviz_explore', 'explore.rviz'),
+        ('climb', 'rviz_climb', 'climb.rviz'),
         ('autonomous_flight_dynamic', 'rviz_autonomous_flight_dynamic', 'autonomous_flight_dynamic.rviz'),
         ('global_planner_map', 'rviz_global_planner_map', 'global_planner_map.rviz'),
         ('global_planner_navigation', 'rviz_global_planner_navigation', 'global_planner_navigation.rviz'),

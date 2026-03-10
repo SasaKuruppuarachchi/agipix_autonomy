@@ -26,6 +26,8 @@ private:
 
   double controlDt_{0.05};
   double velLimit_{1.0};
+  double heightLowerBound_{0.5};
+  double heightUpperBound_{3.0};
   double maxVerticalVel_{0.5};
   double goalTolerance_{1.0};
   double slowdownRadius_{3.0};
