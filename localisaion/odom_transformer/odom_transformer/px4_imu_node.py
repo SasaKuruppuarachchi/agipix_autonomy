@@ -9,6 +9,8 @@ from rclpy.qos import qos_profile_sensor_data
 class PX4IMUNode(Node):
     def __init__(self):
         super().__init__('px4_imu_node')
+        self.namespace = 'drone'
+        self.id = 0
         self.time_offset = 0
         self.force_sync = True
         self.printmsg = True
@@ -23,7 +25,7 @@ class PX4IMUNode(Node):
             '/fmu/out/timesync_status',
             self.timesync_combined_callback,
             qos_profile=qos_profile_sensor_data)
-        self.publisher = self.create_publisher(Imu, '/px4_imu', 10)
+        self.publisher = self.create_publisher(Imu, self.namespace + str(self.id) + '/px4_imu', 10)
         self.time_offset = 0.0
 
     def sensor_combined_callback(self, msg):
