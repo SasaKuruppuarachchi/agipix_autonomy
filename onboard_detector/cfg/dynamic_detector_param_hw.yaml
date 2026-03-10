@@ -4,8 +4,8 @@ dynamic_detector_node:
       localization_mode: 1 # 0: pose (default) 1: odom
 
       # ROS Topics
-      # depth_image_topic: /drone1/RealSense_Camera/depth
-      # color_image_topic: /drone1/RealSense_Camera/color/image_raw
+      # depth_image_topic: /drone0/RealSense_Camera/depth
+      # color_image_topic: /drone0/RealSense_Camera/color/image_raw
       depth_image_topic: /stereo/converted_depth
       color_image_topic: /color/preview/image
       lidar_pointcloud_topic: /livox/lidar

@@ -2,8 +2,8 @@ rl_navigation_node:
   ros__parameters:
     mapper:
       localization_mode: 0
-      depth_image_topic: /drone1/RealSense_Camera/depth
-      point_cloud_topic: /point_cloud
+      depth_image_topic: /drone0/RealSense_Camera/depth
+      point_cloud_topic: /drone0/livox/lidar
       pose_topic: /drone0/self_localization/pose
       odom_topic: /drone0/sensor_measurements/odom
       map_frame_id : drone0/map

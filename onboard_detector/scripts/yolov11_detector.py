@@ -44,7 +44,7 @@ class yolo_detector(Node):
         # subscriber
         self.br = CvBridge()
         # Align ROS behavior to yolo_detector: parameterize color image topic
-        self.declare_parameter('color_image_topic', '/color/preview/image') #'/drone1/RealSense_Camera/color/image_raw')
+        self.declare_parameter('color_image_topic', '/color/preview/image') #'/drone0/RealSense_Camera/color/image_raw')
         color_image_topic = self.get_parameter('color_image_topic').get_parameter_value().string_value
         self.img_sub = self.create_subscription(Image, color_image_topic, self.image_callback, 10)
         self.get_logger().info(f"[onboardDetector]: YOLOv11 color image topic name: {color_image_topic}.")

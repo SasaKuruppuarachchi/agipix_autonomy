@@ -3,11 +3,11 @@ dep_test_node:
     localization_mode: 0 # 0: pose (default) 1: odom
 
     # ROS Topics
-    # depth_image_topic: /drone1/RealSense_Camera/depth
-    # color_image_topic: /drone1/RealSense_Camera/color/image_raw
-    depth_image_topic: /drone1/RealSense_Camera/depth
-    color_image_topic: /drone1/RealSense_Camera/color/image_raw
-    lidar_pointcloud_topic: /point_cloud
+    # depth_image_topic: /drone0/RealSense_Camera/depth
+    # color_image_topic: /drone0/RealSense_Camera/color/image_raw
+    depth_image_topic: /drone0/RealSense_Camera/depth
+    color_image_topic: /drone0/RealSense_Camera/color/image_raw
+    lidar_pointcloud_topic: /drone0/livox/lidar
     pose_topic: /drone0/self_localization/pose
     odom_topic: /drone0/sensor_measurements/odom # /dlio/odom_node/odom
     frame_id: drone0/map

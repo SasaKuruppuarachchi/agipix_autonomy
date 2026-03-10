@@ -253,7 +253,7 @@
         "/px4_visualizer/vehicle_velocity": {
           "visible": false
         },
-        "/point_cloud": {
+        "/drone0/livox/lidar": {
           "visible": false,
           "colorField": "z",
           "colorMode": "colormap",
@@ -274,7 +274,7 @@
           "visible": true,
           "axisScale": 1
         },
-        "/drone1/RealSense_Camera/color/image_raw": {
+        "/drone0/RealSense_Camera/color/image_raw": {
           "visible": false
         },
         "/navigation_runner/goal": {
@@ -458,7 +458,7 @@
         "poseEstimateThetaDeviation": 0.26179939
       },
       "imageMode": {
-        "imageTopic": "/drone1/RealSense_Camera/color/image_raw",
+        "imageTopic": "/drone0/RealSense_Camera/color/image_raw",
         "synchronize": false,
         "rectifyImage": true,
         "colorMode": "gradient",

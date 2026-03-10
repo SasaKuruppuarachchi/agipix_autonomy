@@ -4,11 +4,11 @@ dynamic_detector_node:
       localization_mode: 0 # 0: pose (default) 1: odom
 
       # ROS Topics
-      # depth_image_topic: /drone1/RealSense_Camera/depth
-      # color_image_topic: /drone1/RealSense_Camera/color/image_raw
+      # depth_image_topic: /drone0/RealSense_Camera/depth
+      # color_image_topic: /drone0/RealSense_Camera/color/image_raw
       depth_image_topic: /stereo/depth
       color_image_topic: /color/preview/image
-      lidar_pointcloud_topic: /point_cloud
+      lidar_pointcloud_topic: /drone0/livox/lidar
       pose_topic: /drone0/self_localization/pose
       odom_topic: /dlio/odom_node/odom
       frame_id: drone0/map
