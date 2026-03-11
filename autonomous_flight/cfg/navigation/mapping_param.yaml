@@ -1,4 +1,4 @@
-navigation_node:
+/**:
   ros__parameters:
     mapper:
       localization_mode: 0 # 0: pose (default) 1: odom

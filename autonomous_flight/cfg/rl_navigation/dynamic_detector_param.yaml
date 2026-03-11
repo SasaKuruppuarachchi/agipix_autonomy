@@ -1,4 +1,4 @@
-rl_navigation_node:
+/**:
   ros__parameters:
     detector:
       localization_mode: 0

@@ -21,28 +21,24 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "drone_namespace",
+                default_value="drone0",
+                description="Namespace applied to autonomous flight nodes and mission topics.",
+            ),
+            DeclareLaunchArgument(
+                "target_topic",
+                default_value="autonomous_flight/target_state",
+                description="Target topic consumed by mission_tracking_executor_node.",
+            ),
+            DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="false",
                 description="Use simulation clock if true",
             ),
-            # Node(
-            #     package="map_manager",
-            #     executable="dynamic_map_node",
-            #     name="dynamic_map_node",
-            #     output="screen",
-            #     parameters=[map_params],
-            # ),
-            # Node(
-            #     package="onboard_detector",
-            #     executable="dynamic_detector_node",
-            #     name="dynamic_detector_node",
-            #     output="screen",
-            #     parameters=[detector_params],
-            # ),
-            #ExecuteProcess(cmd=["bash", throttle_script], output="screen"),
             Node(
                 package="autonomous_flight",
                 executable="dynamic_exploration_node",
+                namespace=LaunchConfiguration("drone_namespace"),
                 name="dynamic_exploration_node",
                 output="screen",
                 parameters=af_params + [
@@ -56,7 +52,8 @@ def generate_launch_description():
                 output="screen",
                 parameters=af_params + [
                     {"builtin_profile": "external_target"},
-                    {"target_topic": "/autonomous_flight/target_state"},
+                    {"drone_namespace": LaunchConfiguration("drone_namespace")},
+                    {"target_topic": LaunchConfiguration("target_topic")},
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),

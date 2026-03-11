@@ -37,6 +37,8 @@ def _include_legacy_stack(context):
             ),
             condition=IfCondition(LaunchConfiguration("start_legacy_stack")),
             launch_arguments={
+                "drone_namespace": LaunchConfiguration("drone_namespace"),
+                "target_topic": LaunchConfiguration("target_topic"),
                 "use_sim_time": LaunchConfiguration("use_sim_time"),
             }.items(),
         )
@@ -64,6 +66,7 @@ def _include_px4_mode_node(context):
         Node(
             package="px4_control_interface",
             executable="px4_tracking_mode_node",
+            namespace=LaunchConfiguration("drone_namespace"),
             name="px4_tracking_mode_node",
             output="screen",
             parameters=[
@@ -97,8 +100,13 @@ def generate_launch_description():
                 description="If true, include autonomous_flight mission stack in parallel.",
             ),
             DeclareLaunchArgument(
+                "drone_namespace",
+                default_value="drone0",
+                description="Namespace applied to px4 control nodes and default mission topics.",
+            ),
+            DeclareLaunchArgument(
                 "target_topic",
-                default_value="/autonomous_flight/target_state",
+                default_value="autonomous_flight/target_state",
                 description="Mission target topic consumed by px4_tracking_mode_node.",
             ),
             DeclareLaunchArgument(

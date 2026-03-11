@@ -1,4 +1,4 @@
-navigation_node:
+/**:
   ros__parameters:
     desired_velocity: 2.0 # m/s
     desired_acceleration: 3.0 # m/s^2

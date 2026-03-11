@@ -21,6 +21,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "drone_namespace",
+                default_value="drone0",
+                description="Namespace applied to autonomous flight nodes and inspection frames.",
+            ),
+            DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="false",
                 description="Use simulation clock if true",
@@ -28,18 +33,20 @@ def generate_launch_description():
             Node(
                 package='octomap_server',
                 executable='octomap_server_node',
+                namespace=LaunchConfiguration("drone_namespace"),
                 name='octomap_server_node',
                 output='screen',
                 #arguments=[LaunchConfiguration('map_location')]
                 parameters=[
                     {'octomap_path': octomap_path},
-                    {'frame_id': 'drone0/map'},
+                    {'frame_id': [LaunchConfiguration("drone_namespace"), '/map']},
                     {'use_sim_time': LaunchConfiguration('use_sim_time')},
                 ]  # <--- Pass as param here
             ),
             Node(
                 package="autonomous_flight",
                 executable="inspection_node",
+                namespace=LaunchConfiguration("drone_namespace"),
                 name="inspection_node",
                 output="screen",
                 parameters=af_params + [

@@ -18,6 +18,7 @@ def _rviz_node(toggle_name: str, node_name: str, config_name: str):
     return Node(
         package='rviz2',
         executable='rviz2',
+        namespace=LaunchConfiguration('drone_namespace'),
         name=node_name,
         output='screen',
         arguments=['-d', config_path],
@@ -40,6 +41,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use simulation clock for all RViz instances.',
+        ),
+        DeclareLaunchArgument(
+            'drone_namespace',
+            default_value='drone0',
+            description='Namespace applied to agipix topics published for a drone instance.',
         ),
         DeclareLaunchArgument(
             'publish_agipix_urdf',
@@ -74,6 +80,7 @@ def generate_launch_description():
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
+            namespace=LaunchConfiguration('drone_namespace'),
             name='agipix_robot_state_publisher',
             output='screen',
             parameters=[

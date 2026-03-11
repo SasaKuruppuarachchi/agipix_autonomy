@@ -27,13 +27,13 @@
       },
       "cameraState": {
         "perspective": true,
-        "distance": 45.44146361606185,
-        "phi": 0.00005736189926945049,
-        "thetaOffset": -93.66059380783811,
+        "distance": 23.32701559993317,
+        "phi": 0.000057349190307453494,
+        "thetaOffset": -179.85777702339107,
         "targetOffset": [
-          0.09420591467010085,
-          13.412176090792993,
-          -2.1795637540285355e-17
+          -5.093592149203717,
+          -1.3583809488649676,
+          -2.1795679442447607e-17
         ],
         "target": [
           0,
@@ -253,7 +253,7 @@
         "/px4_visualizer/vehicle_velocity": {
           "visible": false
         },
-        "/drone0/livox/lidar": {
+        "/point_cloud": {
           "visible": false,
           "colorField": "z",
           "colorMode": "colormap",
@@ -274,7 +274,7 @@
           "visible": true,
           "axisScale": 1
         },
-        "/drone0/RealSense_Camera/color/image_raw": {
+        "/drone1/RealSense_Camera/color/image_raw": {
           "visible": false
         },
         "/navigation_runner/goal": {
@@ -390,6 +390,38 @@
         },
         "/goal_marker": {
           "visible": true
+        },
+        "/drone0/dynamic_map/inflated_voxel_map": {
+          "visible": true,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo",
+          "pointSize": 30,
+          "decayTime": 0,
+          "explicitAlpha": 0.116,
+          "pointShape": "cube",
+          "cubeSize": 0.091
+        },
+        "/drone0/dynamic_map/occupancy_map_2D": {
+          "visible": true
+        },
+        "/drone0/dynamic_map/raycast": {
+          "visible": true
+        },
+        "/drone0/dynamic_map/static_obstacles": {
+          "visible": false
+        },
+        "/drone0/goal_marker": {
+          "visible": true
+        },
+        "/drone0/livox/lidar": {
+          "visible": false,
+          "colorField": "z",
+          "colorMode": "colormap",
+          "colorMap": "turbo"
+        },
+        "/drone0/rl_navigation/visualization": {
+          "visible": false
         }
       },
       "publish": {
@@ -409,8 +441,8 @@
       "buttonText": "Motion bounds",
       "buttonTooltip": "",
       "advancedView": true,
-      "value": "{\n  \"header\": {\n    \"stamp\": {\n      \"sec\": 0,\n      \"nanosec\": 0\n    },\n    \"frame_id\": \"\"\n  },\n  \"climb_mode\": 2,\n  \"max_linear_velocity\": 2.6,\n  \"max_angular_velocity\": 0.6,\n  \"max_linear_acceleration\": 0.3,\n  \"max_angular_acceleration\": 0.4,\n  \"scale_linear_ctrl\": 0.9,\n  \"scale_angular_ctrl\": 0.6,\n  \"min_gap_to_obstacle\": 0.4\n}",
-      "topicName": "/climb_motion_bound_cmd",
+      "value": "{\n  \"header\": {\n    \"stamp\": {\n      \"sec\": 0,\n      \"nanosec\": 0\n    },\n    \"frame_id\": \"\"\n  },\n  \"climb_mode\": 0,\n  \"max_linear_velocity\": 0,\n  \"max_angular_velocity\": 0,\n  \"max_linear_acceleration\": 0,\n  \"max_angular_acceleration\": 0,\n  \"scale_linear_ctrl\": 0,\n  \"scale_angular_ctrl\": 0,\n  \"min_gap_to_obstacle\": 0\n}",
+      "topicName": "/drone0/climb_motion_bound_cmd",
       "datatype": "climb_msgs/msg/MotionBounds"
     },
     "Image!3mnp456": {

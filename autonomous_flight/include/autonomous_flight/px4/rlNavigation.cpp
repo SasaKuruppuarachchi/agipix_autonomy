@@ -118,7 +118,7 @@ void rlNavigation::initParam()
   node_->declare_parameter<bool>("rl_nav.bypass_to_vel_ctrl", false);
   node_->get_parameter("rl_nav.bypass_to_vel_ctrl", bypassToVelCtrl_);
 
-  node_->declare_parameter<std::string>("rl_nav.climb_velocity_topic", "/climb_velocity_cmd");
+  node_->declare_parameter<std::string>("rl_nav.climb_velocity_topic", "climb_velocity_cmd");
   node_->get_parameter("rl_nav.climb_velocity_topic", climbVelTopic_);
 
   node_->declare_parameter<double>("rl_nav.safe_action_time_horizon", 1.0);

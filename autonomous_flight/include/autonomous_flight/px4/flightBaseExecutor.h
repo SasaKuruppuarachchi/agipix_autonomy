@@ -34,7 +34,11 @@ public:
     _trajectory_sp = std::make_shared<px4_ros2::TrajectorySetpointType>(*this);
     _local_position = std::make_shared<px4_ros2::OdometryLocalPosition>(*this);
 
-    _target_topic = getOrDeclareParam<std::string>(node, "target_topic", "/autonomous_flight/target_state");
+    _drone_namespace = normalizeNamespace(
+      getOrDeclareParam<std::string>(node, "drone_namespace", "drone0"));
+    _target_topic = resolveTopic(
+      _drone_namespace,
+      getOrDeclareParam<std::string>(node, "target_topic", "autonomous_flight/target_state"));
     _target_timeout_s = getOrDeclareParam<double>(node, "target_timeout_s", 0.2);
     _target_qos_depth = std::max(1, getOrDeclareParam<int>(node, "target_qos_depth", 1));
     _target_qos_reliability =
@@ -46,9 +50,11 @@ public:
     _circle_velocity_m_s = static_cast<float>(getOrDeclareParam<double>(node, "velocity", 0.5));
     _circle_use_tangent_yaw = getOrDeclareParam<bool>(node, "yaw_control", false);
     _publish_target_rx_marker = getOrDeclareParam<bool>(node, "publish_target_rx_marker", false);
-    _target_rx_marker_topic =
-      getOrDeclareParam<std::string>(node, "target_rx_marker_topic", "/autonomous_flight/target_state_rx_marker");
-    _target_rx_marker_frame_id = getOrDeclareParam<std::string>(node, "target_rx_marker_frame_id", "drone0/map");
+    _target_rx_marker_topic = resolveTopic(
+      _drone_namespace,
+      getOrDeclareParam<std::string>(node, "target_rx_marker_topic", "autonomous_flight/target_state_rx_marker"));
+    _target_rx_marker_frame_id = getOrDeclareParam<std::string>(
+      node, "target_rx_marker_frame_id", namespacedFrameId(_drone_namespace, "map"));
     _target_rx_marker_scale_m =
       static_cast<float>(getOrDeclareParam<double>(node, "target_rx_marker_scale", 0.6));
     _debug_mode = getOrDeclareParam<bool>(node, "debug_mode", false);
@@ -65,7 +71,8 @@ public:
       [this](rclcpp::QOSRequestedIncompatibleQoSInfo & info) {
         RCLCPP_WARN(
           this->node().get_logger(),
-          "[AutoFlight]: /autonomous_flight/target_state incompatible QoS (last_policy_kind=%d, total_count=%d).",
+          "[AutoFlight]: %s incompatible QoS (last_policy_kind=%d, total_count=%d).",
+          _target_topic.c_str(),
           info.last_policy_kind,
           info.total_count);
       };
@@ -158,7 +165,8 @@ public:
         node().get_logger(),
         *node().get_clock(),
         2000,
-        "[AutoFlight]: No fresh /autonomous_flight/target_state. Holding hover setpoint.");
+        "[AutoFlight]: No fresh %s. Holding hover setpoint.",
+        _target_topic.c_str());
       applyHoverSetpoint(sp);
     }
 
@@ -174,6 +182,42 @@ private:
       value = node.declare_parameter<T>(name, default_value);
     }
     return value;
+  }
+
+  static std::string normalizeNamespace(std::string name_space)
+  {
+    while (!name_space.empty() && name_space.front() == '/') {
+      name_space.erase(name_space.begin());
+    }
+    while (!name_space.empty() && name_space.back() == '/') {
+      name_space.pop_back();
+    }
+    return name_space;
+  }
+
+  static std::string namespacedFrameId(const std::string & name_space, const std::string & frame)
+  {
+    if (name_space.empty()) {
+      return frame;
+    }
+    return name_space + "/" + frame;
+  }
+
+  static std::string resolveTopic(const std::string & name_space, const std::string & topic)
+  {
+    if (topic.empty()) {
+      return topic;
+    }
+
+    if (topic.front() == '/') {
+      return topic;
+    }
+
+    if (name_space.empty()) {
+      return "/" + topic;
+    }
+
+    return "/" + name_space + "/" + topic;
   }
 
   void targetCallback(const autonomous_flight::msg::Target::SharedPtr msg)
@@ -414,6 +458,7 @@ private:
 
   rclcpp::Subscription<autonomous_flight::msg::Target>::SharedPtr _target_sub;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr _target_rx_marker_pub;
+  std::string _drone_namespace{"drone0"};
   std::string _target_topic;
   double _target_timeout_s{0.2};
   int _target_qos_depth{1};
@@ -425,7 +470,7 @@ private:
   float _circle_velocity_m_s{0.5f};
   bool _circle_use_tangent_yaw{false};
   bool _publish_target_rx_marker{false};
-  std::string _target_rx_marker_topic{"/autonomous_flight/target_state_rx_marker"};
+  std::string _target_rx_marker_topic{"autonomous_flight/target_state_rx_marker"};
   std::string _target_rx_marker_frame_id{"map"};
   float _target_rx_marker_scale_m{0.2f};
 

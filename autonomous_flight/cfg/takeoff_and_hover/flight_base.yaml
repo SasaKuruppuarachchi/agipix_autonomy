@@ -1,5 +1,6 @@
 /**:
   ros__parameters:
+    drone_namespace: drone0
     takeoff_height: 1.0 #m
     frame_id: drone0/map
     odom_topic: /drone0/sensor_measurements/odom

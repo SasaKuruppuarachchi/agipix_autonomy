@@ -1,4 +1,4 @@
-dynamic_navigation_node:
+/**:
   ros__parameters:
     takeoff_height: 1.0 # m
     frame_id: drone0/map
@@ -17,8 +17,9 @@ dynamic_navigation_node:
 
 mission_tracking_executor_node:
   ros__parameters:
+    drone_namespace: drone0
     # Keep consistent with navigation target publication behavior.
-    target_topic: /autonomous_flight/target_state
+    target_topic: autonomous_flight/target_state
     target_timeout_s: 2.5
     use_input_yaw: true
     skip_takeoff_if_flying: true

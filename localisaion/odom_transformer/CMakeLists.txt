@@ -29,8 +29,6 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   odom_transformer/transformer_node.py
-  odom_transformer/odom_to_path_node.py
-  odom_transformer/publish_to_px4.py
   odom_transformer/px4_imu_node.py
   DESTINATION lib/${PROJECT_NAME}
 )

@@ -1,0 +1,27 @@
+==== GROUP BY SUBSCRIBER ====
+
+/drone0/dynamic_exploration_node:
+  - /goal_pose
+  - /move_base_simple/goal
+
+odom_transformer:
+  - /dlio/odom_node/odom
+
+
+==== GROUP BY PUBLISHER ====
+
+drone_location_publisher:
+  - /real_Time_factor
+
+
+==== GROUP BY TYPE ====
+
+geometry_msgs/msg/PoseStamped:
+  - /goal_pose
+  - /move_base_simple/goal
+
+nav_msgs/msg/Odometry:
+  - /dlio/odom_node/odom
+
+std_msgs/msg/Float32:
+  - /real_Time_factor

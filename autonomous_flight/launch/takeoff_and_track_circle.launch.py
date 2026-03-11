@@ -16,6 +16,11 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
+                "drone_namespace",
+                default_value="drone0",
+                description="Namespace applied to autonomous flight nodes.",
+            ),
+            DeclareLaunchArgument(
                 "use_sim_time",
                 default_value="false",
                 description="Use simulation clock if true",
@@ -27,6 +32,7 @@ def generate_launch_description():
                 output="screen",
                 parameters=af_params + [
                     {"builtin_profile": "circle"},
+                    {"drone_namespace": LaunchConfiguration("drone_namespace")},
                     {"use_sim_time": LaunchConfiguration("use_sim_time")},
                 ],
             ),

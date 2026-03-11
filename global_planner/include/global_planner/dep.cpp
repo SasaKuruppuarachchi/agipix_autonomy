@@ -145,16 +145,16 @@ namespace globalPlanner{
 
 	void DEP::registerPub(){
 		// roadmap visualization publisher
-		this->roadmapPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("/dep/roadmap", 10);
+		this->roadmapPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("dep/roadmap", 10);
 
 		// candidate paths publisher
-		this->candidatePathPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("/dep/candidate_paths", 10);
+		this->candidatePathPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("dep/candidate_paths", 10);
 
 		// best path publisher
-		this->bestPathPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("/dep/best_paths", 10);
+		this->bestPathPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("dep/best_paths", 10);
 
 		// fronteir vis publisher
-		this->frontierVisPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("/dep/frontier_regions", 10);
+		this->frontierVisPub_ = this->node_->create_publisher<visualization_msgs::msg::MarkerArray>("dep/frontier_regions", 10);
 	}
 
 	void DEP::registerCallback(){

@@ -65,8 +65,8 @@ class Navigation(Node):
             depth=10,
         )
         self.odom_sub = self.create_subscription(Odometry, odom_topic, self.odom_callback, odom_qos) # odom
-        self.goal_sub = self.create_subscription(PoseStamped, '/goal_pose', self.goal_callback, 10) # goal
-        self.emergency_stop_sub = self.create_subscription(Bool, '/navigation_emergency_stop', self.safety_check_callback, 10) # safety check
+        self.goal_sub = self.create_subscription(PoseStamped, 'goal_pose', self.goal_callback, 10) # goal
+        self.emergency_stop_sub = self.create_subscription(Bool, 'navigation_emergency_stop', self.safety_check_callback, 10) # safety check
         
         # Publisher
         self.declare_parameter('cmd_topic', '/unitree_go2/cmd_vel')

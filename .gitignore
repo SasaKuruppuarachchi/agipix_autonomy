@@ -30,3 +30,5 @@ __pycache__/
 **/htmlcov/
 legacy_controller_bak
 DDS_migration
+*.dot
+agi_viz/scripts/topic_graph.png

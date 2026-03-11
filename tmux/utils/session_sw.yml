@@ -49,31 +49,35 @@ windows:
       layout: tiled
       panes:
         - ros2 launch px4_control_interface dds_shadow.launch.py 
+            drone_namespace:=<%= drone_namespace %>
             use_sim_time:=true 
             start_legacy_stack:=true 
             mission:=dynamic_exploration
 
         - ros2 service call /dynamic_exploration/start std_srvs/srv/Trigger "{}" -sasd
+
 <% elsif control_mode == "climb" %>
   - CTRL-CLIMB:
       layout: tiled
       panes:
         - ros2 launch px4_control_interface dds_shadow.launch.py 
+            drone_namespace:=<%= drone_namespace %>
             use_sim_time:=true 
             start_legacy_stack:=true 
             mission:=rl_navigation
 
-        - cd /workspaces/ui && source install/setup.bash && ros2 launch climb_robot teleop_joy.launch.py
-        - cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}"
+        - cd /workspaces/ui && source install/setup.bash && ros2 launch climb_robot teleop_joy.launch.py # drone_namespace:=<%= drone_namespace %>
+
+        - 'cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}"'
         - cd /workspaces/ui && source install/setup.bash && ros2 topic echo /climb_control/status
 <% end %>
 
   - CTRL-DEBUG:
       layout: tiled
       panes:
-        - ros2 topic hz /autonomous_flight/target_state
-                - ros2 topic hz /fmu/out/vehicle_local_position
-        - ros2 topic hz /drone0/sensor_measurements/odom
+        - ls # - ros2 topic hz /autonomous_flight/target_state
+        # - ros2 topic hz /fmu/out/vehicle_local_position
+        # - ros2 topic hz /drone0/sensor_measurements/odom
         
 
   - BACKEND:
@@ -81,7 +85,9 @@ windows:
       panes:
         - MicroXRCEAgent udp4 -p 8888
         #- 
-        - ros2 launch odom_transformer publish_static_transforms.launch.py use_sim_time:=<%= simulation %>
+        - ros2 launch odom_transformer publish_static_transforms.launch.py 
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
         - ros2 launch as2_platform_pixhawk pixhawk_launch.py
             namespace:=<%= drone_namespace %>
             use_sim_time:=<%= simulation %>
@@ -100,21 +106,31 @@ windows:
       panes:
         # Launch LIO here
         - ls
+        # - sorlidar && ros2 launch direct_lidar_inertial_odometry dlio.launch.py rviz:=false use_sim_time:=<%= simulation %>
+        # - sorlidar && ros2 launch ffastllamaa mid360_px4_odometry.launch.py use_sim_time:=<%= simulation %>
+        # - ros2 run px4_local_navigation_cpp px4_local_navigation --ros-args -p use_sim_time:=<%= simulation %>
 
 <% if control_mode == "mission" %>
   - PERCEP-MAP:
       layout: even-vertical
       panes:
-        #- ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_global_planner_navigation:=true
-        - ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_explore:=true
+        - ros2 launch agi_viz rviz.launch.py 
+            drone_namespace:=<%= drone_namespace %> 
+            use_sim_time:=<%= simulation %> 
+            launch_all:=false 
+            launch_explore:=true
 
 <% elsif control_mode == "climb" %>
   - PERCEP-MAP:
       layout: even-vertical
       panes:
-        #- ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_global_planner_navigation:=true
-        - ros2 launch agi_viz rviz.launch.py use_sim_time:=<%= simulation %> launch_all:=false launch_climb:=true
-        - source /workspaces/ui/install/setup.bash && ros2 launch agi_viz foxglove_launch.xml use_sim_time:=<%= simulation %> 
+        - ros2 launch agi_viz rviz.launch.py 
+            drone_namespace:=<%= drone_namespace %> 
+            use_sim_time:=<%= simulation %> 
+            launch_all:=false 
+            launch_climb:=true
+        - source /workspaces/ui/install/setup.bash && ros2 launch agi_viz foxglove_launch.xml 
+            use_sim_time:=<%= simulation %> 
 <% end %>
 
         

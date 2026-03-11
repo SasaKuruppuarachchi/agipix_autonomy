@@ -33,13 +33,13 @@ namespace AutoFlight{
 		this->node_->get_parameter("odom_topic", this->odomTopic_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom topic: %s.", this->odomTopic_.c_str());
 
-		this->node_->declare_parameter<std::string>("goal_topic", "/goal_pose");
+		this->node_->declare_parameter<std::string>("goal_topic", "goal_pose");
 		this->node_->get_parameter("goal_topic", this->goalTopic_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Goal topic: %s.", this->goalTopic_.c_str());
 
 		this->node_->declare_parameter<bool>("subscribe_legacy_goal_topic", true);
 		this->node_->get_parameter("subscribe_legacy_goal_topic", this->subscribeLegacyGoalTopic_);
-		this->node_->declare_parameter<std::string>("legacy_goal_topic", "/move_base_simple/goal");
+		this->node_->declare_parameter<std::string>("legacy_goal_topic", "move_base_simple/goal");
 		this->node_->get_parameter("legacy_goal_topic", this->legacyGoalTopic_);
 		if (this->subscribeLegacyGoalTopic_){
 			RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Legacy goal topic enabled: %s.", this->legacyGoalTopic_.c_str());
@@ -54,7 +54,7 @@ namespace AutoFlight{
 
 		this->node_->declare_parameter<bool>("publish_target_marker", false);
 		this->node_->get_parameter("publish_target_marker", this->publishTargetMarker_);
-		this->node_->declare_parameter<std::string>("target_marker_topic", "/autonomous_flight/target_state_marker");
+		this->node_->declare_parameter<std::string>("target_marker_topic", "autonomous_flight/target_state_marker");
 		this->node_->get_parameter("target_marker_topic", this->targetMarkerTopic_);
 		this->node_->declare_parameter<double>("target_marker_scale", 0.50);
 		this->node_->get_parameter("target_marker_scale", this->targetMarkerScale_);
@@ -100,7 +100,7 @@ namespace AutoFlight{
 			this->targetQosReliability_,
 			this->targetQosDurability_);
 		this->statePub_ = this->node_->create_publisher<autonomous_flight::msg::Target>(
-			"/autonomous_flight/target_state",
+			"autonomous_flight/target_state",
 			targetQos);
 		if (this->publishTargetMarker_){
 			this->targetMarkerPub_ = this->node_->create_publisher<visualization_msgs::msg::Marker>(this->targetMarkerTopic_, 10);
