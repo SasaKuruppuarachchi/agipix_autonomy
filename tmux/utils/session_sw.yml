@@ -68,7 +68,7 @@ windows:
 
         - cd /workspaces/ui && source install/setup.bash && ros2 launch climb_robot teleop_joy.launch.py # drone_namespace:=<%= drone_namespace %>
 
-        - cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /<%= drone_namespace %>/climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}"
+        - 'cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /<%= drone_namespace %>/climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}'
         - cd /workspaces/ui && source install/setup.bash && ros2 topic echo /<%= drone_namespace %>/climb_control/status
 <% end %>
 
