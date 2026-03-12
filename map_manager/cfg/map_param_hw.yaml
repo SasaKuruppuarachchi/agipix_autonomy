@@ -4,7 +4,7 @@ occupancy_map_node:
       localization_mode: 1 # 0: pose (default) 1: odom
       depth_image_topic: /stereo/depth
       point_cloud_topic: /livox/lidar
-      pose_topic: /drone0/self_localization/pose
+      pose_topic: self_localization/pose
       odom_topic: /dlio/odom_node/odom
       map_frame_id : odom
 

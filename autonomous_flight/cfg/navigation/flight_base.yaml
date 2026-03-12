@@ -2,10 +2,8 @@
   ros__parameters:
     takeoff_height: 1.0 # m
     frame_id: drone0/map
-    odom_topic: /drone0/sensor_measurements/odom
-    goal_topic: /goal_pose
+    odom_topic: sensor_measurements/odom
     subscribe_legacy_goal_topic: true
-    legacy_goal_topic: /move_base_simple/goal
     wait_for_topics_ready: false
     takeoff_wait_timeout_sec: 8.0
     require_takeoff_feedback: false

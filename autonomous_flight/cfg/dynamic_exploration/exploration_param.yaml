@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     # odom_topic: "/CERLAB/quadcopter/odom"
-    odom_topic: "/drone0/sensor_measurements/odom"
+    odom_topic: "sensor_measurements/odom"
     local_region_min: [-5.0, -5.0, -2.0]
     local_region_max: [5.0, 5.0, 2.0]
     global_region_min: [-5.0, -5.0, 0.7]

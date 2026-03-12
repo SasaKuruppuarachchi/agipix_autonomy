@@ -2,11 +2,11 @@
   ros__parameters:
     detector:
       localization_mode: 0
-      depth_image_topic: /drone0/RealSense_Camera/depth
-      color_image_topic: /drone0/RealSense_Camera/color/image_raw
-      lidar_pointcloud_topic: /drone0/livox/lidar
-      pose_topic: /drone0/self_localization/pose
-      odom_topic: /drone0/sensor_measurements/odom
+      depth_image_topic: RealSense_Camera/depth
+      color_image_topic: RealSense_Camera/color/image_raw
+      lidar_pointcloud_topic: livox/lidar
+      pose_topic: self_localization/pose
+      odom_topic: sensor_measurements/odom
       frame_id: drone0/map
 
       depth_intrinsics: [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5]

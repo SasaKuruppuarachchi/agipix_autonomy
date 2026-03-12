@@ -1,10 +1,10 @@
 dep_test_node:
   ros__parameters:
     localization_mode: 0 # 0: pose (default) 1: odom
-    depth_image_topic: /drone0/RealSense_Camera/depth
-    point_cloud_topic: /drone0/livox/lidar
-    pose_topic: /drone0/self_localization/pose
-    odom_topic: /drone0/sensor_measurements/odom
+    depth_image_topic: RealSense_Camera/depth
+    point_cloud_topic: livox/lidar
+    pose_topic: self_localization/pose
+    odom_topic: sensor_measurements/odom
     map_frame_id : drone0/map
 
     # robot size

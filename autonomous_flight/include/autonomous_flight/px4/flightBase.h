@@ -55,7 +55,7 @@ namespace AutoFlight{
 		double takeoffWaitTimeoutSec_ = 8.0;
 		bool requireTakeoffFeedback_ = false;
 		std::string mapFrameId_ = "map";
-		std::string odomTopic_ = "/drone0/sensor_measurements/odom";
+		std::string odomTopic_ = "sensor_measurements/odom";
 		std::string goalTopic_ = "/goal_pose";
 		std::string legacyGoalTopic_ = "/move_base_simple/goal";
 		bool subscribeLegacyGoalTopic_ = true;

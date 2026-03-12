@@ -29,7 +29,7 @@ namespace AutoFlight{
 		this->node_->get_parameter("frame_id", this->mapFrameId_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Frame ID: %s.", this->mapFrameId_.c_str());
 
-		this->node_->declare_parameter<std::string>("odom_topic", "/drone0/sensor_measurements/odom");
+		this->node_->declare_parameter<std::string>("odom_topic", "sensor_measurements/odom");
 		this->node_->get_parameter("odom_topic", this->odomTopic_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Odom topic: %s.", this->odomTopic_.c_str());
 
