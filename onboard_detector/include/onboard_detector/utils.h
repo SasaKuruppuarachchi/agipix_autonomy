@@ -45,6 +45,15 @@ namespace onboardDetector{
         return quaternion;
     }
 
+    inline std::string getNamespacedFrameId(const std::string& namespace_, const std::string& frame_id){
+        if (namespace_.empty()){
+            return frame_id;
+        }
+        else{
+            return namespace_ + "/" + frame_id;
+        }
+    }
+
     inline double rpy_from_quaternion(const geometry_msgs::msg::Quaternion &quat) {
         // return is [0, 2pi]
         tf2::Quaternion tf_quat(quat.x, quat.y, quat.z, quat.w);

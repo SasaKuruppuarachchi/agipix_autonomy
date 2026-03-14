@@ -8,7 +8,9 @@
 
 namespace AutoFlight{
 	flightBase::flightBase(const rclcpp::Node::SharedPtr& node) : node_(node){
-    	// parameters    	
+    	// parameters 
+		
+
 		this->node_->declare_parameter<double>("takeoff_height", 1.0);
 		this->node_->get_parameter("takeoff_height", this->takeoffHgt_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Takeoff Height: %.2fm.", this->takeoffHgt_);
@@ -28,6 +30,9 @@ namespace AutoFlight{
 		this->node_->declare_parameter<std::string>("frame_id", "map");
 		this->node_->get_parameter("frame_id", this->mapFrameId_);
 		RCLCPP_INFO(this->node_->get_logger(), "[AutoFlight]: Frame ID: %s.", this->mapFrameId_.c_str());
+		
+		mapFrameId_ = AutoFlight::getNamespacedFrameId(node_->get_namespace(), this->mapFrameId_);
+		baseLinkFrameId_ = AutoFlight::getNamespacedFrameId(node_->get_namespace(), "base_link");
 
 		this->node_->declare_parameter<std::string>("odom_topic", "sensor_measurements/odom");
 		this->node_->get_parameter("odom_topic", this->odomTopic_);

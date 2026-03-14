@@ -55,9 +55,10 @@ namespace AutoFlight{
 		double takeoffWaitTimeoutSec_ = 8.0;
 		bool requireTakeoffFeedback_ = false;
 		std::string mapFrameId_ = "map";
+		std::string baseLinkFrameId_ = "base_link";
 		std::string odomTopic_ = "sensor_measurements/odom";
-		std::string goalTopic_ = "/goal_pose";
-		std::string legacyGoalTopic_ = "/move_base_simple/goal";
+		std::string goalTopic_ = "goal_pose";
+		std::string legacyGoalTopic_ = "move_base_simple/goal";
 		bool subscribeLegacyGoalTopic_ = true;
 		bool yawControl_;
 		int timeStep_;
@@ -66,7 +67,7 @@ namespace AutoFlight{
 		bool skipTakeoffIfFlying_ = true;
 		double flyingHeightThreshold_ = 0.35;
 		bool publishTargetMarker_ = false;
-		std::string targetMarkerTopic_ = "/autonomous_flight/target_state_marker";
+		std::string targetMarkerTopic_ = "autonomous_flight/target_state_marker";
 		double targetMarkerScale_ = 0.20;
 		int targetQosDepth_ = 1;
 		std::string targetQosReliability_ = "best_effort";

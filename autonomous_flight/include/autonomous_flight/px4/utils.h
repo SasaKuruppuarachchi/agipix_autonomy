@@ -89,6 +89,15 @@ namespace AutoFlight{
         return yaw;
     }
 
+    inline std::string getNamespacedFrameId(const std::string& namespace_, const std::string& frame_id){
+        if (namespace_.empty()){
+            return frame_id;
+        }
+        else{
+            return namespace_ + "/" + frame_id;
+        }
+    }
+
     inline void rpy_from_quaternion(const geometry_msgs::msg::Quaternion& quat, double &roll, double &pitch, double &yaw){
         tf2::Quaternion tf_quat;
         tf2::convert(quat, tf_quat);

@@ -41,6 +41,9 @@ namespace onboardDetector{
 		this->get_parameter("detector.frame_id", this->frameId_);
         cout << this->hint_ << ": frame_id: " << this->frameId_ << endl;
 
+        this->frameId_ = getNamespacedFrameId(this->_node->get_namespace(), this->frameId_);
+        cout << this->hint_ << ": Namespaced frame_id: " << this->frame
+
         // depth topic name
 		this->declare_parameter<std::string>("detector.depth_image_topic", "/camera/depth/image_raw");
 		this->get_parameter("detector.depth_image_topic", this->depthTopicName_);

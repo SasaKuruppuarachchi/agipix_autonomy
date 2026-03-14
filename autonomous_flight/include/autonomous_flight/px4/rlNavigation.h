@@ -42,7 +42,7 @@ private:
 
   bool useSafeAction_{true};
   bool bypassToVelCtrl_{false};
-  std::string climbVelTopic_{"/climb_velocity_cmd"};
+  std::string climbVelTopic_{"climb_velocity_cmd"};  
   double safeTimeHorizon_{1.0};
   double safeTimeStep_{0.05};
   double safeDistance_{0.25};

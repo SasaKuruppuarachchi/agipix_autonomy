@@ -75,8 +75,7 @@ rlNavigation::rlNavigation(const rclcpp::Node::SharedPtr & node)
 }
 
 void rlNavigation::initParam()
-{
-  node_->declare_parameter<double>("rl_nav.control_dt", 0.05);
+{  node_->declare_parameter<double>("rl_nav.control_dt", 0.05);
   node_->get_parameter("rl_nav.control_dt", controlDt_);
 
   node_->declare_parameter<double>("rl_nav.vel_limit", 1.0);
@@ -454,45 +453,6 @@ void rlNavigation::controlCB()
     cmd_vel.z() = 0.0;
   }
   cmd_vel.z() = std::clamp(cmd_vel.z(), -maxVerticalVel_, maxVerticalVel_);
-
-  if (rlVisPub_) {
-    // Express velocity command in base_link so the arrow starts at the drone body origin.
-    const double cmd_x_body = true ? cmd_vel.x() : (std::cos(-currYaw_) * cmd_vel.x() + std::sin(-currYaw_) * cmd_vel.y());
-    const double cmd_y_body = true ? cmd_vel.y() : (-std::sin(-currYaw_) * cmd_vel.x() + std::cos(-currYaw_) * cmd_vel.y());
-
-    visualization_msgs::msg::MarkerArray cmd_msg;
-    visualization_msgs::msg::Marker cmd_arrow;
-    cmd_arrow.header.frame_id = "drone0/base_link";
-    cmd_arrow.header.stamp = node_->now();
-    cmd_arrow.ns = "rl_navigation_cmd_vel";
-    cmd_arrow.id = 100;
-    cmd_arrow.type = visualization_msgs::msg::Marker::ARROW;
-    cmd_arrow.action = visualization_msgs::msg::Marker::ADD;
-    cmd_arrow.pose.orientation.w = 1.0;
-    cmd_arrow.scale.x = 0.05;
-    cmd_arrow.scale.y = 0.10;
-    cmd_arrow.scale.z = 0.15;
-    cmd_arrow.color.a = 0.95;
-    cmd_arrow.color.r = 0.15;
-    cmd_arrow.color.g = 0.95;
-    cmd_arrow.color.b = 0.25;
-    cmd_arrow.lifetime = rclcpp::Duration::from_seconds(std::max(0.05, 2.0 * controlDt_));
-
-    geometry_msgs::msg::Point p0;
-    p0.x = 0.0;
-    p0.y = 0.0;
-    p0.z = 0.0;
-
-    geometry_msgs::msg::Point p1;
-    p1.x = cmd_x_body;
-    p1.y = cmd_y_body;
-    p1.z = cmd_vel.z();
-
-    cmd_arrow.points.push_back(p0);
-    cmd_arrow.points.push_back(p1);
-    cmd_msg.markers.push_back(cmd_arrow);
-    rlVisPub_->publish(cmd_msg);
-  }
 
   autonomous_flight::msg::Target target;
   target.type_mask = autonomous_flight::msg::Target::IGNORE_POS_ACC;

@@ -7,7 +7,7 @@
       lidar_pointcloud_topic: livox/lidar
       pose_topic: self_localization/pose
       odom_topic: sensor_measurements/odom # /dlio/odom_node/odom
-      frame_id: drone0/map
+      frame_id: map
 
       # Camera Parameters
       # depth_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # fx,  fy, cx, cy realsense

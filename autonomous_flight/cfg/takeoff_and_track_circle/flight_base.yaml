@@ -2,7 +2,7 @@
   ros__parameters:
     drone_namespace: drone0
     takeoff_height: 1.0 # m
-    frame_id: drone0/map
+    frame_id: map
     odom_topic: sensor_measurements/odom
     wait_for_topics_ready: false
     takeoff_wait_timeout_sec: 8.0

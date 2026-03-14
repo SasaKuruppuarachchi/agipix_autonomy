@@ -250,7 +250,7 @@ Visualization Manager:
         Inertia: false
         Mass: false
       Name: RobotModel
-      TF Prefix: ""
+      TF Prefix: drone0
       Update Interval: 0
       Value: true
       Visual Enabled: true

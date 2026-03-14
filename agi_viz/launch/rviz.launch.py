@@ -50,7 +50,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'publish_agipix_urdf',
             default_value='true',
-            description='Publish agipix URDF for RobotModel (root link: drone0/base_link).',
+            description='Publish agipix URDF for RobotModel (root link: base_link).',
         ),
         DeclareLaunchArgument(
             'launch_all',
@@ -86,6 +86,7 @@ def generate_launch_description():
                 {
                     'use_sim_time': LaunchConfiguration('use_sim_time'),
                     'robot_description': robot_description,
+                    'frame_prefix': [LaunchConfiguration('drone_namespace'), '/'],
                 }
             ],
             condition=IfCondition(LaunchConfiguration('publish_agipix_urdf')),
