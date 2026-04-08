@@ -6,7 +6,7 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 
 - HW and SIM Platform Repository: https://github.com/SasaKuruppuarachchi/agipix.git
 - Platform docs: https://sasakuruppuarachchi.github.io/agipix/
-- Publication (ICUAS 2026 submission): *"Agipix: A Comprehensive Aerial Robotics Platform Bridging Simulation and Reality"*
+- Publication (ICUAS 2026 submission): *"AgiPIX: Bridging Simulation and Reality in Indoor Aerial Inspection"*
 
 ---
 
@@ -43,6 +43,18 @@ This repository is the **AgiAUTO** autonomy module of **Agipix** for PX4-based U
 				(DDS tracking mode + setpoint writer + executor flow)
 										▼
   									   PX4
+```
+
+## Cite
+
+```
+@article{Arachchige2026agipix,
+  title={AgiPIX: Bridging Simulation and Reality in Indoor Aerial Inspection},
+  author={Arachchige, Sasanka Kuruppu and Garcia, Juan Jose and Tian, Changda and Suomela, Lauri and Trahanias, Panos and Tapus, Adriana and Kamarainen, Joni},
+  journal={arXiv e-prints},
+  pages={arXiv--2307},
+  year={2026}
+}
 ```
 
 ---
@@ -125,13 +137,13 @@ Available missions:
 - ROS 1 → ROS 2 porting completed for the autonomy stack in this repository.
 - Runtime stack is **PX4 DDS-native** (MAVROS backend removed from active control path).
 - Mission validation status:
-	- ✅ takeoff and hover
-	- ✅ takeoff and track circle
-	- ✅ navigation
-	- ✅ rl navigation
-	- ✅ dynamic navigation
-	- ✅ dynamic exploration
-	- ✅ dynamic inspection
+	- [x] takeoff and hover
+	- [x] takeoff and track circle
+	- [x] navigation
+	- [x] rl navigation
+	- [x] dynamic navigation
+	- [x] dynamic exploration
+	- [x] dynamic inspection
 
 ---
 
