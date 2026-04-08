@@ -42,7 +42,7 @@ namespace onboardDetector{
         cout << this->hint_ << ": frame_id: " << this->frameId_ << endl;
 
         this->frameId_ = getNamespacedFrameId(this->_node->get_namespace(), this->frameId_);
-        cout << this->hint_ << ": Namespaced frame_id: " << this->frame
+        cout << this->hint_ << ": Namespaced frame_id: " << this->frameId_ << endl;
 
         // depth topic name
 		this->declare_parameter<std::string>("detector.depth_image_topic", "/camera/depth/image_raw");
@@ -471,7 +471,12 @@ namespace onboardDetector{
         // yolo detection results subscriber
         rclcpp::SubscriptionOptions yoloOpts;
         yoloOpts.callback_group = this->auxSubCbGroup_;
-        this->yoloDetectionSub_ = this->create_subscription<vision_msgs::msg::Detection2DArray>("yolo_detector/detected_bounding_boxes", 10, std::bind(&dynamicDetector::yoloDetectionCB, this, std::placeholders::_1), yoloOpts);
+        auto yoloQos = rclcpp::QoS(rclcpp::KeepLast(10)).best_effort().durability_volatile();
+        this->yoloDetectionSub_ = this->create_subscription<vision_msgs::msg::Detection2DArray>(
+            "yolo_detector/detected_bounding_boxes",
+            yoloQos,
+            std::bind(&dynamicDetector::yoloDetectionCB, this, std::placeholders::_1),
+            yoloOpts);
     
         int timeStep = this->dt_ * 1000.0;
     // detection timer
@@ -1095,13 +1100,6 @@ namespace onboardDetector{
                 result.bbox.size_x = brX - tlX;
                 result.bbox.size_y = brY - tlY;
                 filteredDetectionResults.detections.push_back(result);
-
-                cv::Rect bboxVis;
-                bboxVis.x = tlX;
-                bboxVis.y = tlY;
-                bboxVis.height = brY - tlY;
-                bboxVis.width = brX - tlX;
-                cv::rectangle(this->detectedColorImage_, bboxVis, cv::Scalar(0, 255, 0), 5, 8, 0);
             }
 
 
@@ -1110,27 +1108,6 @@ namespace onboardDetector{
                 int tlYTarget = int(this->yoloDetectionResults_.detections[i].bbox.center.position.y);
                 int brXTarget = tlXTarget + int(this->yoloDetectionResults_.detections[i].bbox.size_x);
                 int brYTarget = tlYTarget + int(this->yoloDetectionResults_.detections[i].bbox.size_y);
-
-                cv::Rect bboxVis;
-                bboxVis.x = tlXTarget;
-                bboxVis.y = tlYTarget;
-                bboxVis.height = brYTarget - tlYTarget;
-                bboxVis.width = brXTarget - tlXTarget;
-                cv::rectangle(this->detectedColorImage_, bboxVis, cv::Scalar(255, 0, 0), 5, 8, 0);
-
-                // Define the text to be added
-                std::string text = "dynamic";
-
-                // Define the position for the text (above the bounding box)
-                int fontFace = cv::FONT_HERSHEY_SIMPLEX;
-                double fontScale = 1.0;
-                int thickness = 2;
-                int baseline;
-                cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
-                cv::Point textOrg(bboxVis.x, bboxVis.y - 10);  // 10 pixels above the bounding box
-
-                // Add the text to the image
-                cv::putText(this->detectedColorImage_, text, textOrg, fontFace, fontScale, cv::Scalar(255, 0, 0), thickness, 8);
 
                 double bestIOU = 0.0;
                 int bestIdx = -1;
@@ -1901,7 +1878,59 @@ namespace onboardDetector{
         if (this->detectedColorImage_.empty()) {
             return;
         }
-        sensor_msgs::msg::Image::SharedPtr detectedColorImgMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->detectedColorImage_).toImageMsg();
+
+        // Render overlays on a snapshot at publish-time to avoid flicker from async frame updates.
+        cv::Mat visImage = this->detectedColorImage_.clone();
+
+        // Draw projected 3D filtered boxes (green).
+        for (const auto & bbox : this->filteredBBoxes_) {
+            Eigen::Vector3d centerWorld(bbox.x, bbox.y, bbox.z);
+            Eigen::Vector3d sizeWorld(bbox.x_width, bbox.y_width, bbox.z_width);
+            Eigen::Vector3d centerCam, sizeCam;
+            this->transformBBox(
+                centerWorld,
+                sizeWorld,
+                -this->orientationColor_.inverse() * this->positionColor_,
+                this->orientationColor_.inverse(),
+                centerCam,
+                sizeCam);
+
+            if (centerCam(2) <= 1e-6) {
+                continue;
+            }
+
+            Eigen::Vector3d topLeft(centerCam(0) - sizeCam(0) / 2.0, centerCam(1) - sizeCam(1) / 2.0, centerCam(2));
+            Eigen::Vector3d bottomRight(centerCam(0) + sizeCam(0) / 2.0, centerCam(1) + sizeCam(1) / 2.0, centerCam(2));
+
+            int tlX = static_cast<int>((this->fxC_ * topLeft(0) + this->cxC_ * topLeft(2)) / topLeft(2));
+            int tlY = static_cast<int>((this->fyC_ * topLeft(1) + this->cyC_ * topLeft(2)) / topLeft(2));
+            int brX = static_cast<int>((this->fxC_ * bottomRight(0) + this->cxC_ * bottomRight(2)) / bottomRight(2));
+            int brY = static_cast<int>((this->fyC_ * bottomRight(1) + this->cyC_ * bottomRight(2)) / bottomRight(2));
+
+            cv::rectangle(visImage, cv::Rect(tlX, tlY, brX - tlX, brY - tlY), cv::Scalar(0, 255, 0), 3, 8, 0);
+        }
+
+        // Draw YOLO dynamic tags (blue).
+        for (const auto & det : this->yoloDetectionResults_.detections) {
+            int tlX = static_cast<int>(det.bbox.center.position.x);
+            int tlY = static_cast<int>(det.bbox.center.position.y);
+            int brX = tlX + static_cast<int>(det.bbox.size_x);
+            int brY = tlY + static_cast<int>(det.bbox.size_y);
+
+            cv::Rect bboxVis(tlX, tlY, brX - tlX, brY - tlY);
+            cv::rectangle(visImage, bboxVis, cv::Scalar(255, 0, 0), 3, 8, 0);
+            cv::putText(
+                visImage,
+                "dynamic",
+                cv::Point(bboxVis.x, bboxVis.y - 10),
+                cv::FONT_HERSHEY_SIMPLEX,
+                0.8,
+                cv::Scalar(255, 0, 0),
+                2,
+                8);
+        }
+
+        sensor_msgs::msg::Image::SharedPtr detectedColorImgMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", visImage).toImageMsg();
         this->detectedColorImgPub_->publish(*detectedColorImgMsg);
     }
 

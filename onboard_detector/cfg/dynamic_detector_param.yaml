@@ -1,4 +1,4 @@
-dynamic_detector_node:
+/**:
   ros__parameters:
     detector:
       localization_mode: 0 # 0: pose (default) 1: odom
@@ -9,9 +9,6 @@ dynamic_detector_node:
       odom_topic: /dlio/odom_node/odom
       frame_id: map
 
-      # Camera Parameters
-      # depth_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # fx,  fy, cx, cy realsense
-      # color_intrinsics: [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5] # intel realsense
 
       depth_intrinsics: [398.5701599121094, 335.19561767578125, 398.5701599121094, 210.33920288085938] # fx,  fy, cx, cy realsense
       color_intrinsics: [568.4973144531258, 327.1590881347656, 568.497314453125, 204.2058868408203] # oak-d

@@ -11,6 +11,8 @@
 
   <depend>rclcpp</depend>
   <depend>rclpy</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>std_msgs</depend>
   <depend>visualization_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>cv_bridge</depend>

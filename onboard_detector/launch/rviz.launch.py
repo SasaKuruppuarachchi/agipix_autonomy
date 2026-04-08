@@ -19,6 +19,12 @@ def generate_launch_description():
         default_value=rviz_config_path,
         description='Full path to the RViz config file'
     )
+    
+    drone_namespace_arg = DeclareLaunchArgument(
+        "drone_namespace",
+        default_value="drone0",
+        description="Namespace applied to autonomous flight nodes and mission topics.",
+    )
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
@@ -30,6 +36,7 @@ def generate_launch_description():
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
+        namespace=LaunchConfiguration('drone_namespace'),
         name='rviz2',
         output='screen',
         arguments=['-d', LaunchConfiguration('rviz_config')],
@@ -37,6 +44,7 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        drone_namespace_arg,
         use_sim_time_arg,
         rviz_config_arg,
         rviz_node

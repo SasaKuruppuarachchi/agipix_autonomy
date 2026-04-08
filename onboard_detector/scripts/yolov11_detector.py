@@ -12,6 +12,7 @@ from vision_msgs.msg import Detection2DArray
 from vision_msgs.msg import Detection2D
 from cv_bridge import CvBridge
 from ultralytics import YOLO
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 
 target_classes = ["person"]
 
@@ -19,7 +20,7 @@ target_classes = ["person"]
 path_curr = os.path.dirname(__file__)
 img_topic = "/camera/color/image_raw"
 device = "cuda" if torch.cuda.is_available() else "cpu"
-weight = "weights/yolo11n.pt"
+weight = "weights/yolo26n.pt"
 class_names = "config/coco.names"
 
 class yolo_detector(Node):
@@ -44,13 +45,15 @@ class yolo_detector(Node):
         # subscriber
         self.br = CvBridge()
         # Align ROS behavior to yolo_detector: parameterize color image topic
-        self.declare_parameter('color_image_topic', '/color/preview/image') 
+        self.declare_parameter('color_image_topic', img_topic) 
         color_image_topic = self.get_parameter('color_image_topic').get_parameter_value().string_value
-        self.img_sub = self.create_subscription(Image, color_image_topic, self.image_callback, 10)
+        qos_profile = QoSProfile(depth=1, history=QoSHistoryPolicy.KEEP_LAST, reliability=QoSReliabilityPolicy.BEST_EFFORT)
+        self.img_sub = self.create_subscription(Image, color_image_topic, self.image_callback, qos_profile)
         self.get_logger().info(f"[onboardDetector]: YOLOv11 color image topic name: {color_image_topic}.")
 
         # publisher (match topics to yolo_detector with leading slash)
-        self.img_pub = self.create_publisher(Image, "/yolo_detector/detected_image", 10)
+        
+        self.img_pub = self.create_publisher(Image, "/yolo_detector/detected_image", qos_profile)
         self.bbox_pub = self.create_publisher(Detection2DArray, "/yolo_detector/detected_bounding_boxes", 10)
         self.time_pub = self.create_publisher(Float64, "/yolo_detector/yolo_time", 10)
 
@@ -61,7 +64,7 @@ class yolo_detector(Node):
         self.get_logger().info(f"[onboardDetector]: Time step is set to: {time_step}s")
         self.bbox_timer = self.create_timer(time_step, self.bbox_callback)
 
-        self.declare_parameter('debug_visualization', False)
+        self.declare_parameter('debug_visualization', True)
         debug_vis = self.get_parameter('debug_visualization').value
         if debug_vis:
             self.vis_timer = self.create_timer(time_step, self.vis_callback)
@@ -76,6 +79,12 @@ class yolo_detector(Node):
         if (self.img_received == True):
             output = self.inference(self.img)
             self.detected_img, self.detected_bboxes = self.postprocess(self.img, output)
+            # self.detected_bboxes = [
+            #     [100, 100, 200, 200, "person"],
+            #     [300, 150, 450, 350, "person"],
+            #     [50, 250, 150, 400, "person"]
+            # ]
+            # self.detected_img = self.img.copy()
             self.img_detected = True
         endTime = self.get_clock().now()
         elapsed = (endTime - startTime).nanoseconds / 1e9

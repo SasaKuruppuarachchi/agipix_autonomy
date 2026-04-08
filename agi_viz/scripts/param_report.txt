@@ -1,0 +1,1631 @@
+==== GROUP BY NODE ====
+
+/drone0/agipix_robot_state_publisher:
+  /drone0/agipix_robot_state_publisher:frame_prefix = drone0/
+  /drone0/agipix_robot_state_publisher:ignore_timestamp = False
+  /drone0/agipix_robot_state_publisher:publish_frequency = 20.0
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.depth = 1
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.depth = 5
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.reliability = best_effort
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.depth = 100
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.depth = 1
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:robot_description = <?xml version="1.0"?>
+<robot name="agipix">
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://agi_viz/assets/meshes/agipix.stl"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+</robot>
+  /drone0/agipix_robot_state_publisher:use_sim_time = True
+
+/drone0/alphanumeric_viewer:
+  /drone0/alphanumeric_viewer:node_frequency = -1.0
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.depth = 1
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/alphanumeric_viewer:use_sim_time = True
+
+/drone0/dynamic_exploration_node:
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold = 0.5
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold_dynamic = 0.5
+  /drone0/dynamic_exploration_node:bspline_traj.max_acc = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.max_height = 1.3
+  /drone0/dynamic_exploration_node:bspline_traj.max_obstacle_size = array('d', [5.0, 5.0, 3.0])
+  /drone0/dynamic_exploration_node:bspline_traj.max_path_length = 20.0
+  /drone0/dynamic_exploration_node:bspline_traj.max_vel = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.min_height = 0.7
+  /drone0/dynamic_exploration_node:bspline_traj.plan_in_z_axis = False
+  /drone0/dynamic_exploration_node:bspline_traj.prediction_horizon = 2.0
+  /drone0/dynamic_exploration_node:bspline_traj.timestep = 0.1
+  /drone0/dynamic_exploration_node:bspline_traj.uncertain_aware_factor = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_distance = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_dynamic_obstacle = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_feasibility = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_smoothness = 1.0
+  /drone0/dynamic_exploration_node:collision_replan_cooldown_sec = 0.3
+  /drone0/dynamic_exploration_node:desired_acceleration = 3.0
+  /drone0/dynamic_exploration_node:desired_angular_velocity = 0.5
+  /drone0/dynamic_exploration_node:desired_velocity = 2.0
+  /drone0/dynamic_exploration_node:detector.body_to_camera_color = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.body_to_camera_depth = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.body_to_lidar = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.color_image_topic = RealSense_Camera/color/image_raw
+  /drone0/dynamic_exploration_node:detector.color_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:detector.constrain_size = False
+  /drone0/dynamic_exploration_node:detector.dbscan_min_points_cluster = 20
+  /drone0/dynamic_exploration_node:detector.dbscan_search_range_epsilon = 0.05
+  /drone0/dynamic_exploration_node:detector.depth_filter_margin = 10
+  /drone0/dynamic_exploration_node:detector.depth_image_topic = RealSense_Camera/depth
+  /drone0/dynamic_exploration_node:detector.depth_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:detector.depth_max_value = 20.0
+  /drone0/dynamic_exploration_node:detector.depth_min_value = 0.5
+  /drone0/dynamic_exploration_node:detector.depth_scale_factor = 1000.0
+  /drone0/dynamic_exploration_node:detector.depth_skip_pixel = 3
+  /drone0/dynamic_exploration_node:detector.downsample_threshold = 3500
+  /drone0/dynamic_exploration_node:detector.dynamic_consistency_threshold = 15
+  /drone0/dynamic_exploration_node:detector.dynamic_velocity_threshold = 0.2
+  /drone0/dynamic_exploration_node:detector.dynamic_voting_threshold = 0.8
+  /drone0/dynamic_exploration_node:detector.feature_weight = array('d', [3.0, 3.0, 0.1, 0.5, 0.5, 0.05, 0.0, 0.0, 0.0])
+  /drone0/dynamic_exploration_node:detector.filtering_BBox_IOU_threshold = 0.2
+  /drone0/dynamic_exploration_node:detector.fix_size_dimension_threshold = 0.4
+  /drone0/dynamic_exploration_node:detector.fix_size_history_threshold = 10
+  /drone0/dynamic_exploration_node:detector.frame_id = drone0/map
+  /drone0/dynamic_exploration_node:detector.frame_skip = 5
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic = 10
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic_check_range = 30
+  /drone0/dynamic_exploration_node:detector.gaussian_downsample_rate = 6
+  /drone0/dynamic_exploration_node:detector.ground_height = 0.2
+  /drone0/dynamic_exploration_node:detector.history_size = 100
+  /drone0/dynamic_exploration_node:detector.image_cols = 1920
+  /drone0/dynamic_exploration_node:detector.image_rows = 1200
+  /drone0/dynamic_exploration_node:detector.kalman_filter_averaging_frames = 10
+  /drone0/dynamic_exploration_node:detector.kalman_filter_param = array('d', [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6])
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_epsilon = 0.05
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_min_points = 10
+  /drone0/dynamic_exploration_node:detector.lidar_pointcloud_topic = livox/lidar
+  /drone0/dynamic_exploration_node:detector.localization_mode = 0
+  /drone0/dynamic_exploration_node:detector.max_match_range = 0.5
+  /drone0/dynamic_exploration_node:detector.max_object_size = array('d', [3.0, 3.0, 2.0])
+  /drone0/dynamic_exploration_node:detector.max_size_diff_range = 0.5
+  /drone0/dynamic_exploration_node:detector.maximum_skip_ratio = 0.5
+  /drone0/dynamic_exploration_node:detector.pose_topic = self_localization/pose
+  /drone0/dynamic_exploration_node:detector.prediction_size = 5
+  /drone0/dynamic_exploration_node:detector.raycast_max_length = 10.0
+  /drone0/dynamic_exploration_node:detector.retrack_similarity_threshold = 0.5
+  /drone0/dynamic_exploration_node:detector.roof_height = 5.0
+  /drone0/dynamic_exploration_node:detector.similarity_threshold = 0.9
+  /drone0/dynamic_exploration_node:detector.target_constrain_size = True
+  /drone0/dynamic_exploration_node:detector.target_object_size = array('d', [0.5, 0.5, 1.5])
+  /drone0/dynamic_exploration_node:detector.time_step = 0.033
+  /drone0/dynamic_exploration_node:detector.voxel_occupied_thresh = 5
+  /drone0/dynamic_exploration_node:dist_thresh = 0.8
+  /drone0/dynamic_exploration_node:dmax = 2.0
+  /drone0/dynamic_exploration_node:dmin = 0.3
+  /drone0/dynamic_exploration_node:end_mission_max_segment_distance = 6.0
+  /drone0/dynamic_exploration_node:flying_height_threshold = 0.35
+  /drone0/dynamic_exploration_node:frame_id = drone0/map
+  /drone0/dynamic_exploration_node:free_range = array('d', [1.0, 1.0, 1.0])
+  /drone0/dynamic_exploration_node:frontier_nearest_neighbor_number = 15
+  /drone0/dynamic_exploration_node:frontier_sample_thresh = 100
+  /drone0/dynamic_exploration_node:global_region_max = array('d', [200.0, 200.0, 1.2])
+  /drone0/dynamic_exploration_node:global_region_min = array('d', [-5.0, -5.0, 0.7])
+  /drone0/dynamic_exploration_node:global_sample_thresh = 100
+  /drone0/dynamic_exploration_node:goal_topic = goal_pose
+  /drone0/dynamic_exploration_node:horizontal_FOV = 1.57
+  /drone0/dynamic_exploration_node:information_gain_update_distance = 1.0
+  /drone0/dynamic_exploration_node:initial_scan = False
+  /drone0/dynamic_exploration_node:legacy_goal_topic = move_base_simple/goal
+  /drone0/dynamic_exploration_node:local_region_max = array('d', [5.0, 5.0, 2.0])
+  /drone0/dynamic_exploration_node:local_region_min = array('d', [-5.0, -5.0, -2.0])
+  /drone0/dynamic_exploration_node:local_sample_thresh = 200
+  /drone0/dynamic_exploration_node:mapper.body_to_depth_sensor = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:mapper.body_to_pointcloud_sensor = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:mapper.clean_local_map = False
+  /drone0/dynamic_exploration_node:mapper.depth_filter_margin = 2
+  /drone0/dynamic_exploration_node:mapper.depth_image_topic = RealSense_Camera/depth
+  /drone0/dynamic_exploration_node:mapper.depth_intrinsics = array('d', [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:mapper.depth_max_value = 5.0
+  /drone0/dynamic_exploration_node:mapper.depth_min_value = 0.5
+  /drone0/dynamic_exploration_node:mapper.depth_scale_factor = 1000.0
+  /drone0/dynamic_exploration_node:mapper.depth_skip_pixel = 2
+  /drone0/dynamic_exploration_node:mapper.ground_height = -0.1
+  /drone0/dynamic_exploration_node:mapper.image_cols = 1920
+  /drone0/dynamic_exploration_node:mapper.image_rows = 1200
+  /drone0/dynamic_exploration_node:mapper.local_bound_inflation = 3.0
+  /drone0/dynamic_exploration_node:mapper.local_map_size = array('d', [5.0, 5.0, 10.0])
+  /drone0/dynamic_exploration_node:mapper.local_update_range = array('d', [5.0, 5.0, 5.0])
+  /drone0/dynamic_exploration_node:mapper.localization_mode = 0
+  /drone0/dynamic_exploration_node:mapper.map_frame_id = drone0/map
+  /drone0/dynamic_exploration_node:mapper.map_resolution = 0.1
+  /drone0/dynamic_exploration_node:mapper.map_size = array('d', [160.0, 160.0, 10.0])
+  /drone0/dynamic_exploration_node:mapper.max_height_visualization = 4.0
+  /drone0/dynamic_exploration_node:mapper.p_hit = 0.7
+  /drone0/dynamic_exploration_node:mapper.p_max = 0.97
+  /drone0/dynamic_exploration_node:mapper.p_min = 0.12
+  /drone0/dynamic_exploration_node:mapper.p_miss = 0.35
+  /drone0/dynamic_exploration_node:mapper.p_occ = 0.8
+  /drone0/dynamic_exploration_node:mapper.point_cloud_topic = livox/lidar
+  /drone0/dynamic_exploration_node:mapper.pointcloud_max_distance = 5.0
+  /drone0/dynamic_exploration_node:mapper.pointcloud_min_distance = 0.5
+  /drone0/dynamic_exploration_node:mapper.pose_topic = self_localization/pose
+  /drone0/dynamic_exploration_node:mapper.prebuilt_map_directory = No
+  /drone0/dynamic_exploration_node:mapper.raycast_max_length = 5.0
+  /drone0/dynamic_exploration_node:mapper.robot_size = array('d', [0.3, 0.3, 0.1])
+  /drone0/dynamic_exploration_node:mapper.verbose = False
+  /drone0/dynamic_exploration_node:mapper.visualize_global_map = True
+  /drone0/dynamic_exploration_node:max_connect_dist = 1.5
+  /drone0/dynamic_exploration_node:max_goal_candidates = 10
+  /drone0/dynamic_exploration_node:min_goal_candidates = 5
+  /drone0/dynamic_exploration_node:min_voxel_thresh = 0.5
+  /drone0/dynamic_exploration_node:min_waypoint_distance = 0.02
+  /drone0/dynamic_exploration_node:nearest_neighbor_number = 15
+  /drone0/dynamic_exploration_node:num_yaw_angles = 32
+  /drone0/dynamic_exploration_node:odom_topic = sensor_measurements/odom
+  /drone0/dynamic_exploration_node:poly_traj.continuity_degree = 4
+  /drone0/dynamic_exploration_node:poly_traj.corridor_res = 5.0
+  /drone0/dynamic_exploration_node:poly_traj.desired_acceleration = 3.0
+  /drone0/dynamic_exploration_node:poly_traj.desired_velocity = 2.0
+  /drone0/dynamic_exploration_node:poly_traj.differential_degree = 4
+  /drone0/dynamic_exploration_node:poly_traj.initial_radius = 0.5
+  /drone0/dynamic_exploration_node:poly_traj.maximum_iteration_num = 20
+  /drone0/dynamic_exploration_node:poly_traj.polynomial_degree = 7
+  /drone0/dynamic_exploration_node:poly_traj.sample_delta_time = 0.1
+  /drone0/dynamic_exploration_node:poly_traj.shrinking_factor = 0.8
+  /drone0/dynamic_exploration_node:poly_traj.soft_constraint = False
+  /drone0/dynamic_exploration_node:poly_traj.timeout = 0.1
+  /drone0/dynamic_exploration_node:poly_traj.use_pwl_failsafe = False
+  /drone0/dynamic_exploration_node:publish_target_marker = True
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.depth = 1
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/dynamic_exploration_node:reach_goal_distance = 0.1
+  /drone0/dynamic_exploration_node:replan_on_collision_fail = True
+  /drone0/dynamic_exploration_node:replan_on_finish_or_fail = False
+  /drone0/dynamic_exploration_node:replan_time_for_dynamic_obstacles = 0.0
+  /drone0/dynamic_exploration_node:require_operator_confirmation = False
+  /drone0/dynamic_exploration_node:require_takeoff_feedback = False
+  /drone0/dynamic_exploration_node:safe_distance_check_unknown = True
+  /drone0/dynamic_exploration_node:safe_distance_xy = 0.3
+  /drone0/dynamic_exploration_node:safe_distance_z = 0.0
+  /drone0/dynamic_exploration_node:skip_takeoff_if_flying = True
+  /drone0/dynamic_exploration_node:stabilize_before_rotate = False
+  /drone0/dynamic_exploration_node:subscribe_legacy_goal_topic = True
+  /drone0/dynamic_exploration_node:takeoff_height = 1.0
+  /drone0/dynamic_exploration_node:takeoff_wait_timeout_sec = 8.0
+  /drone0/dynamic_exploration_node:target_marker_scale = 0.5
+  /drone0/dynamic_exploration_node:target_marker_topic = autonomous_flight/target_state_marker
+  /drone0/dynamic_exploration_node:target_qos_depth = 1
+  /drone0/dynamic_exploration_node:target_qos_durability = volatile
+  /drone0/dynamic_exploration_node:target_qos_reliability = best_effort
+  /drone0/dynamic_exploration_node:use_sim_time = True
+  /drone0/dynamic_exploration_node:vertical_FOV = 1.57
+  /drone0/dynamic_exploration_node:wait_for_topics_ready = False
+  /drone0/dynamic_exploration_node:waypoint_stablize_time = 0.0
+  /drone0/dynamic_exploration_node:yaw_penalty_weight = 1.0
+
+/drone0/platform:
+  /drone0/platform:cmd_freq = 100.0
+  /drone0/platform:control_modes_file = /workspaces/agipix_control/install/as2_platform_pixhawk/share/as2_platform_pixhawk/config/control_modes.yaml
+  /drone0/platform:external_odom = False
+  /drone0/platform:info_freq = 10.0
+  /drone0/platform:mass = 1.0
+  /drone0/platform:max_thrust = 30.0
+  /drone0/platform:min_thrust = 0.3
+  /drone0/platform:node_frequency = -1.0
+  /drone0/platform:qos_overrides./clock.subscription.depth = 1
+  /drone0/platform:qos_overrides./clock.subscription.durability = volatile
+  /drone0/platform:qos_overrides./clock.subscription.history = keep_last
+  /drone0/platform:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/platform:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/platform:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/platform:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/platform:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/platform:use_sim_time = True
+
+/drone0/rviz_explore:
+  /drone0/rviz_explore:qos_overrides./clock.subscription.depth = 1
+  /drone0/rviz_explore:qos_overrides./clock.subscription.durability = volatile
+  /drone0/rviz_explore:qos_overrides./clock.subscription.history = keep_last
+  /drone0/rviz_explore:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/rviz_explore:tf_buffer_cache_time_ms = 10000
+  /drone0/rviz_explore:use_sim_time = True
+
+/drone0/state_estimator:
+  /drone0/state_estimator:base_frame = base_link
+  /drone0/state_estimator:global_ref_frame = earth
+  /drone0/state_estimator:map_frame = map
+  /drone0/state_estimator:node_frequency = -1.0
+  /drone0/state_estimator:odom_frame = odom
+  /drone0/state_estimator:odometry_topic = sensor_measurements/odom
+  /drone0/state_estimator:plugin_name = raw_odometry
+  /drone0/state_estimator:qos_overrides./clock.subscription.depth = 1
+  /drone0/state_estimator:qos_overrides./clock.subscription.durability = volatile
+  /drone0/state_estimator:qos_overrides./clock.subscription.history = keep_last
+  /drone0/state_estimator:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf.publisher.depth = 100
+  /drone0/state_estimator:qos_overrides./tf.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./tf.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.depth = 1
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.reliability = reliable
+  /drone0/state_estimator:set_origin_on_start = False
+  /drone0/state_estimator:use_gps = False
+  /drone0/state_estimator:use_sim_time = True
+
+/earth_frame_pub:
+  /earth_frame_pub:child_frame_id = earth
+  /earth_frame_pub:frame_id = drone0/map
+  /earth_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /earth_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /earth_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /earth_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /earth_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /earth_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /earth_frame_pub:rotation.w = 1.0
+  /earth_frame_pub:rotation.x = 0.0
+  /earth_frame_pub:rotation.y = 0.0
+  /earth_frame_pub:rotation.z = 0.0
+  /earth_frame_pub:translation.x = 0.0
+  /earth_frame_pub:translation.y = 0.0
+  /earth_frame_pub:translation.z = 0.0
+  /earth_frame_pub:use_sim_time = True
+
+/mission_tracking_executor_node:
+  /mission_tracking_executor_node:builtin_profile = external_target
+  /mission_tracking_executor_node:circle_radius = 2.0
+  /mission_tracking_executor_node:debug_mode = False
+  /mission_tracking_executor_node:drone_namespace = drone0
+  /mission_tracking_executor_node:flying_height_threshold = 0.35
+  /mission_tracking_executor_node:publish_target_rx_marker = True
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.depth = 1
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.reliability = best_effort
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /mission_tracking_executor_node:skip_takeoff_if_flying = True
+  /mission_tracking_executor_node:target_qos_depth = 1
+  /mission_tracking_executor_node:target_qos_durability = volatile
+  /mission_tracking_executor_node:target_qos_reliability = best_effort
+  /mission_tracking_executor_node:target_rx_marker_frame_id = drone0/map
+  /mission_tracking_executor_node:target_rx_marker_scale = 0.6
+  /mission_tracking_executor_node:target_rx_marker_topic = autonomous_flight/target_state_rx_marker
+  /mission_tracking_executor_node:target_timeout_s = 2.5
+  /mission_tracking_executor_node:target_topic = autonomous_flight/target_state
+  /mission_tracking_executor_node:use_input_yaw = True
+  /mission_tracking_executor_node:use_sim_time = True
+  /mission_tracking_executor_node:velocity = 0.5
+  /mission_tracking_executor_node:yaw_control = False
+
+/odom_frame_pub:
+  /odom_frame_pub:child_frame_id = odom
+  /odom_frame_pub:frame_id = drone0/map
+  /odom_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /odom_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /odom_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /odom_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /odom_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /odom_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /odom_frame_pub:rotation.w = 1.0
+  /odom_frame_pub:rotation.x = 0.0
+  /odom_frame_pub:rotation.y = 0.0
+  /odom_frame_pub:rotation.z = 0.0
+  /odom_frame_pub:translation.x = 0.0
+  /odom_frame_pub:translation.y = 0.0
+  /odom_frame_pub:translation.z = 0.0
+  /odom_frame_pub:use_sim_time = True
+
+/param_inspector:
+  /param_inspector:use_sim_time = False
+
+/px4_frame_pub:
+  /px4_frame_pub:child_frame_id = drone0/px4_frame
+  /px4_frame_pub:frame_id = drone0/base_link
+  /px4_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /px4_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /px4_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /px4_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /px4_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /px4_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /px4_frame_pub:rotation.w = 0.0
+  /px4_frame_pub:rotation.x = 1.0
+  /px4_frame_pub:rotation.y = 0.0
+  /px4_frame_pub:rotation.z = 0.0
+  /px4_frame_pub:translation.x = 0.0
+  /px4_frame_pub:translation.y = 0.0
+  /px4_frame_pub:translation.z = 0.0
+  /px4_frame_pub:use_sim_time = True
+
+/px4_imu:
+  /px4_imu:use_sim_time = True
+
+/simulator_vehicle_0:
+  /simulator_vehicle_0:use_sim_time = False
+
+
+==== GROUP BY TYPE ====
+
+1:
+  /drone0/agipix_robot_state_publisher:ignore_timestamp = False
+  /drone0/agipix_robot_state_publisher:use_sim_time = True
+  /drone0/rviz_explore:use_sim_time = True
+  /drone0/state_estimator:set_origin_on_start = False
+  /drone0/state_estimator:use_gps = False
+  /drone0/state_estimator:use_sim_time = True
+  /drone0/platform:external_odom = False
+  /drone0/platform:use_sim_time = True
+  /drone0/alphanumeric_viewer:use_sim_time = True
+  /drone0/dynamic_exploration_node:bspline_traj.plan_in_z_axis = False
+  /drone0/dynamic_exploration_node:detector.constrain_size = False
+  /drone0/dynamic_exploration_node:detector.target_constrain_size = True
+  /drone0/dynamic_exploration_node:initial_scan = False
+  /drone0/dynamic_exploration_node:mapper.clean_local_map = False
+  /drone0/dynamic_exploration_node:mapper.verbose = False
+  /drone0/dynamic_exploration_node:mapper.visualize_global_map = True
+  /drone0/dynamic_exploration_node:poly_traj.soft_constraint = False
+  /drone0/dynamic_exploration_node:poly_traj.use_pwl_failsafe = False
+  /drone0/dynamic_exploration_node:publish_target_marker = True
+  /drone0/dynamic_exploration_node:replan_on_collision_fail = True
+  /drone0/dynamic_exploration_node:replan_on_finish_or_fail = False
+  /drone0/dynamic_exploration_node:require_operator_confirmation = False
+  /drone0/dynamic_exploration_node:require_takeoff_feedback = False
+  /drone0/dynamic_exploration_node:safe_distance_check_unknown = True
+  /drone0/dynamic_exploration_node:skip_takeoff_if_flying = True
+  /drone0/dynamic_exploration_node:stabilize_before_rotate = False
+  /drone0/dynamic_exploration_node:subscribe_legacy_goal_topic = True
+  /drone0/dynamic_exploration_node:use_sim_time = True
+  /drone0/dynamic_exploration_node:wait_for_topics_ready = False
+  /param_inspector:use_sim_time = False
+  /mission_tracking_executor_node:debug_mode = False
+  /mission_tracking_executor_node:publish_target_rx_marker = True
+  /mission_tracking_executor_node:skip_takeoff_if_flying = True
+  /mission_tracking_executor_node:use_input_yaw = True
+  /mission_tracking_executor_node:use_sim_time = True
+  /mission_tracking_executor_node:yaw_control = False
+  /px4_imu:use_sim_time = True
+  /earth_frame_pub:use_sim_time = True
+  /odom_frame_pub:use_sim_time = True
+  /px4_frame_pub:use_sim_time = True
+  /simulator_vehicle_0:use_sim_time = False
+
+2:
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.depth = 1
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.depth = 5
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.depth = 100
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.depth = 1
+  /drone0/rviz_explore:qos_overrides./clock.subscription.depth = 1
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/rviz_explore:tf_buffer_cache_time_ms = 10000
+  /drone0/state_estimator:qos_overrides./clock.subscription.depth = 1
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/state_estimator:qos_overrides./tf.publisher.depth = 100
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.depth = 1
+  /drone0/platform:qos_overrides./clock.subscription.depth = 1
+  /drone0/platform:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.depth = 1
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/dynamic_exploration_node:detector.dbscan_min_points_cluster = 20
+  /drone0/dynamic_exploration_node:detector.depth_filter_margin = 10
+  /drone0/dynamic_exploration_node:detector.depth_skip_pixel = 3
+  /drone0/dynamic_exploration_node:detector.downsample_threshold = 3500
+  /drone0/dynamic_exploration_node:detector.dynamic_consistency_threshold = 15
+  /drone0/dynamic_exploration_node:detector.fix_size_history_threshold = 10
+  /drone0/dynamic_exploration_node:detector.frame_skip = 5
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic = 10
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic_check_range = 30
+  /drone0/dynamic_exploration_node:detector.gaussian_downsample_rate = 6
+  /drone0/dynamic_exploration_node:detector.history_size = 100
+  /drone0/dynamic_exploration_node:detector.image_cols = 1920
+  /drone0/dynamic_exploration_node:detector.image_rows = 1200
+  /drone0/dynamic_exploration_node:detector.kalman_filter_averaging_frames = 10
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_min_points = 10
+  /drone0/dynamic_exploration_node:detector.localization_mode = 0
+  /drone0/dynamic_exploration_node:detector.prediction_size = 5
+  /drone0/dynamic_exploration_node:detector.voxel_occupied_thresh = 5
+  /drone0/dynamic_exploration_node:frontier_nearest_neighbor_number = 15
+  /drone0/dynamic_exploration_node:frontier_sample_thresh = 100
+  /drone0/dynamic_exploration_node:global_sample_thresh = 100
+  /drone0/dynamic_exploration_node:local_sample_thresh = 200
+  /drone0/dynamic_exploration_node:mapper.depth_filter_margin = 2
+  /drone0/dynamic_exploration_node:mapper.depth_skip_pixel = 2
+  /drone0/dynamic_exploration_node:mapper.image_cols = 1920
+  /drone0/dynamic_exploration_node:mapper.image_rows = 1200
+  /drone0/dynamic_exploration_node:mapper.localization_mode = 0
+  /drone0/dynamic_exploration_node:max_goal_candidates = 10
+  /drone0/dynamic_exploration_node:min_goal_candidates = 5
+  /drone0/dynamic_exploration_node:nearest_neighbor_number = 15
+  /drone0/dynamic_exploration_node:num_yaw_angles = 32
+  /drone0/dynamic_exploration_node:poly_traj.continuity_degree = 4
+  /drone0/dynamic_exploration_node:poly_traj.differential_degree = 4
+  /drone0/dynamic_exploration_node:poly_traj.maximum_iteration_num = 20
+  /drone0/dynamic_exploration_node:poly_traj.polynomial_degree = 7
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.depth = 1
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/dynamic_exploration_node:target_qos_depth = 1
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.depth = 1
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /mission_tracking_executor_node:target_qos_depth = 1
+  /earth_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /earth_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /odom_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /odom_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /px4_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /px4_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+
+3:
+  /drone0/agipix_robot_state_publisher:publish_frequency = 20.0
+  /drone0/state_estimator:node_frequency = -1.0
+  /drone0/platform:cmd_freq = 100.0
+  /drone0/platform:info_freq = 10.0
+  /drone0/platform:mass = 1.0
+  /drone0/platform:max_thrust = 30.0
+  /drone0/platform:min_thrust = 0.3
+  /drone0/platform:node_frequency = -1.0
+  /drone0/alphanumeric_viewer:node_frequency = -1.0
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold = 0.5
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold_dynamic = 0.5
+  /drone0/dynamic_exploration_node:bspline_traj.max_acc = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.max_height = 1.3
+  /drone0/dynamic_exploration_node:bspline_traj.max_path_length = 20.0
+  /drone0/dynamic_exploration_node:bspline_traj.max_vel = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.min_height = 0.7
+  /drone0/dynamic_exploration_node:bspline_traj.prediction_horizon = 2.0
+  /drone0/dynamic_exploration_node:bspline_traj.timestep = 0.1
+  /drone0/dynamic_exploration_node:bspline_traj.uncertain_aware_factor = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_distance = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_dynamic_obstacle = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_feasibility = 1.0
+  /drone0/dynamic_exploration_node:bspline_traj.weight_smoothness = 1.0
+  /drone0/dynamic_exploration_node:collision_replan_cooldown_sec = 0.3
+  /drone0/dynamic_exploration_node:desired_acceleration = 3.0
+  /drone0/dynamic_exploration_node:desired_angular_velocity = 0.5
+  /drone0/dynamic_exploration_node:desired_velocity = 2.0
+  /drone0/dynamic_exploration_node:detector.dbscan_search_range_epsilon = 0.05
+  /drone0/dynamic_exploration_node:detector.depth_max_value = 20.0
+  /drone0/dynamic_exploration_node:detector.depth_min_value = 0.5
+  /drone0/dynamic_exploration_node:detector.depth_scale_factor = 1000.0
+  /drone0/dynamic_exploration_node:detector.dynamic_velocity_threshold = 0.2
+  /drone0/dynamic_exploration_node:detector.dynamic_voting_threshold = 0.8
+  /drone0/dynamic_exploration_node:detector.filtering_BBox_IOU_threshold = 0.2
+  /drone0/dynamic_exploration_node:detector.fix_size_dimension_threshold = 0.4
+  /drone0/dynamic_exploration_node:detector.ground_height = 0.2
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_epsilon = 0.05
+  /drone0/dynamic_exploration_node:detector.max_match_range = 0.5
+  /drone0/dynamic_exploration_node:detector.max_size_diff_range = 0.5
+  /drone0/dynamic_exploration_node:detector.maximum_skip_ratio = 0.5
+  /drone0/dynamic_exploration_node:detector.raycast_max_length = 10.0
+  /drone0/dynamic_exploration_node:detector.retrack_similarity_threshold = 0.5
+  /drone0/dynamic_exploration_node:detector.roof_height = 5.0
+  /drone0/dynamic_exploration_node:detector.similarity_threshold = 0.9
+  /drone0/dynamic_exploration_node:detector.time_step = 0.033
+  /drone0/dynamic_exploration_node:dist_thresh = 0.8
+  /drone0/dynamic_exploration_node:dmax = 2.0
+  /drone0/dynamic_exploration_node:dmin = 0.3
+  /drone0/dynamic_exploration_node:end_mission_max_segment_distance = 6.0
+  /drone0/dynamic_exploration_node:flying_height_threshold = 0.35
+  /drone0/dynamic_exploration_node:horizontal_FOV = 1.57
+  /drone0/dynamic_exploration_node:information_gain_update_distance = 1.0
+  /drone0/dynamic_exploration_node:mapper.depth_max_value = 5.0
+  /drone0/dynamic_exploration_node:mapper.depth_min_value = 0.5
+  /drone0/dynamic_exploration_node:mapper.depth_scale_factor = 1000.0
+  /drone0/dynamic_exploration_node:mapper.ground_height = -0.1
+  /drone0/dynamic_exploration_node:mapper.local_bound_inflation = 3.0
+  /drone0/dynamic_exploration_node:mapper.map_resolution = 0.1
+  /drone0/dynamic_exploration_node:mapper.max_height_visualization = 4.0
+  /drone0/dynamic_exploration_node:mapper.p_hit = 0.7
+  /drone0/dynamic_exploration_node:mapper.p_max = 0.97
+  /drone0/dynamic_exploration_node:mapper.p_min = 0.12
+  /drone0/dynamic_exploration_node:mapper.p_miss = 0.35
+  /drone0/dynamic_exploration_node:mapper.p_occ = 0.8
+  /drone0/dynamic_exploration_node:mapper.pointcloud_max_distance = 5.0
+  /drone0/dynamic_exploration_node:mapper.pointcloud_min_distance = 0.5
+  /drone0/dynamic_exploration_node:mapper.raycast_max_length = 5.0
+  /drone0/dynamic_exploration_node:max_connect_dist = 1.5
+  /drone0/dynamic_exploration_node:min_voxel_thresh = 0.5
+  /drone0/dynamic_exploration_node:min_waypoint_distance = 0.02
+  /drone0/dynamic_exploration_node:poly_traj.corridor_res = 5.0
+  /drone0/dynamic_exploration_node:poly_traj.desired_acceleration = 3.0
+  /drone0/dynamic_exploration_node:poly_traj.desired_velocity = 2.0
+  /drone0/dynamic_exploration_node:poly_traj.initial_radius = 0.5
+  /drone0/dynamic_exploration_node:poly_traj.sample_delta_time = 0.1
+  /drone0/dynamic_exploration_node:poly_traj.shrinking_factor = 0.8
+  /drone0/dynamic_exploration_node:poly_traj.timeout = 0.1
+  /drone0/dynamic_exploration_node:reach_goal_distance = 0.1
+  /drone0/dynamic_exploration_node:replan_time_for_dynamic_obstacles = 0.0
+  /drone0/dynamic_exploration_node:safe_distance_xy = 0.3
+  /drone0/dynamic_exploration_node:safe_distance_z = 0.0
+  /drone0/dynamic_exploration_node:takeoff_height = 1.0
+  /drone0/dynamic_exploration_node:takeoff_wait_timeout_sec = 8.0
+  /drone0/dynamic_exploration_node:target_marker_scale = 0.5
+  /drone0/dynamic_exploration_node:vertical_FOV = 1.57
+  /drone0/dynamic_exploration_node:waypoint_stablize_time = 0.0
+  /drone0/dynamic_exploration_node:yaw_penalty_weight = 1.0
+  /mission_tracking_executor_node:circle_radius = 2.0
+  /mission_tracking_executor_node:flying_height_threshold = 0.35
+  /mission_tracking_executor_node:target_rx_marker_scale = 0.6
+  /mission_tracking_executor_node:target_timeout_s = 2.5
+  /mission_tracking_executor_node:velocity = 0.5
+  /earth_frame_pub:rotation.w = 1.0
+  /earth_frame_pub:rotation.x = 0.0
+  /earth_frame_pub:rotation.y = 0.0
+  /earth_frame_pub:rotation.z = 0.0
+  /earth_frame_pub:translation.x = 0.0
+  /earth_frame_pub:translation.y = 0.0
+  /earth_frame_pub:translation.z = 0.0
+  /odom_frame_pub:rotation.w = 1.0
+  /odom_frame_pub:rotation.x = 0.0
+  /odom_frame_pub:rotation.y = 0.0
+  /odom_frame_pub:rotation.z = 0.0
+  /odom_frame_pub:translation.x = 0.0
+  /odom_frame_pub:translation.y = 0.0
+  /odom_frame_pub:translation.z = 0.0
+  /px4_frame_pub:rotation.w = 0.0
+  /px4_frame_pub:rotation.x = 1.0
+  /px4_frame_pub:rotation.y = 0.0
+  /px4_frame_pub:rotation.z = 0.0
+  /px4_frame_pub:translation.x = 0.0
+  /px4_frame_pub:translation.y = 0.0
+  /px4_frame_pub:translation.z = 0.0
+
+4:
+  /drone0/agipix_robot_state_publisher:frame_prefix = drone0/
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.reliability = best_effort
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.durability = volatile
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.history = keep_last
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.reliability = reliable
+  /drone0/agipix_robot_state_publisher:robot_description = <?xml version="1.0"?>
+<robot name="agipix">
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://agi_viz/assets/meshes/agipix.stl"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+</robot>
+  /drone0/rviz_explore:qos_overrides./clock.subscription.durability = volatile
+  /drone0/rviz_explore:qos_overrides./clock.subscription.history = keep_last
+  /drone0/rviz_explore:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/state_estimator:base_frame = base_link
+  /drone0/state_estimator:global_ref_frame = earth
+  /drone0/state_estimator:map_frame = map
+  /drone0/state_estimator:odom_frame = odom
+  /drone0/state_estimator:odometry_topic = sensor_measurements/odom
+  /drone0/state_estimator:plugin_name = raw_odometry
+  /drone0/state_estimator:qos_overrides./clock.subscription.durability = volatile
+  /drone0/state_estimator:qos_overrides./clock.subscription.history = keep_last
+  /drone0/state_estimator:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./tf.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.reliability = reliable
+  /drone0/platform:control_modes_file = /workspaces/agipix_control/install/as2_platform_pixhawk/share/as2_platform_pixhawk/config/control_modes.yaml
+  /drone0/platform:qos_overrides./clock.subscription.durability = volatile
+  /drone0/platform:qos_overrides./clock.subscription.history = keep_last
+  /drone0/platform:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/platform:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/platform:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/platform:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/dynamic_exploration_node:detector.color_image_topic = RealSense_Camera/color/image_raw
+  /drone0/dynamic_exploration_node:detector.depth_image_topic = RealSense_Camera/depth
+  /drone0/dynamic_exploration_node:detector.frame_id = drone0/map
+  /drone0/dynamic_exploration_node:detector.lidar_pointcloud_topic = livox/lidar
+  /drone0/dynamic_exploration_node:detector.pose_topic = self_localization/pose
+  /drone0/dynamic_exploration_node:frame_id = drone0/map
+  /drone0/dynamic_exploration_node:goal_topic = goal_pose
+  /drone0/dynamic_exploration_node:legacy_goal_topic = move_base_simple/goal
+  /drone0/dynamic_exploration_node:mapper.depth_image_topic = RealSense_Camera/depth
+  /drone0/dynamic_exploration_node:mapper.map_frame_id = drone0/map
+  /drone0/dynamic_exploration_node:mapper.point_cloud_topic = livox/lidar
+  /drone0/dynamic_exploration_node:mapper.pose_topic = self_localization/pose
+  /drone0/dynamic_exploration_node:mapper.prebuilt_map_directory = No
+  /drone0/dynamic_exploration_node:odom_topic = sensor_measurements/odom
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/dynamic_exploration_node:target_marker_topic = autonomous_flight/target_state_marker
+  /drone0/dynamic_exploration_node:target_qos_durability = volatile
+  /drone0/dynamic_exploration_node:target_qos_reliability = best_effort
+  /mission_tracking_executor_node:builtin_profile = external_target
+  /mission_tracking_executor_node:drone_namespace = drone0
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.reliability = best_effort
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /mission_tracking_executor_node:target_qos_durability = volatile
+  /mission_tracking_executor_node:target_qos_reliability = best_effort
+  /mission_tracking_executor_node:target_rx_marker_frame_id = drone0/map
+  /mission_tracking_executor_node:target_rx_marker_topic = autonomous_flight/target_state_rx_marker
+  /mission_tracking_executor_node:target_topic = autonomous_flight/target_state
+  /earth_frame_pub:child_frame_id = earth
+  /earth_frame_pub:frame_id = drone0/map
+  /earth_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /earth_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /earth_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /earth_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /odom_frame_pub:child_frame_id = odom
+  /odom_frame_pub:frame_id = drone0/map
+  /odom_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /odom_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /odom_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /odom_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /px4_frame_pub:child_frame_id = drone0/px4_frame
+  /px4_frame_pub:frame_id = drone0/base_link
+  /px4_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /px4_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /px4_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /px4_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+
+8:
+  /drone0/dynamic_exploration_node:bspline_traj.max_obstacle_size = array('d', [5.0, 5.0, 3.0])
+  /drone0/dynamic_exploration_node:detector.body_to_camera_color = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.body_to_camera_depth = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.body_to_lidar = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:detector.color_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:detector.depth_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:detector.feature_weight = array('d', [3.0, 3.0, 0.1, 0.5, 0.5, 0.05, 0.0, 0.0, 0.0])
+  /drone0/dynamic_exploration_node:detector.kalman_filter_param = array('d', [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6])
+  /drone0/dynamic_exploration_node:detector.max_object_size = array('d', [3.0, 3.0, 2.0])
+  /drone0/dynamic_exploration_node:detector.target_object_size = array('d', [0.5, 0.5, 1.5])
+  /drone0/dynamic_exploration_node:free_range = array('d', [1.0, 1.0, 1.0])
+  /drone0/dynamic_exploration_node:global_region_max = array('d', [200.0, 200.0, 1.2])
+  /drone0/dynamic_exploration_node:global_region_min = array('d', [-5.0, -5.0, 0.7])
+  /drone0/dynamic_exploration_node:local_region_max = array('d', [5.0, 5.0, 2.0])
+  /drone0/dynamic_exploration_node:local_region_min = array('d', [-5.0, -5.0, -2.0])
+  /drone0/dynamic_exploration_node:mapper.body_to_depth_sensor = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:mapper.body_to_pointcloud_sensor = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+  /drone0/dynamic_exploration_node:mapper.depth_intrinsics = array('d', [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5])
+  /drone0/dynamic_exploration_node:mapper.local_map_size = array('d', [5.0, 5.0, 10.0])
+  /drone0/dynamic_exploration_node:mapper.local_update_range = array('d', [5.0, 5.0, 5.0])
+  /drone0/dynamic_exploration_node:mapper.map_size = array('d', [160.0, 160.0, 10.0])
+  /drone0/dynamic_exploration_node:mapper.robot_size = array('d', [0.3, 0.3, 0.1])
+
+
+==== GROUP BY NAME ====
+
+base_frame:
+  /drone0/state_estimator:base_frame = base_link
+
+bspline_traj.distance_threshold:
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold = 0.5
+
+bspline_traj.distance_threshold_dynamic:
+  /drone0/dynamic_exploration_node:bspline_traj.distance_threshold_dynamic = 0.5
+
+bspline_traj.max_acc:
+  /drone0/dynamic_exploration_node:bspline_traj.max_acc = 1.0
+
+bspline_traj.max_height:
+  /drone0/dynamic_exploration_node:bspline_traj.max_height = 1.3
+
+bspline_traj.max_obstacle_size:
+  /drone0/dynamic_exploration_node:bspline_traj.max_obstacle_size = array('d', [5.0, 5.0, 3.0])
+
+bspline_traj.max_path_length:
+  /drone0/dynamic_exploration_node:bspline_traj.max_path_length = 20.0
+
+bspline_traj.max_vel:
+  /drone0/dynamic_exploration_node:bspline_traj.max_vel = 1.0
+
+bspline_traj.min_height:
+  /drone0/dynamic_exploration_node:bspline_traj.min_height = 0.7
+
+bspline_traj.plan_in_z_axis:
+  /drone0/dynamic_exploration_node:bspline_traj.plan_in_z_axis = False
+
+bspline_traj.prediction_horizon:
+  /drone0/dynamic_exploration_node:bspline_traj.prediction_horizon = 2.0
+
+bspline_traj.timestep:
+  /drone0/dynamic_exploration_node:bspline_traj.timestep = 0.1
+
+bspline_traj.uncertain_aware_factor:
+  /drone0/dynamic_exploration_node:bspline_traj.uncertain_aware_factor = 1.0
+
+bspline_traj.weight_distance:
+  /drone0/dynamic_exploration_node:bspline_traj.weight_distance = 1.0
+
+bspline_traj.weight_dynamic_obstacle:
+  /drone0/dynamic_exploration_node:bspline_traj.weight_dynamic_obstacle = 1.0
+
+bspline_traj.weight_feasibility:
+  /drone0/dynamic_exploration_node:bspline_traj.weight_feasibility = 1.0
+
+bspline_traj.weight_smoothness:
+  /drone0/dynamic_exploration_node:bspline_traj.weight_smoothness = 1.0
+
+builtin_profile:
+  /mission_tracking_executor_node:builtin_profile = external_target
+
+child_frame_id:
+  /earth_frame_pub:child_frame_id = earth
+  /odom_frame_pub:child_frame_id = odom
+  /px4_frame_pub:child_frame_id = drone0/px4_frame
+
+circle_radius:
+  /mission_tracking_executor_node:circle_radius = 2.0
+
+cmd_freq:
+  /drone0/platform:cmd_freq = 100.0
+
+collision_replan_cooldown_sec:
+  /drone0/dynamic_exploration_node:collision_replan_cooldown_sec = 0.3
+
+control_modes_file:
+  /drone0/platform:control_modes_file = /workspaces/agipix_control/install/as2_platform_pixhawk/share/as2_platform_pixhawk/config/control_modes.yaml
+
+debug_mode:
+  /mission_tracking_executor_node:debug_mode = False
+
+desired_acceleration:
+  /drone0/dynamic_exploration_node:desired_acceleration = 3.0
+
+desired_angular_velocity:
+  /drone0/dynamic_exploration_node:desired_angular_velocity = 0.5
+
+desired_velocity:
+  /drone0/dynamic_exploration_node:desired_velocity = 2.0
+
+detector.body_to_camera_color:
+  /drone0/dynamic_exploration_node:detector.body_to_camera_color = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+
+detector.body_to_camera_depth:
+  /drone0/dynamic_exploration_node:detector.body_to_camera_depth = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+
+detector.body_to_lidar:
+  /drone0/dynamic_exploration_node:detector.body_to_lidar = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+
+detector.color_image_topic:
+  /drone0/dynamic_exploration_node:detector.color_image_topic = RealSense_Camera/color/image_raw
+
+detector.color_intrinsics:
+  /drone0/dynamic_exploration_node:detector.color_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+
+detector.constrain_size:
+  /drone0/dynamic_exploration_node:detector.constrain_size = False
+
+detector.dbscan_min_points_cluster:
+  /drone0/dynamic_exploration_node:detector.dbscan_min_points_cluster = 20
+
+detector.dbscan_search_range_epsilon:
+  /drone0/dynamic_exploration_node:detector.dbscan_search_range_epsilon = 0.05
+
+detector.depth_filter_margin:
+  /drone0/dynamic_exploration_node:detector.depth_filter_margin = 10
+
+detector.depth_image_topic:
+  /drone0/dynamic_exploration_node:detector.depth_image_topic = RealSense_Camera/depth
+
+detector.depth_intrinsics:
+  /drone0/dynamic_exploration_node:detector.depth_intrinsics = array('d', [958.7999877929688, 958.7999877929688, 957.7999877929688, 589.5])
+
+detector.depth_max_value:
+  /drone0/dynamic_exploration_node:detector.depth_max_value = 20.0
+
+detector.depth_min_value:
+  /drone0/dynamic_exploration_node:detector.depth_min_value = 0.5
+
+detector.depth_scale_factor:
+  /drone0/dynamic_exploration_node:detector.depth_scale_factor = 1000.0
+
+detector.depth_skip_pixel:
+  /drone0/dynamic_exploration_node:detector.depth_skip_pixel = 3
+
+detector.downsample_threshold:
+  /drone0/dynamic_exploration_node:detector.downsample_threshold = 3500
+
+detector.dynamic_consistency_threshold:
+  /drone0/dynamic_exploration_node:detector.dynamic_consistency_threshold = 15
+
+detector.dynamic_velocity_threshold:
+  /drone0/dynamic_exploration_node:detector.dynamic_velocity_threshold = 0.2
+
+detector.dynamic_voting_threshold:
+  /drone0/dynamic_exploration_node:detector.dynamic_voting_threshold = 0.8
+
+detector.feature_weight:
+  /drone0/dynamic_exploration_node:detector.feature_weight = array('d', [3.0, 3.0, 0.1, 0.5, 0.5, 0.05, 0.0, 0.0, 0.0])
+
+detector.filtering_BBox_IOU_threshold:
+  /drone0/dynamic_exploration_node:detector.filtering_BBox_IOU_threshold = 0.2
+
+detector.fix_size_dimension_threshold:
+  /drone0/dynamic_exploration_node:detector.fix_size_dimension_threshold = 0.4
+
+detector.fix_size_history_threshold:
+  /drone0/dynamic_exploration_node:detector.fix_size_history_threshold = 10
+
+detector.frame_id:
+  /drone0/dynamic_exploration_node:detector.frame_id = drone0/map
+
+detector.frame_skip:
+  /drone0/dynamic_exploration_node:detector.frame_skip = 5
+
+detector.frames_force_dynamic:
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic = 10
+
+detector.frames_force_dynamic_check_range:
+  /drone0/dynamic_exploration_node:detector.frames_force_dynamic_check_range = 30
+
+detector.gaussian_downsample_rate:
+  /drone0/dynamic_exploration_node:detector.gaussian_downsample_rate = 6
+
+detector.ground_height:
+  /drone0/dynamic_exploration_node:detector.ground_height = 0.2
+
+detector.history_size:
+  /drone0/dynamic_exploration_node:detector.history_size = 100
+
+detector.image_cols:
+  /drone0/dynamic_exploration_node:detector.image_cols = 1920
+
+detector.image_rows:
+  /drone0/dynamic_exploration_node:detector.image_rows = 1200
+
+detector.kalman_filter_averaging_frames:
+  /drone0/dynamic_exploration_node:detector.kalman_filter_averaging_frames = 10
+
+detector.kalman_filter_param:
+  /drone0/dynamic_exploration_node:detector.kalman_filter_param = array('d', [0.25, 0.01, 0.05, 0.05, 0.04, 0.3, 0.6])
+
+detector.lidar_DBSCAN_epsilon:
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_epsilon = 0.05
+
+detector.lidar_DBSCAN_min_points:
+  /drone0/dynamic_exploration_node:detector.lidar_DBSCAN_min_points = 10
+
+detector.lidar_pointcloud_topic:
+  /drone0/dynamic_exploration_node:detector.lidar_pointcloud_topic = livox/lidar
+
+detector.localization_mode:
+  /drone0/dynamic_exploration_node:detector.localization_mode = 0
+
+detector.max_match_range:
+  /drone0/dynamic_exploration_node:detector.max_match_range = 0.5
+
+detector.max_object_size:
+  /drone0/dynamic_exploration_node:detector.max_object_size = array('d', [3.0, 3.0, 2.0])
+
+detector.max_size_diff_range:
+  /drone0/dynamic_exploration_node:detector.max_size_diff_range = 0.5
+
+detector.maximum_skip_ratio:
+  /drone0/dynamic_exploration_node:detector.maximum_skip_ratio = 0.5
+
+detector.pose_topic:
+  /drone0/dynamic_exploration_node:detector.pose_topic = self_localization/pose
+
+detector.prediction_size:
+  /drone0/dynamic_exploration_node:detector.prediction_size = 5
+
+detector.raycast_max_length:
+  /drone0/dynamic_exploration_node:detector.raycast_max_length = 10.0
+
+detector.retrack_similarity_threshold:
+  /drone0/dynamic_exploration_node:detector.retrack_similarity_threshold = 0.5
+
+detector.roof_height:
+  /drone0/dynamic_exploration_node:detector.roof_height = 5.0
+
+detector.similarity_threshold:
+  /drone0/dynamic_exploration_node:detector.similarity_threshold = 0.9
+
+detector.target_constrain_size:
+  /drone0/dynamic_exploration_node:detector.target_constrain_size = True
+
+detector.target_object_size:
+  /drone0/dynamic_exploration_node:detector.target_object_size = array('d', [0.5, 0.5, 1.5])
+
+detector.time_step:
+  /drone0/dynamic_exploration_node:detector.time_step = 0.033
+
+detector.voxel_occupied_thresh:
+  /drone0/dynamic_exploration_node:detector.voxel_occupied_thresh = 5
+
+dist_thresh:
+  /drone0/dynamic_exploration_node:dist_thresh = 0.8
+
+dmax:
+  /drone0/dynamic_exploration_node:dmax = 2.0
+
+dmin:
+  /drone0/dynamic_exploration_node:dmin = 0.3
+
+drone_namespace:
+  /mission_tracking_executor_node:drone_namespace = drone0
+
+end_mission_max_segment_distance:
+  /drone0/dynamic_exploration_node:end_mission_max_segment_distance = 6.0
+
+external_odom:
+  /drone0/platform:external_odom = False
+
+flying_height_threshold:
+  /drone0/dynamic_exploration_node:flying_height_threshold = 0.35
+  /mission_tracking_executor_node:flying_height_threshold = 0.35
+
+frame_id:
+  /drone0/dynamic_exploration_node:frame_id = drone0/map
+  /earth_frame_pub:frame_id = drone0/map
+  /odom_frame_pub:frame_id = drone0/map
+  /px4_frame_pub:frame_id = drone0/base_link
+
+frame_prefix:
+  /drone0/agipix_robot_state_publisher:frame_prefix = drone0/
+
+free_range:
+  /drone0/dynamic_exploration_node:free_range = array('d', [1.0, 1.0, 1.0])
+
+frontier_nearest_neighbor_number:
+  /drone0/dynamic_exploration_node:frontier_nearest_neighbor_number = 15
+
+frontier_sample_thresh:
+  /drone0/dynamic_exploration_node:frontier_sample_thresh = 100
+
+global_ref_frame:
+  /drone0/state_estimator:global_ref_frame = earth
+
+global_region_max:
+  /drone0/dynamic_exploration_node:global_region_max = array('d', [200.0, 200.0, 1.2])
+
+global_region_min:
+  /drone0/dynamic_exploration_node:global_region_min = array('d', [-5.0, -5.0, 0.7])
+
+global_sample_thresh:
+  /drone0/dynamic_exploration_node:global_sample_thresh = 100
+
+goal_topic:
+  /drone0/dynamic_exploration_node:goal_topic = goal_pose
+
+horizontal_FOV:
+  /drone0/dynamic_exploration_node:horizontal_FOV = 1.57
+
+ignore_timestamp:
+  /drone0/agipix_robot_state_publisher:ignore_timestamp = False
+
+info_freq:
+  /drone0/platform:info_freq = 10.0
+
+information_gain_update_distance:
+  /drone0/dynamic_exploration_node:information_gain_update_distance = 1.0
+
+initial_scan:
+  /drone0/dynamic_exploration_node:initial_scan = False
+
+legacy_goal_topic:
+  /drone0/dynamic_exploration_node:legacy_goal_topic = move_base_simple/goal
+
+local_region_max:
+  /drone0/dynamic_exploration_node:local_region_max = array('d', [5.0, 5.0, 2.0])
+
+local_region_min:
+  /drone0/dynamic_exploration_node:local_region_min = array('d', [-5.0, -5.0, -2.0])
+
+local_sample_thresh:
+  /drone0/dynamic_exploration_node:local_sample_thresh = 200
+
+map_frame:
+  /drone0/state_estimator:map_frame = map
+
+mapper.body_to_depth_sensor:
+  /drone0/dynamic_exploration_node:mapper.body_to_depth_sensor = array('d', [0.0, 0.0, 1.0, 0.13, -1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -0.022, 0.0, 0.0, 0.0, 1.0])
+
+mapper.body_to_pointcloud_sensor:
+  /drone0/dynamic_exploration_node:mapper.body_to_pointcloud_sensor = array('d', [0.7071068, 0.0, 0.7071068, 0.0795, 0.0, 1.0, 0.0, 0.0, -0.7071068, 0.0, 0.7071068, 0.0323, 0.0, 0.0, 0.0, 1.0])
+
+mapper.clean_local_map:
+  /drone0/dynamic_exploration_node:mapper.clean_local_map = False
+
+mapper.depth_filter_margin:
+  /drone0/dynamic_exploration_node:mapper.depth_filter_margin = 2
+
+mapper.depth_image_topic:
+  /drone0/dynamic_exploration_node:mapper.depth_image_topic = RealSense_Camera/depth
+
+mapper.depth_intrinsics:
+  /drone0/dynamic_exploration_node:mapper.depth_intrinsics = array('d', [958.7999877929688, 957.7999877929688, 958.7999877929688, 589.5])
+
+mapper.depth_max_value:
+  /drone0/dynamic_exploration_node:mapper.depth_max_value = 5.0
+
+mapper.depth_min_value:
+  /drone0/dynamic_exploration_node:mapper.depth_min_value = 0.5
+
+mapper.depth_scale_factor:
+  /drone0/dynamic_exploration_node:mapper.depth_scale_factor = 1000.0
+
+mapper.depth_skip_pixel:
+  /drone0/dynamic_exploration_node:mapper.depth_skip_pixel = 2
+
+mapper.ground_height:
+  /drone0/dynamic_exploration_node:mapper.ground_height = -0.1
+
+mapper.image_cols:
+  /drone0/dynamic_exploration_node:mapper.image_cols = 1920
+
+mapper.image_rows:
+  /drone0/dynamic_exploration_node:mapper.image_rows = 1200
+
+mapper.local_bound_inflation:
+  /drone0/dynamic_exploration_node:mapper.local_bound_inflation = 3.0
+
+mapper.local_map_size:
+  /drone0/dynamic_exploration_node:mapper.local_map_size = array('d', [5.0, 5.0, 10.0])
+
+mapper.local_update_range:
+  /drone0/dynamic_exploration_node:mapper.local_update_range = array('d', [5.0, 5.0, 5.0])
+
+mapper.localization_mode:
+  /drone0/dynamic_exploration_node:mapper.localization_mode = 0
+
+mapper.map_frame_id:
+  /drone0/dynamic_exploration_node:mapper.map_frame_id = drone0/map
+
+mapper.map_resolution:
+  /drone0/dynamic_exploration_node:mapper.map_resolution = 0.1
+
+mapper.map_size:
+  /drone0/dynamic_exploration_node:mapper.map_size = array('d', [160.0, 160.0, 10.0])
+
+mapper.max_height_visualization:
+  /drone0/dynamic_exploration_node:mapper.max_height_visualization = 4.0
+
+mapper.p_hit:
+  /drone0/dynamic_exploration_node:mapper.p_hit = 0.7
+
+mapper.p_max:
+  /drone0/dynamic_exploration_node:mapper.p_max = 0.97
+
+mapper.p_min:
+  /drone0/dynamic_exploration_node:mapper.p_min = 0.12
+
+mapper.p_miss:
+  /drone0/dynamic_exploration_node:mapper.p_miss = 0.35
+
+mapper.p_occ:
+  /drone0/dynamic_exploration_node:mapper.p_occ = 0.8
+
+mapper.point_cloud_topic:
+  /drone0/dynamic_exploration_node:mapper.point_cloud_topic = livox/lidar
+
+mapper.pointcloud_max_distance:
+  /drone0/dynamic_exploration_node:mapper.pointcloud_max_distance = 5.0
+
+mapper.pointcloud_min_distance:
+  /drone0/dynamic_exploration_node:mapper.pointcloud_min_distance = 0.5
+
+mapper.pose_topic:
+  /drone0/dynamic_exploration_node:mapper.pose_topic = self_localization/pose
+
+mapper.prebuilt_map_directory:
+  /drone0/dynamic_exploration_node:mapper.prebuilt_map_directory = No
+
+mapper.raycast_max_length:
+  /drone0/dynamic_exploration_node:mapper.raycast_max_length = 5.0
+
+mapper.robot_size:
+  /drone0/dynamic_exploration_node:mapper.robot_size = array('d', [0.3, 0.3, 0.1])
+
+mapper.verbose:
+  /drone0/dynamic_exploration_node:mapper.verbose = False
+
+mapper.visualize_global_map:
+  /drone0/dynamic_exploration_node:mapper.visualize_global_map = True
+
+mass:
+  /drone0/platform:mass = 1.0
+
+max_connect_dist:
+  /drone0/dynamic_exploration_node:max_connect_dist = 1.5
+
+max_goal_candidates:
+  /drone0/dynamic_exploration_node:max_goal_candidates = 10
+
+max_thrust:
+  /drone0/platform:max_thrust = 30.0
+
+min_goal_candidates:
+  /drone0/dynamic_exploration_node:min_goal_candidates = 5
+
+min_thrust:
+  /drone0/platform:min_thrust = 0.3
+
+min_voxel_thresh:
+  /drone0/dynamic_exploration_node:min_voxel_thresh = 0.5
+
+min_waypoint_distance:
+  /drone0/dynamic_exploration_node:min_waypoint_distance = 0.02
+
+nearest_neighbor_number:
+  /drone0/dynamic_exploration_node:nearest_neighbor_number = 15
+
+node_frequency:
+  /drone0/state_estimator:node_frequency = -1.0
+  /drone0/platform:node_frequency = -1.0
+  /drone0/alphanumeric_viewer:node_frequency = -1.0
+
+num_yaw_angles:
+  /drone0/dynamic_exploration_node:num_yaw_angles = 32
+
+odom_frame:
+  /drone0/state_estimator:odom_frame = odom
+
+odom_topic:
+  /drone0/dynamic_exploration_node:odom_topic = sensor_measurements/odom
+
+odometry_topic:
+  /drone0/state_estimator:odometry_topic = sensor_measurements/odom
+
+plugin_name:
+  /drone0/state_estimator:plugin_name = raw_odometry
+
+poly_traj.continuity_degree:
+  /drone0/dynamic_exploration_node:poly_traj.continuity_degree = 4
+
+poly_traj.corridor_res:
+  /drone0/dynamic_exploration_node:poly_traj.corridor_res = 5.0
+
+poly_traj.desired_acceleration:
+  /drone0/dynamic_exploration_node:poly_traj.desired_acceleration = 3.0
+
+poly_traj.desired_velocity:
+  /drone0/dynamic_exploration_node:poly_traj.desired_velocity = 2.0
+
+poly_traj.differential_degree:
+  /drone0/dynamic_exploration_node:poly_traj.differential_degree = 4
+
+poly_traj.initial_radius:
+  /drone0/dynamic_exploration_node:poly_traj.initial_radius = 0.5
+
+poly_traj.maximum_iteration_num:
+  /drone0/dynamic_exploration_node:poly_traj.maximum_iteration_num = 20
+
+poly_traj.polynomial_degree:
+  /drone0/dynamic_exploration_node:poly_traj.polynomial_degree = 7
+
+poly_traj.sample_delta_time:
+  /drone0/dynamic_exploration_node:poly_traj.sample_delta_time = 0.1
+
+poly_traj.shrinking_factor:
+  /drone0/dynamic_exploration_node:poly_traj.shrinking_factor = 0.8
+
+poly_traj.soft_constraint:
+  /drone0/dynamic_exploration_node:poly_traj.soft_constraint = False
+
+poly_traj.timeout:
+  /drone0/dynamic_exploration_node:poly_traj.timeout = 0.1
+
+poly_traj.use_pwl_failsafe:
+  /drone0/dynamic_exploration_node:poly_traj.use_pwl_failsafe = False
+
+publish_frequency:
+  /drone0/agipix_robot_state_publisher:publish_frequency = 20.0
+
+publish_target_marker:
+  /drone0/dynamic_exploration_node:publish_target_marker = True
+
+publish_target_rx_marker:
+  /mission_tracking_executor_node:publish_target_rx_marker = True
+
+qos_overrides./clock.subscription.depth:
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.depth = 1
+  /drone0/rviz_explore:qos_overrides./clock.subscription.depth = 1
+  /drone0/state_estimator:qos_overrides./clock.subscription.depth = 1
+  /drone0/platform:qos_overrides./clock.subscription.depth = 1
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.depth = 1
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.depth = 1
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.depth = 1
+  /earth_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /odom_frame_pub:qos_overrides./clock.subscription.depth = 1
+  /px4_frame_pub:qos_overrides./clock.subscription.depth = 1
+
+qos_overrides./clock.subscription.durability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.durability = volatile
+  /drone0/rviz_explore:qos_overrides./clock.subscription.durability = volatile
+  /drone0/state_estimator:qos_overrides./clock.subscription.durability = volatile
+  /drone0/platform:qos_overrides./clock.subscription.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.durability = volatile
+  /earth_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /odom_frame_pub:qos_overrides./clock.subscription.durability = volatile
+  /px4_frame_pub:qos_overrides./clock.subscription.durability = volatile
+
+qos_overrides./clock.subscription.history:
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.history = keep_last
+  /drone0/rviz_explore:qos_overrides./clock.subscription.history = keep_last
+  /drone0/state_estimator:qos_overrides./clock.subscription.history = keep_last
+  /drone0/platform:qos_overrides./clock.subscription.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.history = keep_last
+  /earth_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /odom_frame_pub:qos_overrides./clock.subscription.history = keep_last
+  /px4_frame_pub:qos_overrides./clock.subscription.history = keep_last
+
+qos_overrides./clock.subscription.reliability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/rviz_explore:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/state_estimator:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/platform:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/alphanumeric_viewer:qos_overrides./clock.subscription.reliability = best_effort
+  /drone0/dynamic_exploration_node:qos_overrides./clock.subscription.reliability = best_effort
+  /mission_tracking_executor_node:qos_overrides./clock.subscription.reliability = best_effort
+  /earth_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /odom_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+  /px4_frame_pub:qos_overrides./clock.subscription.reliability = best_effort
+
+qos_overrides./drone0/joint_states.subscription.depth:
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.depth = 5
+
+qos_overrides./drone0/joint_states.subscription.history:
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.history = keep_last
+
+qos_overrides./drone0/joint_states.subscription.reliability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./drone0/joint_states.subscription.reliability = best_effort
+
+qos_overrides./parameter_events.publisher.depth:
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/platform:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.depth = 1000
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.depth = 1000
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.depth = 1000
+
+qos_overrides./parameter_events.publisher.durability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/platform:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.durability = volatile
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.durability = volatile
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.durability = volatile
+
+qos_overrides./parameter_events.publisher.history:
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/platform:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.history = keep_last
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.history = keep_last
+
+qos_overrides./parameter_events.publisher.reliability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/rviz_explore:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/platform:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/alphanumeric_viewer:qos_overrides./parameter_events.publisher.reliability = reliable
+  /drone0/dynamic_exploration_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /mission_tracking_executor_node:qos_overrides./parameter_events.publisher.reliability = reliable
+  /earth_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /odom_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+  /px4_frame_pub:qos_overrides./parameter_events.publisher.reliability = reliable
+
+qos_overrides./tf.publisher.depth:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.depth = 100
+  /drone0/state_estimator:qos_overrides./tf.publisher.depth = 100
+
+qos_overrides./tf.publisher.durability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.durability = volatile
+  /drone0/state_estimator:qos_overrides./tf.publisher.durability = volatile
+
+qos_overrides./tf.publisher.history:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf.publisher.history = keep_last
+
+qos_overrides./tf.publisher.reliability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf.publisher.reliability = reliable
+
+qos_overrides./tf_static.publisher.depth:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.depth = 1
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.depth = 1
+  /earth_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /odom_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+  /px4_frame_pub:qos_overrides./tf_static.publisher.depth = 1
+
+qos_overrides./tf_static.publisher.history:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.history = keep_last
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.history = keep_last
+  /earth_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /odom_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+  /px4_frame_pub:qos_overrides./tf_static.publisher.history = keep_last
+
+qos_overrides./tf_static.publisher.reliability:
+  /drone0/agipix_robot_state_publisher:qos_overrides./tf_static.publisher.reliability = reliable
+  /drone0/state_estimator:qos_overrides./tf_static.publisher.reliability = reliable
+  /earth_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /odom_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+  /px4_frame_pub:qos_overrides./tf_static.publisher.reliability = reliable
+
+reach_goal_distance:
+  /drone0/dynamic_exploration_node:reach_goal_distance = 0.1
+
+replan_on_collision_fail:
+  /drone0/dynamic_exploration_node:replan_on_collision_fail = True
+
+replan_on_finish_or_fail:
+  /drone0/dynamic_exploration_node:replan_on_finish_or_fail = False
+
+replan_time_for_dynamic_obstacles:
+  /drone0/dynamic_exploration_node:replan_time_for_dynamic_obstacles = 0.0
+
+require_operator_confirmation:
+  /drone0/dynamic_exploration_node:require_operator_confirmation = False
+
+require_takeoff_feedback:
+  /drone0/dynamic_exploration_node:require_takeoff_feedback = False
+
+robot_description:
+  /drone0/agipix_robot_state_publisher:robot_description = <?xml version="1.0"?>
+<robot name="agipix">
+
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://agi_viz/assets/meshes/agipix.stl"/>
+      </geometry>
+      <material name="gray">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+</robot>
+
+rotation.w:
+  /earth_frame_pub:rotation.w = 1.0
+  /odom_frame_pub:rotation.w = 1.0
+  /px4_frame_pub:rotation.w = 0.0
+
+rotation.x:
+  /earth_frame_pub:rotation.x = 0.0
+  /odom_frame_pub:rotation.x = 0.0
+  /px4_frame_pub:rotation.x = 1.0
+
+rotation.y:
+  /earth_frame_pub:rotation.y = 0.0
+  /odom_frame_pub:rotation.y = 0.0
+  /px4_frame_pub:rotation.y = 0.0
+
+rotation.z:
+  /earth_frame_pub:rotation.z = 0.0
+  /odom_frame_pub:rotation.z = 0.0
+  /px4_frame_pub:rotation.z = 0.0
+
+safe_distance_check_unknown:
+  /drone0/dynamic_exploration_node:safe_distance_check_unknown = True
+
+safe_distance_xy:
+  /drone0/dynamic_exploration_node:safe_distance_xy = 0.3
+
+safe_distance_z:
+  /drone0/dynamic_exploration_node:safe_distance_z = 0.0
+
+set_origin_on_start:
+  /drone0/state_estimator:set_origin_on_start = False
+
+skip_takeoff_if_flying:
+  /drone0/dynamic_exploration_node:skip_takeoff_if_flying = True
+  /mission_tracking_executor_node:skip_takeoff_if_flying = True
+
+stabilize_before_rotate:
+  /drone0/dynamic_exploration_node:stabilize_before_rotate = False
+
+subscribe_legacy_goal_topic:
+  /drone0/dynamic_exploration_node:subscribe_legacy_goal_topic = True
+
+takeoff_height:
+  /drone0/dynamic_exploration_node:takeoff_height = 1.0
+
+takeoff_wait_timeout_sec:
+  /drone0/dynamic_exploration_node:takeoff_wait_timeout_sec = 8.0
+
+target_marker_scale:
+  /drone0/dynamic_exploration_node:target_marker_scale = 0.5
+
+target_marker_topic:
+  /drone0/dynamic_exploration_node:target_marker_topic = autonomous_flight/target_state_marker
+
+target_qos_depth:
+  /drone0/dynamic_exploration_node:target_qos_depth = 1
+  /mission_tracking_executor_node:target_qos_depth = 1
+
+target_qos_durability:
+  /drone0/dynamic_exploration_node:target_qos_durability = volatile
+  /mission_tracking_executor_node:target_qos_durability = volatile
+
+target_qos_reliability:
+  /drone0/dynamic_exploration_node:target_qos_reliability = best_effort
+  /mission_tracking_executor_node:target_qos_reliability = best_effort
+
+target_rx_marker_frame_id:
+  /mission_tracking_executor_node:target_rx_marker_frame_id = drone0/map
+
+target_rx_marker_scale:
+  /mission_tracking_executor_node:target_rx_marker_scale = 0.6
+
+target_rx_marker_topic:
+  /mission_tracking_executor_node:target_rx_marker_topic = autonomous_flight/target_state_rx_marker
+
+target_timeout_s:
+  /mission_tracking_executor_node:target_timeout_s = 2.5
+
+target_topic:
+  /mission_tracking_executor_node:target_topic = autonomous_flight/target_state
+
+tf_buffer_cache_time_ms:
+  /drone0/rviz_explore:tf_buffer_cache_time_ms = 10000
+
+translation.x:
+  /earth_frame_pub:translation.x = 0.0
+  /odom_frame_pub:translation.x = 0.0
+  /px4_frame_pub:translation.x = 0.0
+
+translation.y:
+  /earth_frame_pub:translation.y = 0.0
+  /odom_frame_pub:translation.y = 0.0
+  /px4_frame_pub:translation.y = 0.0
+
+translation.z:
+  /earth_frame_pub:translation.z = 0.0
+  /odom_frame_pub:translation.z = 0.0
+  /px4_frame_pub:translation.z = 0.0
+
+use_gps:
+  /drone0/state_estimator:use_gps = False
+
+use_input_yaw:
+  /mission_tracking_executor_node:use_input_yaw = True
+
+use_sim_time:
+  /drone0/agipix_robot_state_publisher:use_sim_time = True
+  /drone0/rviz_explore:use_sim_time = True
+  /drone0/state_estimator:use_sim_time = True
+  /drone0/platform:use_sim_time = True
+  /drone0/alphanumeric_viewer:use_sim_time = True
+  /drone0/dynamic_exploration_node:use_sim_time = True
+  /param_inspector:use_sim_time = False
+  /mission_tracking_executor_node:use_sim_time = True
+  /px4_imu:use_sim_time = True
+  /earth_frame_pub:use_sim_time = True
+  /odom_frame_pub:use_sim_time = True
+  /px4_frame_pub:use_sim_time = True
+  /simulator_vehicle_0:use_sim_time = False
+
+velocity:
+  /mission_tracking_executor_node:velocity = 0.5
+
+vertical_FOV:
+  /drone0/dynamic_exploration_node:vertical_FOV = 1.57
+
+wait_for_topics_ready:
+  /drone0/dynamic_exploration_node:wait_for_topics_ready = False
+
+waypoint_stablize_time:
+  /drone0/dynamic_exploration_node:waypoint_stablize_time = 0.0
+
+yaw_control:
+  /mission_tracking_executor_node:yaw_control = False
+
+yaw_penalty_weight:
+  /drone0/dynamic_exploration_node:yaw_penalty_weight = 1.0

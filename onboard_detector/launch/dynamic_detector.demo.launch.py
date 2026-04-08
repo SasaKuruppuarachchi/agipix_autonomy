@@ -11,13 +11,13 @@ def generate_launch_description():
     # Declare a launch argument for the dynamic detector config filename
     dynamic_config_arg = DeclareLaunchArgument(
         'config_file',
-        default_value='dynamic_detector_param_sw.yaml',
+        default_value='dynamic_detector_param_demo.yaml',
         description='YAML config filename for the dynamic detector, located in onboard_detector/cfg'
     )
 
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='false',
+        default_value='true',
         description='Use simulation clock if true'
     )
     
@@ -38,7 +38,7 @@ def generate_launch_description():
     yolo_detector_param_path = os.path.join(
         get_package_share_directory('onboard_detector'),
         'cfg',
-        'yolo_detector_param.yaml'
+        'yolo_detector_param_demo.yaml'
     )
 
     # Log the resolved dynamic parameter file

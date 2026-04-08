@@ -24,6 +24,14 @@ ros2 launch map_manager dynamic_map.launch.py
 - Service:
   - `/onboard_detector/get_dynamic_obstacles`
 
+YOLO 2D detections used by the dynamic detector are published to:
+
+- `/yolo_detector/detected_bounding_boxes` (`vision_msgs/msg/Detection2DArray`)
+- `/yolo_detector/detected_image` (debug image; enabled by parameter)
+- `/yolo_detector/yolo_time` (`std_msgs/msg/Float64`, per-frame detector latency)
+
+The default detector node is now `yolo_detector_node` (C++) using YOLOs-CPP with `yolo26n.onnx`.
+
 ## AgiAUTO context
 
 - Repo: https://github.com/SasaKuruppuarachchi/agipix_px4_autonomy.git
