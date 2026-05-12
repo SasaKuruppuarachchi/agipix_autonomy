@@ -88,6 +88,8 @@ namespace AutoFlight{
 		rclcpp::Time waypointRotateReadyTime_;
 		double waypointRotateYaw_ = 0.0;
 		double lastCollisionReplanSec_{-1.0};
+		std::vector<Eigen::Vector3d> blacklistedGoalPositions_;
+		static constexpr double goalBlacklistRadius_ = 0.5;
 		std::mutex navStateMutex_;
 
 		void clearWaypointPlan();

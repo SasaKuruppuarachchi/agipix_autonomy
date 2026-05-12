@@ -32,3 +32,8 @@ legacy_controller_bak
 DDS_migration
 *.dot
 agi_viz/scripts/topic_graph.png
+.agent-memory/
+.github/agents
+.github/skills
+ideas/
+.vscode/

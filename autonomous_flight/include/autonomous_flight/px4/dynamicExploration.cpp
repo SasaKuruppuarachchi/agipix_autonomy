@@ -586,6 +586,11 @@ namespace AutoFlight{
 
 		if (this->trajectoryReady_){
 			if (not this->expPlanner_->isPosValid(this->trajectory_.at(this->trajectory_.getDuration()))){
+				const Eigen::Vector3d unsafePos = this->trajectory_.at(this->trajectory_.getDuration());
+				this->blacklistedGoalPositions_.push_back(unsafePos);
+				RCLCPP_WARN(this->node_->get_logger(),
+					"[AutoFlight]: Blacklisting unsafe goal at (%.2f, %.2f, %.2f). Will re-run frontier.",
+					unsafePos(0), unsafePos(1), unsafePos(2));
 				this->trajectoryReady_ = false;
 				this->replan_ = false;
 				this->stop();
@@ -944,19 +949,39 @@ namespace AutoFlight{
 		if (replanSuccess){
 			this->waypoints_ = this->expPlanner_->getBestPath();
 			if (this->waypoints_.poses.size() >= 2){
-				const auto& startPose = this->waypoints_.poses.front().pose.position;
-				const auto& nextPose = this->waypoints_.poses[1].pose.position;
-				const double dx = nextPose.x - startPose.x;
-				const double dy = nextPose.y - startPose.y;
-				const double dz = nextPose.z - startPose.z;
-				const double waypointDist = std::sqrt(dx * dx + dy * dy + dz * dz);
-				if (waypointDist >= this->minWaypointDistance_){
-					this->newWaypoints_ = true;
-					this->waypointIdx_ = 1;
-					this->explorationReplan_ = false;
+				// Validate endpoint: reject if unsafe or previously blacklisted
+				const auto& lastPose = this->waypoints_.poses.back().pose.position;
+				const Eigen::Vector3d lastPos(lastPose.x, lastPose.y, lastPose.z);
+				bool isBlacklisted = false;
+				for (const auto& bl : this->blacklistedGoalPositions_){
+					if ((lastPos - bl).norm() < goalBlacklistRadius_){
+						isBlacklisted = true;
+						break;
+					}
+				}
+				if (!this->expPlanner_->isPosValid(lastPos) || isBlacklisted){
+					RCLCPP_WARN(this->node_->get_logger(),
+						"[AutoFlight]: DEP goal (%.2f, %.2f, %.2f) is %s. Re-running frontier on next tick.",
+						lastPos(0), lastPos(1), lastPos(2),
+						isBlacklisted ? "blacklisted" : "unsafe");
+					// Do not accept; exploreReplan will fire again in 300 ms
 				}
 				else{
-					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: DEP returned too-short waypoint segment (%.3f m). Retrying.", waypointDist);
+					const auto& startPose = this->waypoints_.poses.front().pose.position;
+					const auto& nextPose = this->waypoints_.poses[1].pose.position;
+					const double dx = nextPose.x - startPose.x;
+					const double dy = nextPose.y - startPose.y;
+					const double dz = nextPose.z - startPose.z;
+					const double waypointDist = std::sqrt(dx * dx + dy * dy + dz * dz);
+					if (waypointDist >= this->minWaypointDistance_){
+						this->blacklistedGoalPositions_.clear();
+						this->newWaypoints_ = true;
+						this->waypointIdx_ = 1;
+						this->explorationReplan_ = false;
+					}
+					else{
+						RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: DEP returned too-short waypoint segment (%.3f m). Retrying.", waypointDist);
+					}
 				}
 			}
 			else{
