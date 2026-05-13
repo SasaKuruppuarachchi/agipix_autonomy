@@ -43,8 +43,10 @@ def generate_launch_description() -> LaunchDescription:
     px4_frame = [LaunchConfiguration('drone_namespace'), '/px4_frame']
     livox_imu_frame = [LaunchConfiguration('drone_namespace'), '/livox_imu_frame']
     camera_frame = [LaunchConfiguration('drone_namespace'), '/camera']
-    livox_lidar_frame_sim = [LaunchConfiguration('drone_namespace'), '/livox_lidar_frame']
-    livox_lidar_frame_hw  = [LaunchConfiguration('drone_namespace'), '/livox_lidar_frame']
+    if use_sim_time_arg == 'true':
+        livox_lidar_frame = [LaunchConfiguration('drone_namespace'), '/livox_lidar_frame']
+    else:
+        livox_lidar_frame  = [LaunchConfiguration('drone_namespace'), '/livox_lidar_frame']
     
     
     package_share_path = get_package_share_directory("odom_transformer")
@@ -82,15 +84,14 @@ def generate_launch_description() -> LaunchDescription:
     )
     ## -------------- Sensror frames -------------- ##
     # Lidar
-    transform_drone0map_to_livox_lidar = Node(
+    transform_drone0base_link_to_livox_lidar = Node(
         package='tf2_ros',
         executable='static_transform_publisher',
         name='livox_lidar_frame_pub',
         output='screen',
-        arguments = [ '0.0905', '0.02329', '0.00182', '0', '0.3826834', '0', '0.9238795', base_link_frame, livox_lidar_frame_hw] 
+        arguments = [ '0.0905', '0.02329', '0.00182', '0', '0.3826834', '0', '0.9238795', base_link_frame, livox_lidar_frame]
     )
-    if use_sim_time_arg == 'true':
-        transform_drone0map_to_livox_lidar.arguments = [ '0.0905', '0.02329', '0.00182', '0', '0.3826834', '0', '0.9238795', base_link_frame, livox_lidar_frame_sim]
+    
         
     #Lidar IMU
     transform_base_link_to_livox_frame = Node(
@@ -123,5 +124,6 @@ def generate_launch_description() -> LaunchDescription:
         odom_transformer, px4_imu, \
         transform_drone0map_to_earth, \
         transform_drone0map_to_odom, \
-        transform_baselink_to_px4_frame]\
+        transform_baselink_to_px4_frame,
+        transform_drone0base_link_to_livox_lidar]\
         )
