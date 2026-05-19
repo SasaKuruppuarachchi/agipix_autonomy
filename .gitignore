@@ -37,3 +37,4 @@ agi_viz/scripts/topic_graph.png
 .github/skills
 ideas/
 .vscode/
+*.gv

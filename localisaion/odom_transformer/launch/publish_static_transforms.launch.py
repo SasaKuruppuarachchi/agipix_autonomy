@@ -120,10 +120,11 @@ def generate_launch_description() -> LaunchDescription:
     
     return LaunchDescription([use_sim_time_arg,
         drone_namespace_arg,
-        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')),
-        odom_transformer, px4_imu, \
-        transform_drone0map_to_earth, \
-        transform_drone0map_to_odom, \
+        SetParameter(name='use_sim_time', value=LaunchConfiguration('use_sim_time')), 
+        #odom_transformer, 
+        #px4_imu, 
+        #transform_drone0map_to_earth, 
+        transform_drone0map_to_odom, 
         transform_baselink_to_px4_frame,
-        transform_drone0base_link_to_livox_lidar]\
+        transform_drone0base_link_to_livox_lidar]
         )
