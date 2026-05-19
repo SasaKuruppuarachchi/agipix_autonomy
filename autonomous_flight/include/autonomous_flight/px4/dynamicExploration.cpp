@@ -342,11 +342,8 @@ namespace AutoFlight{
 		if (this->endMissionActive_){
 			if (this->newWaypoints_){
 				if (this->waypoints_.poses.size() < 2){
-					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: End mission path invalid (size=%zu). Holding position.", this->waypoints_.poses.size());
-					this->newWaypoints_ = false;
-					this->replan_ = false;
-					this->trajectoryReady_ = false;
-					this->stop();
+					RCLCPP_WARN(this->node_->get_logger(), "[AutoFlight]: End mission path invalid (size=%zu). Rebuilding return-home path.", this->waypoints_.poses.size());
+					this->endMission();
 					return;
 				}
 

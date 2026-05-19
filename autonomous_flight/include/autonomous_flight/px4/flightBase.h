@@ -30,6 +30,7 @@ namespace AutoFlight{
 		rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr targetMarkerPub_;
 		rclcpp::TimerBase::SharedPtr stateUpdateTimer_;
 		rclcpp::TimerBase::SharedPtr targetPubTimer_;
+		std::mutex targetStateMutex_;
 
 		// callback groups (critical callbacks are mutually exclusive)
 		rclcpp::CallbackGroup::SharedPtr stateCbGroup_;

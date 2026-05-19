@@ -136,12 +136,17 @@ namespace AutoFlight{
 	}
 
 	void flightBase::publishTarget(){
-		if (!this->hasStateTarget_.load()) {
-			return;
+		autonomous_flight::msg::Target target;
+		{
+			std::scoped_lock<std::mutex> lock(this->targetStateMutex_);
+			if (!this->hasStateTarget_.load()) {
+				return;
+			}
+			target = this->stateTgt_;
 		}
-		this->statePub_->publish(this->stateTgt_);
+		this->statePub_->publish(target);
 		if (this->publishTargetMarker_ && this->targetMarkerPub_){
-			this->publishTargetMarker(this->stateTgt_);
+			this->publishTargetMarker(target);
 		}
 	}
 
@@ -563,6 +568,7 @@ namespace AutoFlight{
 	}
 
 	void flightBase::updateTargetWithState(const autonomous_flight::msg::Target& target){
+		std::scoped_lock<std::mutex> lock(this->targetStateMutex_);
 		this->stateTgt_ = target;
 		this->stateTgt_.header.stamp = this->node_->now();
 		this->stateTgt_.header.frame_id = this->mapFrameId_;
