@@ -724,20 +724,29 @@ namespace globalPlanner{
 		std::shared_ptr<PRM::Node> currPos;
 		currPos.reset(new PRM::Node (this->position_));
 		std::shared_ptr<PRM::Node> start = this->roadmap_->nearestNeighbor(currPos);
+		int failedCandidateCount = 0;
 
 		candidatePaths.clear();
 		for (std::shared_ptr<PRM::Node> goal : goalCandidates){
-			std::vector<std::shared_ptr<PRM::Node>> path = PRM::AStar(this->roadmap_, start, goal, this->map_);
+			std::vector<std::shared_ptr<PRM::Node>> path = PRM::AStar(this->roadmap_, start, goal, this->map_, false);
 			if (int(path.size()) != 0){
 				findPath = true;
 			}
 			else{
+				++failedCandidateCount;
 				continue;
 			}
 			path.insert(path.begin(), currPos);
 			std::vector<std::shared_ptr<PRM::Node>> pathSc;
 			this->shortcutPath(path, pathSc);
 			candidatePaths.push_back(pathSc);
+		}
+		if (!findPath && !goalCandidates.empty()){
+			RCLCPP_WARN(
+				this->node_->get_logger(),
+				"[DEP]: No valid roadmap path from current pose to any goal candidate (%d/%zu failed).",
+				failedCandidateCount,
+				goalCandidates.size());
 		}
 		return findPath;
 	}

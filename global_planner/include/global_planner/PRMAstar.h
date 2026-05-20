@@ -20,7 +20,8 @@ namespace PRM{
 	inline std::vector<std::shared_ptr<Node>> AStar(const std::shared_ptr<KDTree>& roadmap,
 										     const std::shared_ptr<Node>& start,
 										     const std::shared_ptr<Node>& goal,
-										     const std::shared_ptr<mapManager::occMap>& map){
+									     const std::shared_ptr<mapManager::occMap>& map,
+									     bool log_failure = true){
 		std::vector<std::shared_ptr<Node>> path;
 
 		// open: priority queue
@@ -43,7 +44,9 @@ namespace PRM{
 
 			if (open.size() == 0){
 				findPath = false;
-				cout << "[Astar]: No valid path." << endl;
+				if (log_failure){
+					cout << "[Astar]: No valid path." << endl;
+				}
 				break;
 			}
 
