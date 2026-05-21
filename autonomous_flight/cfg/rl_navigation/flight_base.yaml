@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     takeoff_height: 1.0
-    frame_id: map
+    frame_id: odom
     odom_topic: sensor_measurements/odom
     wait_for_topics_ready: false
     takeoff_wait_timeout_sec: 8.0

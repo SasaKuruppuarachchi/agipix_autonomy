@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     takeoff_height: 1.0 # m
-    frame_id: map
+    frame_id: odom
     odom_topic: sensor_measurements/odom
     subscribe_legacy_goal_topic: true
     wait_for_topics_ready: false

@@ -5,4 +5,13 @@
     mass: 1.0  # Kg
     max_thrust: 15.0  # N
     min_thrust: 0.15  # N
-    external_odom: false  # Use external odometry source
+    external_odom: true  # Use external odometry source
+    publish_visual_odometry: true  # Publish visual odometry as nav_msgs/Odometry
+    fill_imu_orientation: false  # Copy orientation from platform odometry into IMU when available
+    imu_frame_id: base_link  # Output IMU frame. Set to e.g. imu when using a dedicated IMU frame
+    imu_transform_x: 0.0  # m, base_link -> imu_frame translation x
+    imu_transform_y: 0.0  # m, base_link -> imu_frame translation y
+    imu_transform_z: 0.0  # m, base_link -> imu_frame translation z
+    imu_transform_roll: 3.14159  # rad, base_link -> imu_frame rotation roll
+    imu_transform_pitch: 0.0  # rad, base_link -> imu_frame rotation pitch
+    imu_transform_yaw: 0.0  # rad, base_link -> imu_frame rotation yaw

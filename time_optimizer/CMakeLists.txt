@@ -218,6 +218,9 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "a
     FILES
       ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libmosek64.so
       ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libmosek64.so.10.1
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libtbb_debug.so
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libtbb_debug.so.12
+      ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME}/third_party/lib/ARM/libtbb_debug.so.12.8
     DESTINATION lib
   )
 endif()
