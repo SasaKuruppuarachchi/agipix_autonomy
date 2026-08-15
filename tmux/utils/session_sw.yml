@@ -106,8 +106,10 @@ windows:
       panes:
         # Launch LIO here
         - ls
+        - sorlidar && ros2 launch adaptive_lio run.launch.py namespace:=<%= drone_namespace %> use_sim_time:=<%= simulation %> viz:=true 
+
         # - sorlidar && ros2 launch direct_lidar_inertial_odometry dlio.launch.py rviz:=false use_sim_time:=<%= simulation %>
-        - sorlidar && ros2 launch fast_lio mapping.launch.py namespace:=drone0 use_sim_time:=<%= simulation %>
+        # - sorlidar && ros2 launch fast_lio mapping.launch.py namespace:=drone0 use_sim_time:=<%= simulation %>
         # - ros2 run px4_local_navigation_cpp px4_local_navigation --ros-args -p use_sim_time:=<%= simulation %>
 
 <% if control_mode == "mission" %>

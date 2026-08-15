@@ -1,5 +1,5 @@
 /**:
   ros__parameters:
-    odom_topic: "/drone0/fast_lio/imu_odometry"  # Topic to subscribe for odometry data
+    odom_topic: "/drone0/state/odom"  # Topic to subscribe for odometry data
     use_gps: false
-    set_origin_on_start: false
+    set_origin_on_start: true

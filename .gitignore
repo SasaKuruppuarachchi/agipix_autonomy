@@ -38,3 +38,4 @@ agi_viz/scripts/topic_graph.png
 ideas/
 .vscode/
 *.gv
+core.*
