@@ -6,7 +6,7 @@
       point_cloud_topic: livox/lidar
       pose_topic: self_localization/pose
       odom_topic: sensor_measurements/odom
-      map_frame_id : drone0/map
+      map_frame_id : drone0/odom
 
       # robot size
       robot_size: [0.3, 0.3, 0.1]

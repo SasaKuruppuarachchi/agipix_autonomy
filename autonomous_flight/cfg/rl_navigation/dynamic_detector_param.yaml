@@ -7,7 +7,7 @@
       lidar_pointcloud_topic: livox/lidar
       pose_topic: self_localization/pose
       odom_topic: sensor_measurements/odom
-      frame_id: map
+      frame_id: odom
 
       depth_intrinsics: [606.3120727539062, 605.92626953125, 314.6913146972656, 252.1909942626953]
       color_intrinsics: [606.3120727539062, 605.92626953125, 314.6913146972656, 252.1909942626953]
