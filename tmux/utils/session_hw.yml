@@ -50,7 +50,7 @@ windows:
       panes:
         - ros2 launch px4_control_interface dds_shadow.launch.py 
             drone_namespace:=<%= drone_namespace %>
-            use_sim_time:=true 
+            use_sim_time:=<%= simulation %> 
             start_legacy_stack:=true 
             mission:=dynamic_exploration
 
@@ -62,7 +62,7 @@ windows:
       panes:
         - ros2 launch px4_control_interface dds_shadow.launch.py 
             drone_namespace:=<%= drone_namespace %>
-            use_sim_time:=true 
+            use_sim_time:=<%= simulation %> 
             start_legacy_stack:=true 
             mission:=rl_navigation
 
@@ -83,7 +83,7 @@ windows:
   - BACKEND:
       layout: even-horizontal
       panes:
-        - sudo MicroXRCEAgent serial --dev /dev/ttyTHS2 -b 921600
+        - sudo MicroXRCEAgent serial --dev /dev/ttyTHS2 -b 1500000
         #- 
         - ros2 launch odom_transformer publish_static_transforms.launch.py 
             namespace:=<%= drone_namespace %>
@@ -106,8 +106,9 @@ windows:
       panes:
         # Launch LIO here
         - ls
-        # - sorlidar && ros2 launch direct_lidar_inertial_odometry dlio.launch.py namespace:=<%= drone_namespace %> rviz:=false use_sim_time:=<%= simulation %> 
-        - sorlidar && ros2 launch fast_lio mapping.launch.py namespace:=drone0 use_sim_time:=<%= simulation %>
+        # - sorlidar && ros2 launch adaptive_lio run.launch.py namespace:=<%= drone_namespace %> use_sim_time:=<%= simulation %> viz:=true 
+        - sorlidar && ros2 launch direct_lidar_inertial_odometry dlio.launch.py rviz:=true use_sim_time:=<%= simulation %>
+        # - sorlidar && ros2 launch fast_lio mapping.launch.py namespace:=drone0 use_sim_time:=<%= simulation %>
         # - ros2 run px4_local_navigation_cpp px4_local_navigation --ros-args -p use_sim_time:=<%= simulation %>
         - sorlidar && ros2 launch livox_ros_driver2 msg_MID360_launch.py namespace:=<%= drone_namespace %> 
 
