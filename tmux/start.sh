@@ -75,7 +75,7 @@ arch=$(uname -m)
 if [[ ${arch} == "aarch64" ]]; then
   session_file="utils/session_hw.yml"
 else
-  session_file="utils/session_sw.yml"
+  session_file="utils/session_sw_estimation_only.yml"
 fi
 
 # Shift optional args

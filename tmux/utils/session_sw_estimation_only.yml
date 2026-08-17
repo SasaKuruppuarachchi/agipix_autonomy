@@ -1,0 +1,142 @@
+<%
+# Input parameters
+drone_namespace     = @settings["drone_namespace"]
+simulation          = @settings["simulation"] == "true"
+estimator_plugin    = @settings["estimator_plugin"]
+control_mode        = @settings["control_mode"] || "mission"
+
+# Other parameters
+behavior_type               = "position" # "trajectory"
+motion_controller_plugin    = "pid_speed_controller" # "differential_flatness_controller"
+
+if simulation
+    config_path     = "sim_config"
+    platform_config_file = "sim_config/platform_config.yaml"
+else
+    config_path     = "real_config"
+    platform_config_file = "real_config/platform_config_odom.yaml"
+end
+
+if estimator_plugin == "mocap_pose"
+    platform_config_file = "real_config/platform_config_mocap.yaml"
+    state_estimator_config_file = "real_config/state_estimator_mocap.yaml"
+elsif estimator_plugin == "raw_odometry"
+
+    
+
+    if not simulation
+        state_estimator_config_file = "real_config/state_estimator_odom.yaml"
+    elsif simulation
+        state_estimator_config_file = "sim_config/state_estimator_odom.yaml"
+    end
+end
+
+%>
+
+name: agipix_console_<%= drone_namespace %>
+root: ./
+startup_window: UI
+pre_window: ls; source /workspaces/agipix_control/install/setup.bash
+windows:
+  - UI:
+      layout: tiled
+      panes:
+        - ros2 run agi_alphanumeric_viewer agi_alphanumeric_viewer_node --ros-args -r  __ns:=/<%= drone_namespace %> -p use_sim_time:=<%= simulation %>
+        - agi-logger record
+
+# <% if control_mode == "mission" %>
+#   - CTRL-MISSION:
+#       layout: tiled
+#       panes:
+#         - ros2 launch px4_control_interface dds_shadow.launch.py 
+#             drone_namespace:=<%= drone_namespace %>
+#             use_sim_time:=true 
+#             start_legacy_stack:=true 
+#             mission:=dynamic_exploration
+
+#         - ros2 service call /<%= drone_namespace %>/dynamic_exploration/start std_srvs/srv/Trigger "{}" -sasd
+
+# <% elsif control_mode == "climb" %>
+#   - CTRL-CLIMB:
+#       layout: tiled
+#       panes:
+#         - ros2 launch px4_control_interface dds_shadow.launch.py 
+#             drone_namespace:=<%= drone_namespace %>
+#             use_sim_time:=true 
+#             start_legacy_stack:=true 
+#             mission:=rl_navigation
+
+#         - cd /workspaces/ui && source install/setup.bash && ros2 launch climb_robot teleop_joy.launch.py # drone_namespace:=<%= drone_namespace %>
+
+#         - 'cd /workspaces/ui && source install/setup.bash && ros2 topic pub --once /<%= drone_namespace %>/climb_motion_bound_cmd climb_msgs/msg/MotionBounds "{climb_mode: 2, max_linear_velocity: 1.6, max_angular_velocity: 0.8, max_linear_acceleration: 0.3, max_angular_acceleration: 0.4, scale_linear_ctrl: 0.9, scale_angular_ctrl: 0.6, min_gap_to_obstacle: 0.4}"'
+#         - cd /workspaces/ui && source install/setup.bash && ros2 topic echo /<%= drone_namespace %>/climb_control/status
+# <% end %>
+
+  - CTRL-DEBUG:
+      layout: tiled
+      panes:
+        - ls # - ros2 topic hz /<%= drone_namespace %>/autonomous_flight/target_state
+        # - ros2 topic hz /fmu/out/vehicle_local_position
+        # - ros2 topic hz /<%= drone_namespace %>/sensor_measurements/odom
+        
+
+  - BACKEND:
+      layout: even-horizontal
+      panes:
+        - MicroXRCEAgent udp4 -p 8888
+        #- 
+        - ros2 launch odom_transformer publish_static_transforms.launch.py 
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
+        - ros2 launch as2_platform_pixhawk pixhawk_launch.py
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
+            platform_config_file:=<%= platform_config_file %>
+        - ros2 launch as2_state_estimator state_estimator_launch.py
+            namespace:=<%= drone_namespace %>
+            use_sim_time:=<%= simulation %>
+            plugin_name:=<%= estimator_plugin %>
+            plugin_config_file:=<%= state_estimator_config_file %>
+
+        # cd /workspaces/agipix_control/src/thirdparty/PX4-Autopilot && make px4_sitl gz_x500
+        
+        
+  - PERCEP-LIO:
+      layout: even-vertical
+      panes:
+        # Launch LIO here
+        - ls
+        # - sorlidar && ros2 launch adaptive_lio run.launch.py namespace:=<%= drone_namespace %> use_sim_time:=<%= simulation %> viz:=true 
+        - sorlidar && ros2 launch direct_lidar_inertial_odometry dlio.launch.py rviz:=true use_sim_time:=<%= simulation %>
+        # - sorlidar && ros2 launch fast_lio mapping.launch.py namespace:=drone0 use_sim_time:=<%= simulation %>
+        # - ros2 run px4_local_navigation_cpp px4_local_navigation --ros-args -p use_sim_time:=<%= simulation %>
+
+# <% if control_mode == "mission" %>
+#   - PERCEP-MAP:
+#       layout: even-vertical
+#       panes:
+#         - ros2 launch agi_viz rviz.launch.py 
+#             drone_namespace:=<%= drone_namespace %> 
+#             use_sim_time:=<%= simulation %> 
+#             launch_all:=false 
+#             launch_explore:=true
+
+# <% elsif control_mode == "climb" %>
+#   - PERCEP-MAP:
+#       layout: even-vertical
+#       panes:
+#         - ros2 launch agi_viz rviz.launch.py 
+#             drone_namespace:=<%= drone_namespace %> 
+#             use_sim_time:=<%= simulation %> 
+#             launch_all:=false 
+#             launch_climb:=true
+#         - source /workspaces/ui/install/setup.bash && ros2 launch agi_viz foxglove_launch.xml 
+#             use_sim_time:=<%= simulation %> 
+# <% end %>
+
+        
+  - PERCEP-debug:
+      layout: even-horizontal
+      panes:
+        - ros2 topic echo /fmu/in/vehicle_visual_odometry
+ 
