@@ -73,7 +73,7 @@ source utils/tools.bash
 # Select tmuxinator session file based on architecture
 arch=$(uname -m)
 if [[ ${arch} == "aarch64" ]]; then
-  session_file="utils/session_hw.yml"
+  session_file="utils/session_hw_estimation_only.yml"
 else
   session_file="utils/session_sw_estimation_only.yml"
 fi
