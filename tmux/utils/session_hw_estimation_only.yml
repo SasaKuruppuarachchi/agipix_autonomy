@@ -83,7 +83,7 @@ windows:
   - BACKEND:
       layout: even-horizontal
       panes:
-        - sudo MicroXRCEAgent serial --dev /dev/ttyTHS2 -b 921600
+        - sudo chrt -f 80 MicroXRCEAgent serial --dev /dev/ttyTHS2 -b 1500000 -v 3
         #- 
         - ros2 launch odom_transformer publish_static_transforms.launch.py 
             namespace:=<%= drone_namespace %>
@@ -140,4 +140,6 @@ windows:
       layout: even-horizontal
       panes:
         - ros2 topic echo /fmu/in/vehicle_visual_odometry
+        - sorlidar && ros2 launch realsense2_camera rs_launch.py namespace:=<%= drone_namespace %> use_sim_time:=<%= simulation %>
+        - sorlidar && ros2 launch usb_camera_driver usb_camera_node.launch.py namespace:=<%= drone_namespace %> use_sim_time:=<%= simulation %>
  
