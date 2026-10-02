@@ -209,22 +209,44 @@ namespace AutoFlight{
 	}
 
 	void flightBase::stateUpdateCB(){
+		if (!this->odomReceived_){
+			return;
+		}
 		Eigen::Vector3d currVelBody (this->odom_.twist.twist.linear.x, this->odom_.twist.twist.linear.y, this->odom_.twist.twist.linear.z);
 		Eigen::Vector4d orientationQuat (this->odom_.pose.pose.orientation.w, this->odom_.pose.pose.orientation.x, this->odom_.pose.pose.orientation.y, this->odom_.pose.pose.orientation.z);
+		if (!currVelBody.allFinite() || !orientationQuat.allFinite() || orientationQuat.squaredNorm() < 1e-12){
+			this->currAcc_.setZero();
+			this->stateUpdateFirstTime_ = true;
+			return;
+		}
 		Eigen::Matrix3d orientationRot = AutoFlight::quat2RotMatrix(orientationQuat);
-		this->currVel_ = orientationRot * currVelBody;	
-		rclcpp::Time currTime = this->node_->now();	
-		if (this->stateUpdateFirstTime_){
-			this->currAcc_ = Eigen::Vector3d (0.0, 0.0, 0.0);
+		const Eigen::Vector3d velocity = orientationRot * currVelBody;
+		if (!velocity.allFinite()){
+			this->currAcc_.setZero();
+			this->stateUpdateFirstTime_ = true;
+			return;
+		}
+
+		// A wall timer can run more than once for one simulated odometry sample.
+		// Differentiate source timestamps, never repeated/stalled node clock time.
+		const rclcpp::Time currTime(this->odom_.header.stamp);
+		if (this->stateUpdateFirstTime_ || currTime < this->prevStateTime_){
+			this->currVel_ = velocity;
+			this->currAcc_.setZero();
+			this->prevVel_ = velocity;
 			this->prevStateTime_ = currTime;
 			this->stateUpdateFirstTime_ = false;
+			return;
 		}
-		else{
-			double dt = (currTime - this->prevStateTime_).seconds();
-			this->currAcc_ = (this->currVel_ - this->prevVel_)/dt;
-			this->prevVel_ = this->currVel_; 
-			this->prevStateTime_ = currTime;
+		const double dt = (currTime - this->prevStateTime_).seconds();
+		if (dt <= 0.0){
+			return;
 		}
+		const Eigen::Vector3d acceleration = (velocity - this->prevVel_) / dt;
+		this->currVel_ = velocity;
+		this->currAcc_ = acceleration.allFinite() ? acceleration : Eigen::Vector3d::Zero();
+		this->prevVel_ = velocity;
+		this->prevStateTime_ = currTime;
 	}
 
 	void flightBase::takeoff(){

@@ -29,7 +29,7 @@ class flightBaseTrackingMode : public px4_ros2::ModeBase
 {
 public:
   explicit flightBaseTrackingMode(rclcpp::Node & node)
-  : ModeBase(node, px4_ros2::ModeBase::Settings{"AgiPix FB Tracking", false})
+  : ModeBase(node, px4_ros2::ModeBase::Settings{"AgiPix FB Tracking"}.activateEvenWhileDisarmed(false))
   {
     _trajectory_sp = std::make_shared<px4_ros2::TrajectorySetpointType>(*this);
     _local_position = std::make_shared<px4_ros2::OdometryLocalPosition>(*this);
@@ -491,10 +491,11 @@ private:
 class flightBaseExecutor : public px4_ros2::ModeExecutorBase
 {
 public:
-  flightBaseExecutor(rclcpp::Node & node, px4_ros2::ModeBase & owned_mode)
-  : ModeExecutorBase(node, px4_ros2::ModeExecutorBase::Settings{}, owned_mode),
-    _node(node)
+  explicit flightBaseExecutor(px4_ros2::ModeBase & owned_mode)
+  : ModeExecutorBase(px4_ros2::ModeExecutorBase::Settings{}, owned_mode),
+    _node(owned_mode.node())
   {
+    auto & node = _node;
     _local_position = std::make_shared<px4_ros2::OdometryLocalPosition>(owned_mode);
     _vehicle_status = std::make_shared<px4_ros2::VehicleStatus>(owned_mode);
     _skip_takeoff_if_flying = getOrDeclareParam<bool>(node, "skip_takeoff_if_flying", true);

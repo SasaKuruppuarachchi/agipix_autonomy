@@ -27,7 +27,7 @@ class AgipixTrackingMode : public px4_ros2::ModeBase
 {
 public:
   explicit AgipixTrackingMode(rclcpp::Node & node)
-  : ModeBase(node, px4_ros2::ModeBase::Settings{"AgiPix DDS Tracking", false})
+  : ModeBase(node, px4_ros2::ModeBase::Settings{"AgiPix DDS Tracking"}.activateEvenWhileDisarmed(false))
   {
     _trajectory_sp = std::make_shared<px4_ros2::TrajectorySetpointType>(*this);
     _local_position = std::make_shared<px4_ros2::OdometryLocalPosition>(*this);
@@ -208,8 +208,9 @@ private:
 class AgipixTrackingExecutor : public px4_ros2::ModeExecutorBase
 {
 public:
-  AgipixTrackingExecutor(rclcpp::Node & node, px4_ros2::ModeBase & owned_mode)
-  : ModeExecutorBase(node, px4_ros2::ModeExecutorBase::Settings{}, owned_mode), _node(node)
+  explicit AgipixTrackingExecutor(px4_ros2::ModeBase & owned_mode)
+  : ModeExecutorBase(px4_ros2::ModeExecutorBase::Settings{}, owned_mode),
+    _node(owned_mode.node())
   {}
 
   void onActivate() override

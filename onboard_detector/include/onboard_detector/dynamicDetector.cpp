@@ -6,6 +6,15 @@
 #include <onboard_detector/dynamicDetector.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/filters/voxel_grid.h>
+#include <cmath>
+
+namespace {
+template<typename PublisherPtr>
+bool hasVisualizationSubscribers(const PublisherPtr& publisher) {
+    return publisher && (publisher->get_subscription_count() > 0 ||
+                         publisher->get_intra_process_subscription_count() > 0);
+}
+}  // namespace
 
 namespace onboardDetector{
     dynamicDetector::dynamicDetector(){
@@ -676,11 +685,13 @@ namespace onboardDetector{
         }
 
         this->lidarCloud_ = downsampledCloud;
-        sensor_msgs::msg::PointCloud2 outputCloud;
-        pcl::toROSMsg(*this->lidarCloud_, outputCloud);
-        outputCloud.header = cloudMsg->header;
-        outputCloud.header.frame_id = this->frameId_;
-        this->downSamplePointsPub_->publish(outputCloud);
+        if (hasVisualizationSubscribers(this->downSamplePointsPub_)) {
+            sensor_msgs::msg::PointCloud2 outputCloud;
+            pcl::toROSMsg(*this->lidarCloud_, outputCloud);
+            outputCloud.header = cloudMsg->header;
+            outputCloud.header.frame_id = this->frameId_;
+            this->downSamplePointsPub_->publish(outputCloud);
+        }
 
         // store lidar pose
         this->positionLidar_(0) = lidarPoseMatrix(0, 3);
@@ -928,12 +939,29 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::visCB(){
+        if (!(hasVisualizationSubscribers(this->uvDepthMapPub_) ||
+               hasVisualizationSubscribers(this->uDepthMapPub_) ||
+               hasVisualizationSubscribers(this->uvBirdViewPub_) ||
+               hasVisualizationSubscribers(this->uvBBoxesPub_) ||
+               hasVisualizationSubscribers(this->dynamicPointsPub_) ||
+               hasVisualizationSubscribers(this->filteredPointsPub_) ||
+               hasVisualizationSubscribers(this->dbBBoxesPub_) ||
+               hasVisualizationSubscribers(this->detectedColorImgPub_) ||
+               hasVisualizationSubscribers(this->filteredBBoxesPub_) ||
+               hasVisualizationSubscribers(this->trackedBBoxesPub_) ||
+               hasVisualizationSubscribers(this->dynamicBBoxesPub_) ||
+               hasVisualizationSubscribers(this->historyTrajPub_) ||
+               hasVisualizationSubscribers(this->velVisPub_))) {
+            return;
+        }
 		std::lock_guard<std::mutex> lock(this->stateMutex_);
         this->publishUVImages();
         this->publish3dBox(this->uvBBoxes_, this->uvBBoxesPub_, 0, 1, 0);
-        std::vector<Eigen::Vector3d> dynamicPoints;
-        this->getDynamicPc(dynamicPoints);
-        this->publishPoints(dynamicPoints, this->dynamicPointsPub_);
+        if (hasVisualizationSubscribers(this->dynamicPointsPub_)) {
+            std::vector<Eigen::Vector3d> dynamicPoints;
+            this->getDynamicPc(dynamicPoints);
+            this->publishPoints(dynamicPoints, this->dynamicPointsPub_);
+        }
         this->publishPoints(this->filteredPoints_, this->filteredPointsPub_);
         this->publish3dBox(this->dbBBoxes_, this->dbBBoxesPub_, 1, 0, 0);
         this->publishColorImages();
@@ -1011,7 +1039,7 @@ namespace onboardDetector{
             this->lidarClusters_ = lidarClustersFiltered;
 
             // publish lidar clusters as PointCloud2 for visualization (concatenate clusters with different colors is left for higher-level code)
-            if (!this->lidarClusters_.empty()){
+            if (!this->lidarClusters_.empty() && hasVisualizationSubscribers(this->lidarClustersPub_)){
                 pcl::PointCloud<pcl::PointXYZ> merged;
                 for (auto &c : this->lidarClusters_){
                     for (auto &pt : c.points->points) merged.push_back(pt);
@@ -1446,93 +1474,119 @@ namespace onboardDetector{
         this->genFeatHelper(currBoxesFeat, this->filteredBBoxes_);
     }
 
-    void dynamicDetector::genFeatHelper(std::vector<Eigen::VectorXd>& features, const std::vector<onboardDetector::box3D>& boxes){ 
-    // 3pos + 3size + 1 pc length + 3 pc std
-    const Eigen::VectorXd &featureWeights = this->featureWeights_;
-        for (size_t i=0 ; i<boxes.size() ; i++){
-            Eigen::VectorXd feature(10);
-            features[i] = feature;
-            features[i](0) = (boxes[i].x - this->position_(0)) * featureWeights(0) ;
+    void dynamicDetector::genFeatHelper(std::vector<Eigen::VectorXd>& features, const std::vector<onboardDetector::box3D>& boxes){
+        // Historical boxes can outnumber current clusters; retain geometry only
+        // when cluster metadata is unavailable instead of indexing past its end.
+        features.assign(boxes.size(), Eigen::VectorXd::Zero(10));
+        const Eigen::VectorXd &featureWeights = this->featureWeights_;
+        if (featureWeights.size() != 10 || !featureWeights.allFinite()) {
+            return;
+        }
+        for (size_t i=0; i<boxes.size(); ++i){
+            features[i](0) = (boxes[i].x - this->position_(0)) * featureWeights(0);
             features[i](1) = (boxes[i].y - this->position_(1)) * featureWeights(1);
             features[i](2) = (boxes[i].z - this->position_(2)) * featureWeights(2);
             features[i](3) = boxes[i].x_width * featureWeights(3);
             features[i](4) = boxes[i].y_width * featureWeights(4);
             features[i](5) = boxes[i].z_width * featureWeights(5);
-            features[i](6) = this->filteredPcClusters_[i].size() * featureWeights(6);
-            features[i](7) = this->filteredPcClusterStds_[i](0) * featureWeights(7);
-            features[i](8) = this->filteredPcClusterStds_[i](1) * featureWeights(8);
-            features[i](9) = this->filteredPcClusterStds_[i](2) * featureWeights(9);
+            if (i < this->filteredPcClusters_.size() && i < this->filteredPcClusterStds_.size()) {
+                features[i](6) = this->filteredPcClusters_[i].size() * featureWeights(6);
+                features[i](7) = this->filteredPcClusterStds_[i](0) * featureWeights(7);
+                features[i](8) = this->filteredPcClusterStds_[i](1) * featureWeights(8);
+                features[i](9) = this->filteredPcClusterStds_[i](2) * featureWeights(9);
+            }
+            if (!features[i].allFinite()) {
+                features[i].setZero();
+            }
         }
     }
 
     void dynamicDetector::findBestMatch(const std::vector<Eigen::VectorXd>& propedBoxesFeat, const std::vector<Eigen::VectorXd>& currBoxesFeat, const std::vector<onboardDetector::box3D>& propedBoxes, std::vector<int>& bestMatch){
-        int numObjs = this->filteredBBoxes_.size();
-        std::vector<double> bestSims; // best similarity
-        bestSims.resize(numObjs);
-
-        for (int i=0 ; i<numObjs ; i++){
+        const size_t numObjs = this->filteredBBoxes_.size();
+        bestMatch.assign(numObjs, -1);
+        for (size_t i=0; i<numObjs; ++i){
+            if (i >= currBoxesFeat.size() || !currBoxesFeat[i].allFinite()) {
+                continue;
+            }
+            const double currNorm = currBoxesFeat[i].norm();
+            if (!std::isfinite(currNorm) || currNorm <= 1e-12) {
+                continue;
+            }
             double bestSim = -1.;
             int bestMatchInd = -1;
-            for (size_t j=0 ; j<propedBoxes.size() ; j++){
-                double sim = propedBoxesFeat[j].dot(currBoxesFeat[i])/(propedBoxesFeat[j].norm()*currBoxesFeat[i].norm());
-                if (sim >= bestSim){
+            for (size_t j=0; j<propedBoxes.size() && j<propedBoxesFeat.size(); ++j){
+                const auto& previousFeature = propedBoxesFeat[j];
+                if (previousFeature.size() != currBoxesFeat[i].size() || !previousFeature.allFinite()) {
+                    continue;
+                }
+                const double previousNorm = previousFeature.norm();
+                if (!std::isfinite(previousNorm) || previousNorm <= 1e-12) {
+                    continue;
+                }
+                const double sim = previousFeature.dot(currBoxesFeat[i]) / (previousNorm * currNorm);
+                if (std::isfinite(sim) && sim >= bestSim){
                     bestSim = sim;
-                    bestSims[i] = sim;
-                    bestMatchInd = j;
+                    bestMatchInd = static_cast<int>(j);
                 }
             }
-
-            // additional gating: position and size thresholds from cfg
-            Eigen::Vector3d curCenter(this->filteredBBoxes_[i].x, this->filteredBBoxes_[i].y, this->filteredBBoxes_[i].z);
-            Eigen::Vector3d preCenter(propedBoxes[bestMatchInd].x, propedBoxes[bestMatchInd].y, propedBoxes[bestMatchInd].z);
-            double posDist = (curCenter - preCenter).norm();
-            Eigen::Vector3d curSize(this->filteredBBoxes_[i].x_width, this->filteredBBoxes_[i].y_width, this->filteredBBoxes_[i].z_width);
-            Eigen::Vector3d preSize(propedBoxes[bestMatchInd].x_width, propedBoxes[bestMatchInd].y_width, propedBoxes[bestMatchInd].z_width);
-            Eigen::Vector3d sizeDiff = (curSize - preSize).cwiseAbs();
-            bool sizeOk = (sizeDiff(0) <= this->maxSizeDiffRange_) && (sizeDiff(1) <= this->maxSizeDiffRange_) && (sizeDiff(2) <= this->maxSizeDiffRange_);
-            double iou = this->calBoxIOU(this->filteredBBoxes_[i], propedBoxes[bestMatchInd]);
-            if(!(bestSims[i]>this->simThresh_ && iou && posDist <= this->maxMatchRange_ && sizeOk)){
-                bestSims[i] = 0;
-                bestMatch[i] = -1;
+            // No candidate (empty history or invalid features) must not index [-1].
+            if (bestMatchInd < 0) {
+                continue;
             }
-            else {
+            const auto& previousBox = propedBoxes[bestMatchInd];
+            Eigen::Vector3d curCenter(this->filteredBBoxes_[i].x, this->filteredBBoxes_[i].y, this->filteredBBoxes_[i].z);
+            Eigen::Vector3d preCenter(previousBox.x, previousBox.y, previousBox.z);
+            const double posDist = (curCenter - preCenter).norm();
+            Eigen::Vector3d curSize(this->filteredBBoxes_[i].x_width, this->filteredBBoxes_[i].y_width, this->filteredBBoxes_[i].z_width);
+            Eigen::Vector3d preSize(previousBox.x_width, previousBox.y_width, previousBox.z_width);
+            const Eigen::Vector3d sizeDiff = (curSize - preSize).cwiseAbs();
+            const bool sizeOk = (sizeDiff(0) <= this->maxSizeDiffRange_) && (sizeDiff(1) <= this->maxSizeDiffRange_) && (sizeDiff(2) <= this->maxSizeDiffRange_);
+            const double iou = this->calBoxIOU(this->filteredBBoxes_[i], previousBox);
+            if (bestSim > this->simThresh_ && std::isfinite(iou) && iou > 0.0 && posDist <= this->maxMatchRange_ && sizeOk){
                 bestMatch[i] = bestMatchInd;
             }
         }
     }
 
     void dynamicDetector::findBestMatchEstimate(const std::vector<Eigen::VectorXd>& propedBoxesFeat, const std::vector<Eigen::VectorXd>& currBoxesFeat, const std::vector<onboardDetector::box3D>& propedBoxes, std::vector<int>& bestMatch, std::vector<int>& boxOOR){
-        int numObjs = int(this->filteredBBoxes_.size());
-        std::vector<double> bestSims; // best similarity
-        bestSims.resize(numObjs);
-
-        for (int i=0 ; i<numObjs ; i++){
-            if (bestMatch[i] < 0){
-                double bestSim = -1.;
-                int bestMatchInd = -1;
-                for (size_t j=0 ; j<propedBoxes.size() ; j++){
-                    if (propedBoxes[j].is_estimated and boxOOR[j]){
-                        double sim = propedBoxesFeat[j].dot(currBoxesFeat[i])/(propedBoxesFeat[j].norm()*currBoxesFeat[i].norm());
-                        if (sim >= bestSim){
-                            bestSim = sim;
-                            bestSims[i] = sim;
-                            bestMatchInd = j;
-                        }
-                    }
+        const size_t numObjs = this->filteredBBoxes_.size();
+        bestMatch.resize(numObjs, -1);
+        for (size_t i=0; i<numObjs; ++i){
+            if (bestMatch[i] >= 0 || i >= currBoxesFeat.size() || !currBoxesFeat[i].allFinite()) {
+                continue;
+            }
+            const double currNorm = currBoxesFeat[i].norm();
+            if (!std::isfinite(currNorm) || currNorm <= 1e-12) {
+                continue;
+            }
+            double bestSim = -1.;
+            int bestMatchInd = -1;
+            for (size_t j=0; j<propedBoxes.size() && j<propedBoxesFeat.size() && j<boxOOR.size(); ++j){
+                const auto& previousFeature = propedBoxesFeat[j];
+                if (!propedBoxes[j].is_estimated || !boxOOR[j] ||
+                    previousFeature.size() != currBoxesFeat[i].size() || !previousFeature.allFinite()) {
+                    continue;
                 }
-                double iou = this->calBoxIOU(this->filteredBBoxes_[i], propedBoxes[bestMatchInd]);
-                if(!(bestSims[i]>this->simThreshRetrack_ && iou)){
-                    bestSims[i] = 0;
-                    bestMatch[i] = -1;
+                const double previousNorm = previousFeature.norm();
+                if (!std::isfinite(previousNorm) || previousNorm <= 1e-12) {
+                    continue;
                 }
-                else {
-                    boxOOR[bestMatchInd] = 0;
-                    bestMatch[i] = bestMatchInd;
-                    // cout<<"retrack"<<endl;
+                const double sim = previousFeature.dot(currBoxesFeat[i]) / (previousNorm * currNorm);
+                if (std::isfinite(sim) && sim >= bestSim){
+                    bestSim = sim;
+                    bestMatchInd = static_cast<int>(j);
                 }
             }
+            if (bestMatchInd < 0) {
+                continue;
+            }
+            const double iou = this->calBoxIOU(this->filteredBBoxes_[i], propedBoxes[bestMatchInd]);
+            if (bestSim > this->simThreshRetrack_ && std::isfinite(iou) && iou > 0.0){
+                boxOOR[bestMatchInd] = 0;
+                bestMatch[i] = bestMatchInd;
+            }
         }
-    }    
+    }
 
     void dynamicDetector::getBoxOutofRange(std::vector<int>& boxOOR, const std::vector<int>&bestMatch){
         if (int(this->boxHist_.size())>0){
@@ -1862,19 +1916,24 @@ namespace onboardDetector{
             return;
         }
 
-        cv::Mat depthShow = this->uvDetector_->depth_show.clone();
-        cv::Mat uMapShow = this->uvDetector_->U_map_show.clone();
-        cv::Mat birdView = this->uvDetector_->bird_view.clone();
-
-        sensor_msgs::msg::Image::SharedPtr depthBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", depthShow).toImageMsg();
-        sensor_msgs::msg::Image::SharedPtr umapBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", uMapShow).toImageMsg();
-        sensor_msgs::msg::Image::SharedPtr birdBoxMsg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", birdView).toImageMsg();
-        this->uvDepthMapPub_->publish(*depthBoxMsg);
-        this->uDepthMapPub_->publish(*umapBoxMsg); 
-        this->uvBirdViewPub_->publish(*birdBoxMsg);     
+        if (hasVisualizationSubscribers(this->uvDepthMapPub_)) {
+            auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->depth_show).toImageMsg();
+            this->uvDepthMapPub_->publish(*msg);
+        }
+        if (hasVisualizationSubscribers(this->uDepthMapPub_)) {
+            auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->U_map_show).toImageMsg();
+            this->uDepthMapPub_->publish(*msg);
+        }
+        if (hasVisualizationSubscribers(this->uvBirdViewPub_)) {
+            auto msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", this->uvDetector_->bird_view).toImageMsg();
+            this->uvBirdViewPub_->publish(*msg);
+        }
     }
 
     void dynamicDetector::publishColorImages(){
+        if (!hasVisualizationSubscribers(this->detectedColorImgPub_)) {
+            return;
+        }
         if (this->detectedColorImage_.empty()) {
             return;
         }
@@ -1935,6 +1994,9 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::publishPoints(const std::vector<Eigen::Vector3d>& points, const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& publisher){
+        if (!hasVisualizationSubscribers(publisher)) {
+            return;
+        }
         pcl::PointXYZ pt;
         pcl::PointCloud<pcl::PointXYZ> cloud;        
         for (size_t i=0; i<points.size(); ++i){
@@ -1955,6 +2017,9 @@ namespace onboardDetector{
 
 
     void dynamicDetector::publish3dBox(const std::vector<box3D>& boxes, const rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr& publisher, double r, double g, double b) {
+        if (!hasVisualizationSubscribers(publisher)) {
+            return;
+        }
         // visualization using bounding boxes 
         visualization_msgs::msg::Marker line;
         visualization_msgs::msg::MarkerArray lines;
@@ -2055,6 +2120,9 @@ namespace onboardDetector{
     }
 
     void dynamicDetector::publishHistoryTraj(){
+        if (!hasVisualizationSubscribers(this->historyTrajPub_)) {
+            return;
+        }
         visualization_msgs::msg::MarkerArray trajMsg;
         int countMarker = 0;
         for (size_t i=0; i<this->boxHist_.size(); ++i){
@@ -2088,7 +2156,10 @@ namespace onboardDetector{
         this->historyTrajPub_->publish(trajMsg);
     }
 
-    void dynamicDetector::publishVelVis(){ // publish velocities for all tracked objects
+    void dynamicDetector::publishVelVis(){
+        if (!hasVisualizationSubscribers(this->velVisPub_)) {
+            return;
+        } // publish velocities for all tracked objects
         visualization_msgs::msg::MarkerArray velVisMsg;
         int countMarker = 0;
         for (size_t i=0; i<this->trackedBBoxes_.size(); ++i){

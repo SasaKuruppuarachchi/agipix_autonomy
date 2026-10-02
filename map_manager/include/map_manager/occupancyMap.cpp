@@ -5,6 +5,14 @@
 */
 #include <map_manager/occupancyMap.h>
 
+namespace {
+template<typename PublisherPtr>
+bool hasVisualizationSubscribers(const PublisherPtr& publisher) {
+    return publisher && (publisher->get_subscription_count() > 0 ||
+                         publisher->get_intra_process_subscription_count() > 0);
+}
+}  // namespace
+
 namespace mapManager{
     occMap::occMap(const std::shared_ptr<rclcpp::Node>& node)
 	:_node(node)
@@ -1320,6 +1328,10 @@ namespace mapManager{
 
 
 	void occMap::publishProjPoints(){
+		// Build visualization messages only when a consumer is present.
+		if (!hasVisualizationSubscribers(this->depthCloudPub_)){
+			return;
+		}
 		pcl::PointXYZ pt;
 		pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -1341,6 +1353,10 @@ namespace mapManager{
 	}
 
 	void occMap::publishMap(){
+		// Build visualization messages only when a consumer is present.
+		if (!hasVisualizationSubscribers(this->mapVisPub_)){
+			return;
+		}
 		pcl::PointXYZ pt;
 		pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -1393,6 +1409,10 @@ namespace mapManager{
 	}
 
 	void occMap::publishInflatedMap(){
+		// Build visualization messages only when a consumer is present.
+		if (!hasVisualizationSubscribers(this->inflatedMapVisPub_)){
+			return;
+		}
 		pcl::PointXYZ pt;
 		pcl::PointCloud<pcl::PointXYZ> cloud;
 
@@ -1444,6 +1464,10 @@ namespace mapManager{
 	}
 
 	void occMap::publish2DOccupancyGrid(){
+		// Build visualization messages only when a consumer is present.
+		if (!hasVisualizationSubscribers(this->map2DPub_)){
+			return;
+		}
 		Eigen::Vector3d minRange, maxRange;
 		minRange = this->mapSizeMin_;
 		maxRange = this->mapSizeMax_;
@@ -1498,6 +1522,10 @@ namespace mapManager{
 	}
 
 	void occMap::publishStaticObstacles(){
+		// Build visualization messages only when a consumer is present.
+		if (!hasVisualizationSubscribers(this->staticObstacleVisPub_)){
+			return;
+		}
 		if (this->refinedBBoxVertices_.size() != 0){
 		    visualization_msgs::msg::Marker line;
 		    visualization_msgs::msg::MarkerArray lines;

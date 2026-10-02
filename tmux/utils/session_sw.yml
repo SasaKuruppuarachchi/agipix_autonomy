@@ -54,7 +54,9 @@ windows:
             start_legacy_stack:=true 
             mission:=dynamic_exploration
 
-        - ros2 service call /<%= drone_namespace %>/dynamic_exploration/start std_srvs/srv/Trigger "{}" -sasd
+        - |
+            echo 'After arming and reaching tracking hover, start exploration manually:'
+            echo 'ros2 service call /<%= drone_namespace %>/dynamic_exploration/start std_srvs/srv/Trigger {}'
 
 <% elsif control_mode == "climb" %>
   - CTRL-CLIMB:

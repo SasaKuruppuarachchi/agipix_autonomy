@@ -46,7 +46,9 @@ namespace AutoFlight{
 		geometry_msgs::msg::PoseStamped goal_;
 		Eigen::Vector3d currPos_;
 		double currYaw_;
-		Eigen::Vector3d currVel_, currAcc_, prevVel_; 
+		Eigen::Vector3d currVel_ = Eigen::Vector3d::Zero();
+		Eigen::Vector3d currAcc_ = Eigen::Vector3d::Zero();
+		Eigen::Vector3d prevVel_ = Eigen::Vector3d::Zero();
 		rclcpp::Time prevStateTime_;
 		bool stateUpdateFirstTime_ = true;
 		
